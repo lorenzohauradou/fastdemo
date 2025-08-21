@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { Play, Pause, ZoomIn, ZoomOut } from 'lucide-react'
+import { Play, Pause, ZoomIn, ZoomOut, Upload, Music } from 'lucide-react'
 
 // Componente per renderizzare ogni blocco di animazione (clip)
 function AnimationBlock({
@@ -139,7 +139,9 @@ export function Timeline() {
         updateAnimation,
         removeAnimation,
         selectedAnimation,
-        setSelectedAnimation
+        setSelectedAnimation,
+        updateProject,
+        setSelectedPanel
     } = useEditorStore()
 
     const tracks = [
@@ -262,6 +264,66 @@ export function Timeline() {
             properties: trackType === 'zoom' ? { level: 1.5 } : { content: 'Nuovo Testo' }
         })
     }
+    // con il blob funziona
+    const handleAudioImport = async () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'audio/*'
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0]
+            if (file) {
+                try {
+                    // Upload del file audio al backend
+                    const formData = new FormData()
+                    formData.append('file', file)
+
+                    const response = await fetch('/api/upload/audio', {
+                        method: 'POST',
+                        body: formData
+                    })
+
+                    if (response.ok) {
+                        // Usa direttamente il blob invece della route API
+                        const audioUrl = URL.createObjectURL(file)
+                        updateProject({
+                            musicSettings: {
+                                type: 'custom',
+                                track: audioUrl,
+                                volume: 0.5
+                            }
+                        })
+                    } else {
+                        console.error('Errore nell\'upload dell\'audio')
+                        // Fallback all'URL locale se l'upload fallisce
+                        const audioUrl = URL.createObjectURL(file)
+                        updateProject({
+                            musicSettings: {
+                                type: 'custom',
+                                track: audioUrl,
+                                volume: 0.5
+                            }
+                        })
+                    }
+                } catch (error) {
+                    console.error('Errore nell\'upload dell\'audio:', error)
+                    // Fallback all'URL locale in caso di errore
+                    const audioUrl = URL.createObjectURL(file)
+                    updateProject({
+                        musicSettings: {
+                            type: 'custom',
+                            track: audioUrl,
+                            volume: 0.5
+                        }
+                    })
+                }
+            }
+        }
+        input.click()
+    }
+
+    const handleOpenLibrary = () => {
+        setSelectedPanel('music')
+    }
 
 
 
@@ -367,26 +429,52 @@ export function Timeline() {
                                         )}
                                         {track.type === 'audio' && (
                                             <div className="w-full h-full bg-transparent flex items-center">
-                                                <div className="text-xs text-muted-foreground px-2">Traccia Audio</div>
-                                                {/* Waveform semplificato */}
-                                                <div className="flex-1 h-full flex items-center justify-center">
-                                                    <svg className="w-full h-6" viewBox="0 0 200 24">
-                                                        {Array.from({ length: 50 }, (_, i) => {
-                                                            const height = Math.random() * 20 + 2
-                                                            return (
-                                                                <rect
-                                                                    key={i}
-                                                                    x={i * 4}
-                                                                    y={12 - height / 2}
-                                                                    width="2"
-                                                                    height={height}
-                                                                    fill={track.color}
-                                                                    opacity="0.6"
-                                                                />
-                                                            )
-                                                        })}
-                                                    </svg>
-                                                </div>
+                                                {currentProject.musicSettings?.track && currentProject.musicSettings.track.trim() !== '' ? (
+                                                    // Audio caricato - mostra waveform allineato con il video
+                                                    <div className="w-full h-full bg-transparent flex items-center">
+                                                        <div className="text-xs text-muted-foreground px-2">Traccia Audio</div>
+                                                        <div className="flex-1 h-full flex items-center justify-center pointer-events-none">
+                                                            <svg className="w-full h-6 pointer-events-none" viewBox="0 0 200 24">
+                                                                {Array.from({ length: 50 }, (_, i) => {
+                                                                    const height = Math.random() * 20 + 2
+                                                                    return (
+                                                                        <rect
+                                                                            key={i}
+                                                                            x={i * 4}
+                                                                            y={12 - height / 2}
+                                                                            width="2"
+                                                                            height={height}
+                                                                            fill={track.color}
+                                                                            opacity="0.6"
+                                                                        />
+                                                                    )
+                                                                })}
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    // Nessun audio - mostra pulsanti
+                                                    <div className="flex-1 h-full flex items-center justify-center space-x-3">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={handleAudioImport}
+                                                            className="text-xs px-3 py-1 h-7 flex items-center space-x-1"
+                                                        >
+                                                            <Upload className="w-3 h-3" />
+                                                            <span>Import Audio</span>
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={handleOpenLibrary}
+                                                            className="text-xs px-3 py-1 h-7 flex items-center space-x-1"
+                                                        >
+                                                            <Music className="w-3 h-3" />
+                                                            <span>Library</span>
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         {trackAnimations.map(anim => (

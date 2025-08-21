@@ -7,6 +7,7 @@ import { Upload, Search } from 'lucide-react'
 
 export function VideoPreview() {
     const videoRef = useRef<HTMLVideoElement>(null)
+    const audioRef = useRef<HTMLAudioElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
     // Stato per il zoom interattivo
@@ -29,6 +30,10 @@ export function VideoPreview() {
         if (videoRef.current && Math.abs(videoRef.current.currentTime - currentTime) > 0.1) {
             videoRef.current.currentTime = currentTime
         }
+        // Sincronizza anche l'audio se presente
+        if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 0.1) {
+            audioRef.current.currentTime = currentTime
+        }
     }, [currentTime])
 
     // Gestisce play/pause
@@ -37,8 +42,25 @@ export function VideoPreview() {
 
         if (isPlaying) {
             videoRef.current.play()
+            // Riproduci anche l'audio se presente
+            if (audioRef.current) {
+                console.log('Tentativo di riproduzione audio...')
+                console.log('Audio readyState:', audioRef.current.readyState)
+                console.log('Audio src:', audioRef.current.src)
+                audioRef.current.play().catch(error => {
+                    console.error('Errore nella riproduzione audio:', error)
+                    if (audioRef.current) {
+                        console.error('Audio error code:', audioRef.current.error?.code)
+                        console.error('Audio error message:', audioRef.current.error?.message)
+                    }
+                })
+            }
         } else {
             videoRef.current.pause()
+            // Pausa anche l'audio se presente
+            if (audioRef.current) {
+                audioRef.current.pause()
+            }
         }
     }, [isPlaying])
 
@@ -244,10 +266,28 @@ export function VideoPreview() {
                         if (duration !== currentProject.duration) {
                             useEditorStore.getState().updateProject({ duration })
                         }
+                        // Disabilita l'audio del video se c'è una traccia audio separata
+                        if (currentProject.musicSettings?.track) {
+                            videoRef.current.muted = true
+                        }
                     }
                 }}
                 draggable={false}
             />
+
+            {/* Audio separato per la traccia musicale */}
+            {currentProject.musicSettings?.track && (
+                <audio
+                    ref={audioRef}
+                    src={currentProject.musicSettings.track}
+                    preload="metadata"
+                    onLoadedMetadata={() => {
+                        if (audioRef.current) {
+                            audioRef.current.volume = currentProject.musicSettings?.volume || 0.5
+                        }
+                    }}
+                />
+            )}
 
             {/* Indicatore quando zona zoom è selezionata */}
             {selectedAnimation?.type === 'zoom' &&
