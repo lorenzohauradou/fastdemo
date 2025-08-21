@@ -58,12 +58,14 @@ function AnimationBlock({
                 updateAnimation(animation.id, { startTime: newStartTime, endTime: newEndTime })
 
             } else if (dragMode === 'resize-right') {
-                const newEndTime = Math.max(startTime + 0.1, endTime + deltaTime)
+                const minDuration = 1.5 // Durata minima di 1.5 secondi --- lunghezza pulsanti colorati
+                const newEndTime = Math.max(startTime + minDuration, endTime + deltaTime)
                 if (newEndTime > projectDuration) return
                 updateAnimation(animation.id, { endTime: newEndTime })
 
             } else if (dragMode === 'resize-left') {
-                const newStartTime = Math.min(endTime - 0.1, startTime + deltaTime)
+                const minDuration = 1.5 // Durata minima di 1.5 secondi
+                const newStartTime = Math.min(endTime - minDuration, startTime + deltaTime)
                 if (newStartTime < 0) return
                 updateAnimation(animation.id, { startTime: newStartTime })
             }
@@ -108,6 +110,8 @@ function AnimationBlock({
                 {animation.type === 'zoom' ? `Zoom ${animation.properties.level || ''}x` : animation.properties.content}
             </span>
 
+
+
             {/* Maniglia Destra */}
             <div
                 className="absolute -right-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
@@ -141,7 +145,7 @@ export function Timeline() {
     const tracks = [
         { id: 'text', label: 'TEXT', type: 'text' as const, color: '#10b981' }, // Verde
         { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f59e0b' }, // Arancione
-        { id: 'voiceover', label: 'VOICEOVER', type: 'text' as const, color: '#8b5cf6' }, // Viola
+        { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#8b5cf6' }, // Viola
         { id: 'video', label: 'VIDEO', type: 'video' as const, color: 'transparent' },
         { id: 'audio', label: 'AUDIO', type: 'audio' as const, color: '#22c55e' }, // Verde più chiaro
     ]
@@ -194,16 +198,20 @@ export function Timeline() {
         }
     }, [currentProject?.videoUrl])
 
-    // Gestione tasto ESC per eliminare animazioni
+    // Gestione tasti per eliminare animazioni
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && selectedAnimation) {
+            if (selectedAnimation && (e.key === 'Escape' || e.key === 'Delete' || e.key === 'Backspace')) {
+                e.preventDefault()
                 removeAnimation(selectedAnimation.id)
+                setSelectedAnimation(null) // Reset della selezione dopo l'eliminazione
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedAnimation, removeAnimation])
+    }, [selectedAnimation, removeAnimation, setSelectedAnimation])
+
+
 
     if (!currentProject) {
         return (
@@ -254,6 +262,8 @@ export function Timeline() {
             properties: trackType === 'zoom' ? { level: 1.5 } : { content: 'Nuovo Testo' }
         })
     }
+
+
 
     // Calcola la posizione del playhead con una transizione CSS per la fluidità
     const playheadStyle = {
