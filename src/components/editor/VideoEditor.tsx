@@ -77,17 +77,17 @@ export function VideoEditor() {
                 {/* Header */}
                 <Header />
 
-                {/* Contenuto principale centrato e compatto */}
-                <div className="flex-1 flex flex-col items-center p-3 bg-background min-h-0">
-                    {/* Video Preview più piccolo */}
-                    <div className="w-full max-w-lg mb-2">
-                        <div className="aspect-video bg-card rounded-md overflow-hidden border border-border shadow-md">
+                {/* Contenuto principale con proporzioni migliori */}
+                <div className="flex-1 flex flex-col p-4 bg-background min-h-0">
+                    {/* Video Preview più grande */}
+                    <div className="w-full flex justify-center mb-4">
+                        <div className="w-full max-w-3xl aspect-video bg-card rounded-lg overflow-hidden border border-border shadow-lg">
                             <VideoPreview />
                         </div>
                     </div>
 
-                    {/* Timeline compatta */}
-                    <div className="w-full max-w-5xl flex-1 bg-card rounded-md border border-border shadow-sm min-h-0">
+                    {/* Timeline con altezza fissa */}
+                    <div className="w-full bg-card rounded-lg border border-border shadow-sm" style={{ height: '280px' }}>
                         <Timeline />
                     </div>
                 </div>
