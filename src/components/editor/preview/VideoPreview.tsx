@@ -64,6 +64,26 @@ export function VideoPreview() {
         }
     }, [isPlaying])
 
+    // Trova l'animazione zoom attiva al tempo corrente - logica condivisa
+    const getActiveZoomAnimation = () => {
+        if (!currentProject) return null
+
+        // Trova SOLO l'animazione zoom selezionata se è attiva al tempo corrente
+        // Questo evita conflitti con animazioni zoom multiple
+        return selectedAnimation?.type === 'zoom' &&
+            currentTime >= selectedAnimation.startTime &&
+            currentTime <= selectedAnimation.endTime
+            ? selectedAnimation
+            : currentProject.animations.find(anim =>
+                anim.type === 'zoom' &&
+                currentTime >= anim.startTime &&
+                currentTime <= anim.endTime &&
+                anim.startTime < anim.endTime
+            ) || null
+    }
+
+    const activeZoomAnimation = getActiveZoomAnimation()
+
     // Applica le trasformazioni CSS in tempo reale per il preview
     const getVideoTransform = () => {
         if (!currentProject) return {}
@@ -85,19 +105,14 @@ export function VideoPreview() {
 
         let transform = `scale(${zoom})`
 
-        // Trova l'animazione attiva al tempo corrente
-        const activeAnimation = currentProject.animations.find(anim =>
-            anim.type === 'zoom' && currentTime >= anim.startTime && currentTime <= anim.endTime
-        )
-
-        if (activeAnimation?.type === 'zoom') {
-            const zoomLevel = activeAnimation.properties.level || 1
-            const x = activeAnimation.properties.x || 0
-            const y = activeAnimation.properties.y || 0
+        if (activeZoomAnimation?.type === 'zoom') {
+            const zoomLevel = activeZoomAnimation.properties.level || 1
+            const x = activeZoomAnimation.properties.x || 0
+            const y = activeZoomAnimation.properties.y || 0
 
             // Calcola il progresso dell'animazione (0-1)
-            const progress = (currentTime - activeAnimation.startTime) /
-                (activeAnimation.endTime - activeAnimation.startTime)
+            const progress = (currentTime - activeZoomAnimation.startTime) /
+                (activeZoomAnimation.endTime - activeZoomAnimation.startTime)
 
             // Interpola i valori
             const currentZoom = 1 + (zoomLevel - 1) * progress
@@ -289,23 +304,21 @@ export function VideoPreview() {
                 />
             )}
 
-            {/* Indicatore quando zona zoom è selezionata */}
-            {selectedAnimation?.type === 'zoom' &&
-                currentTime >= selectedAnimation.startTime &&
-                currentTime <= selectedAnimation.endTime && (
-                    <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm rounded-lg p-3 text-primary-foreground text-sm">
-                        <div className="flex items-center space-x-2">
-                            <Search className="h-4 w-4" />
-                            <span>Zoom Mode Active</span>
-                        </div>
-                        <div className="text-xs mt-1 opacity-80">
-                            Scroll to zoom • Drag to pan
-                        </div>
-                        <div className="text-xs">
-                            {interactiveZoom.toFixed(1)}x zoom
-                        </div>
+            {/* Indicatore quando zona zoom è attiva - usa la stessa logica dell'effetto zoom */}
+            {activeZoomAnimation?.type === 'zoom' && (
+                <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm rounded-lg p-3 text-primary-foreground text-sm">
+                    <div className="flex items-center space-x-2">
+                        <Search className="h-4 w-4" />
+                        <span>Zoom Mode Active</span>
                     </div>
-                )}
+                    <div className="text-xs mt-1 opacity-80">
+                        Scroll to zoom • Drag to pan
+                    </div>
+                    <div className="text-xs">
+                        {interactiveZoom.toFixed(1)}x zoom
+                    </div>
+                </div>
+            )}
 
             {/* Overlay per mostrare informazioni di debug */}
             {process.env.NODE_ENV === 'development' && (

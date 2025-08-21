@@ -3,7 +3,8 @@
 import { useRef, useEffect, useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { Play, Pause, ZoomIn, ZoomOut, Upload, Music } from 'lucide-react'
+import { ZoomIn, ZoomOut, Upload, Music } from 'lucide-react'
+import { Player } from '@/components/editor/player/Player'
 
 // Componente per renderizzare ogni blocco di animazione (clip)
 function AnimationBlock({
@@ -131,8 +132,7 @@ export function Timeline() {
         currentProject,
         currentTime,
         setCurrentTime,
-        isPlaying,
-        setIsPlaying,
+
         zoom: timelineZoom,
         setZoom: setTimelineZoom,
         addAnimation,
@@ -148,8 +148,6 @@ export function Timeline() {
         { id: 'text', label: 'TEXT', type: 'text' as const, color: '#10b981' }, // Verde
         { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f59e0b' }, // Arancione
         { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#8b5cf6' }, // Viola
-        { id: 'video', label: 'VIDEO', type: 'video' as const, color: 'transparent' },
-        { id: 'audio', label: 'AUDIO', type: 'audio' as const, color: '#22c55e' }, // Verde più chiaro
     ]
 
     // Funzione per generare thumbnails dal video
@@ -330,7 +328,6 @@ export function Timeline() {
     // Calcola la posizione del playhead con una transizione CSS per la fluidità
     const playheadStyle = {
         transform: `translateX(${96 + currentTime * pixelsPerSecond}px)`, // Aggiungi l'offset del label
-        transition: isPlaying ? 'transform 0.1s linear' : 'none',
     }
 
     return (
@@ -338,14 +335,7 @@ export function Timeline() {
             {/* Controlli */}
             <div className="flex items-center justify-between px-4 py-1 border-b border-border">
                 <div className="flex items-center space-x-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="text-muted-foreground hover:text-foreground h-7 w-7 p-0"
-                    >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                    </Button>
+
                     <span className="text-xs text-muted-foreground font-mono">
                         {new Date(currentTime * 1000).toISOString().substr(14, 5)} / {new Date(duration * 1000).toISOString().substr(14, 5)}
                     </span>
@@ -409,74 +399,7 @@ export function Timeline() {
                                 <div key={track.id} className="h-10 flex items-center relative">
                                     <div className="w-24 text-[10px] text-muted-foreground font-semibold shrink-0 pr-2 text-right">{track.label}</div>
                                     <div className="flex-1 h-full relative bg-muted/20 rounded-md border border-border/50" style={{ marginLeft: '0px' }}>
-                                        {track.type === 'video' && (
-                                            <div className="flex h-full items-center overflow-hidden">
-                                                {videoThumbnails.length > 0 ? (
-                                                    <div className="flex h-full">
-                                                        {videoThumbnails.map((thumb, index) => (
-                                                            <img
-                                                                key={index}
-                                                                src={thumb}
-                                                                alt={`Thumbnail ${index}`}
-                                                                className="h-full w-auto object-cover border-r border-border/30"
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-full w-full bg-muted flex items-center text-xs text-muted-foreground px-2">Traccia Video</div>
-                                                )}
-                                            </div>
-                                        )}
-                                        {track.type === 'audio' && (
-                                            <div className="w-full h-full bg-transparent flex items-center">
-                                                {currentProject.musicSettings?.track && currentProject.musicSettings.track.trim() !== '' ? (
-                                                    // Audio caricato - mostra waveform allineato con il video
-                                                    <div className="w-full h-full bg-transparent flex items-center">
-                                                        <div className="text-xs text-muted-foreground px-2">Traccia Audio</div>
-                                                        <div className="flex-1 h-full flex items-center justify-center pointer-events-none">
-                                                            <svg className="w-full h-6 pointer-events-none" viewBox="0 0 200 24">
-                                                                {Array.from({ length: 50 }, (_, i) => {
-                                                                    const height = Math.random() * 20 + 2
-                                                                    return (
-                                                                        <rect
-                                                                            key={i}
-                                                                            x={i * 4}
-                                                                            y={12 - height / 2}
-                                                                            width="2"
-                                                                            height={height}
-                                                                            fill={track.color}
-                                                                            opacity="0.6"
-                                                                        />
-                                                                    )
-                                                                })}
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    // Nessun audio - mostra pulsanti
-                                                    <div className="flex-1 h-full flex items-center justify-center space-x-3">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={handleAudioImport}
-                                                            className="text-xs px-3 py-1 h-7 flex items-center space-x-1"
-                                                        >
-                                                            <Upload className="w-3 h-3" />
-                                                            <span>Import Audio</span>
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={handleOpenLibrary}
-                                                            className="text-xs px-3 py-1 h-7 flex items-center space-x-1"
-                                                        >
-                                                            <Music className="w-3 h-3" />
-                                                            <span>Library</span>
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+
                                         {trackAnimations.map(anim => (
                                             <AnimationBlock
                                                 key={anim.id}
@@ -493,6 +416,11 @@ export function Timeline() {
                                 </div>
                             )
                         })}
+                    </div>
+
+                    {/* Player integrato nella timeline */}
+                    <div className="border-t border-border/50 mt-2">
+                        <Player />
                     </div>
                 </div>
             </div>

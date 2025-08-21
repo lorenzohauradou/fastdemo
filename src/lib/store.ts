@@ -99,13 +99,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   updateAnimation: (id, updates) => set((state) => {
     if (!state.currentProject) return state
     
+    const updatedAnimations = state.currentProject.animations.map(anim => 
+      anim.id === id ? { ...anim, ...updates } : anim
+    )
+    
+    // Se l'animazione modificata è quella selezionata, aggiorna anche selectedAnimation
+    const updatedSelectedAnimation = state.selectedAnimation?.id === id 
+      ? { ...state.selectedAnimation, ...updates }
+      : state.selectedAnimation
+    
     return {
       currentProject: {
         ...state.currentProject,
-        animations: state.currentProject.animations.map(anim => 
-          anim.id === id ? { ...anim, ...updates } : anim
-        )
-      }
+        animations: updatedAnimations
+      },
+      selectedAnimation: updatedSelectedAnimation
     }
   }),
   

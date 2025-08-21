@@ -68,25 +68,25 @@ export function VideoEditor() {
 
     return (
         <div className="flex h-screen bg-background text-foreground">
-            {/* Sidebar */}
-            <div className="w-96 bg-card border-r border-border">
+            {/* Sidebar - larghezza fissa per evitare ridimensionamenti */}
+            <div className="w-96 flex-shrink-0 bg-card border-r border-border">
                 <Sidebar />
             </div>
 
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
                 <Header />
 
-                {/* Contenuto principale con proporzioni migliori */}
+                {/* Contenuto principale con proporzioni originali */}
                 <div className="flex-1 flex flex-col p-4 bg-background min-h-0">
-                    {/* Video Preview più grande */}
+                    {/* Video Preview centrale - sopra come prima */}
                     <div className="w-full flex justify-center mb-4">
                         <div className="w-full max-w-3xl aspect-video bg-card rounded-lg overflow-hidden border border-border shadow-lg">
                             <VideoPreview />
                         </div>
                     </div>
 
-                    {/* Timeline con altezza fissa e background più scuro */}
+                    {/* Timeline con Player integrato - sotto */}
                     <div className="w-full rounded-lg border border-border shadow-sm" style={{ height: '280px', backgroundColor: '#0f0f0f' }}>
                         <Timeline />
                     </div>
