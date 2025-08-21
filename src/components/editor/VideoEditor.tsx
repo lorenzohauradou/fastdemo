@@ -86,8 +86,8 @@ export function VideoEditor() {
                         </div>
                     </div>
 
-                    {/* Timeline con altezza fissa */}
-                    <div className="w-full bg-card rounded-lg border border-border shadow-sm" style={{ height: '280px' }}>
+                    {/* Timeline con altezza fissa e background più scuro */}
+                    <div className="w-full rounded-lg border border-border shadow-sm" style={{ height: '280px', backgroundColor: '#0f0f0f' }}>
                         <Timeline />
                     </div>
                 </div>

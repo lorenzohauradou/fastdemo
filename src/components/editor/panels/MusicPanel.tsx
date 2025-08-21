@@ -5,78 +5,97 @@ import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
-import { Play, Pause, Upload, Volume2 } from 'lucide-react'
+import { Play, Pause, Upload, Volume2, ArrowLeft, Plus, X } from 'lucide-react'
 
-const presetTracks = [
+// Categorie principali come da foto 1
+const musicCategories = [
     {
-        id: 'cinematic-1',
+        id: 'cinematic',
         name: 'Cinematic',
         description: 'Dramatic emotional soundscapes',
-        category: 'cinematic',
-        duration: 180,
-        preview: '/music/cinematic-preview.mp3'
+        color: 'from-orange-500 to-red-600'
     },
     {
-        id: 'confident-1',
+        id: 'confident',
         name: 'Confident Energy',
         description: 'Bold motivational tracks',
-        category: 'confident',
-        duration: 165,
-        preview: '/music/confident-preview.mp3'
+        color: 'from-red-500 to-pink-600'
     },
     {
-        id: 'electronic-1',
+        id: 'electronic',
         name: 'Electronic',
         description: 'Modern digital beats',
-        category: 'electronic',
-        duration: 200,
-        preview: '/music/electronic-preview.mp3'
+        color: 'from-blue-500 to-purple-600'
     },
     {
-        id: 'hype-1',
+        id: 'hype',
         name: 'Hype',
         description: 'High-energy exciting tracks',
-        category: 'hype',
-        duration: 145,
-        preview: '/music/hype-preview.mp3'
+        color: 'from-green-500 to-teal-600'
     },
     {
-        id: 'jazzy-1',
+        id: 'jazzy',
         name: 'Jazzy',
         description: 'Smooth sophisticated melodies',
-        category: 'jazzy',
-        duration: 220,
-        preview: '/music/jazzy-preview.mp3'
+        color: 'from-emerald-500 to-green-600'
     },
     {
-        id: 'lofi-1',
+        id: 'lofi',
         name: 'Lo-fi Chill',
         description: 'Relaxed nostalgic beats',
-        category: 'lofi',
-        duration: 190,
-        preview: '/music/lofi-preview.mp3'
+        color: 'from-purple-500 to-indigo-600'
     }
 ]
 
-const categoryColors = {
-    cinematic: 'from-orange-500 to-red-600',
-    confident: 'from-red-500 to-pink-600',
-    electronic: 'from-blue-500 to-purple-600',
-    hype: 'from-green-500 to-teal-600',
-    jazzy: 'from-emerald-500 to-green-600',
-    lofi: 'from-purple-500 to-indigo-600'
+// Tracce per categoria come da foto 2
+const categoryTracks = {
+    cinematic: [
+        { id: 'dramatic-reveal', name: 'Dramatic Reveal', duration: '1:59' },
+        { id: 'epic-journey', name: 'Epic Journey', duration: '2:05' },
+        { id: 'final-battle', name: 'Final Battle', duration: '1:59' },
+        { id: 'heroic-moment', name: 'Heroic Moment', duration: '2:02' },
+        { id: 'opening-scene', name: 'Opening Scene', duration: '2:01' }
+    ],
+    confident: [
+        { id: 'confident-1', name: 'Power Drive', duration: '2:15' },
+        { id: 'confident-2', name: 'Victory March', duration: '1:58' },
+        { id: 'confident-3', name: 'Rising Up', duration: '2:33' }
+    ],
+    electronic: [
+        { id: 'electronic-1', name: 'Neon Lights', duration: '3:12' },
+        { id: 'electronic-2', name: 'Digital Pulse', duration: '2:44' },
+        { id: 'electronic-3', name: 'Cyber Dreams', duration: '3:01' }
+    ],
+    hype: [
+        { id: 'hype-1', name: 'Energy Boost', duration: '2:28' },
+        { id: 'hype-2', name: 'Adrenaline Rush', duration: '1:55' },
+        { id: 'hype-3', name: 'Peak Performance', duration: '2:17' }
+    ],
+    jazzy: [
+        { id: 'jazzy-1', name: 'Smooth Operator', duration: '3:45' },
+        { id: 'jazzy-2', name: 'Late Night Vibes', duration: '4:12' },
+        { id: 'jazzy-3', name: 'City Lights', duration: '3:28' }
+    ],
+    lofi: [
+        { id: 'lofi-1', name: 'Study Session', duration: '3:15' },
+        { id: 'lofi-2', name: 'Rainy Day', duration: '2:48' },
+        { id: 'lofi-3', name: 'Coffee Shop', duration: '3:33' }
+    ]
 }
 
 export function MusicPanel() {
     const { currentProject, updateProject } = useEditorStore()
-    const [selectedTrack, setSelectedTrack] = useState<string | null>(null)
-    const [isPlaying, setIsPlaying] = useState(false)
+    const [currentView, setCurrentView] = useState<'main' | 'category' | 'imported'>('main')
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+    const [importedFile, setImportedFile] = useState<File | null>(null)
     const [volume, setVolume] = useState([50])
 
-    const handleTrackSelect = (trackId: string) => {
-        const track = presetTracks.find(t => t.id === trackId)
-        if (!track) return
+    const handleCategorySelect = (categoryId: string) => {
+        setSelectedCategory(categoryId)
+        setCurrentView('category')
+    }
 
+    const handleTrackSelect = (trackId: string) => {
         updateProject({
             musicSettings: {
                 type: 'preset',
@@ -84,16 +103,16 @@ export function MusicPanel() {
                 volume: volume[0] / 100
             }
         })
-
-        setSelectedTrack(trackId)
     }
 
     const handleCustomUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (!file) return
 
-        const audioUrl = URL.createObjectURL(file)
+        setImportedFile(file)
+        setCurrentView('imported')
 
+        const audioUrl = URL.createObjectURL(file)
         updateProject({
             musicSettings: {
                 type: 'custom',
@@ -103,39 +122,38 @@ export function MusicPanel() {
         })
     }
 
-    const togglePreview = (trackId: string) => {
-        setIsPlaying(!isPlaying)
-        console.log('Toggle preview for:', trackId)
+    const handleRemoveImported = () => {
+        setImportedFile(null)
+        setCurrentView('main')
+        updateProject({
+            musicSettings: {
+                type: 'custom',
+                track: '',
+                volume: volume[0] / 100
+            }
+        })
     }
 
-    return (
-        <div className="p-4 space-y-6">
-            {/* Header */}
-            <div>
-                <h2 className="text-lg font-semibold text-white mb-2">Music</h2>
-                <p className="text-sm text-gray-400">Add background music to your video</p>
-            </div>
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B'
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+    }
 
-            {/* Volume Control */}
-            <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-300">Volume</label>
-                    <span className="text-sm text-gray-400">{volume[0]}%</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Volume2 className="h-4 w-4 text-gray-400" />
-                    <Slider
-                        value={volume}
-                        onValueChange={setVolume}
-                        max={100}
-                        step={1}
-                        className="flex-1"
-                    />
-                </div>
-            </div>
+    const formatDuration = (file: File) => {
+        // Placeholder - in realtà dovremmo calcolare la durata reale
+        return '03:18'
+    }
 
-            {/* Custom Upload */}
-            <div>
+    // Vista principale - griglia categorie come foto 1
+    if (currentView === 'main') {
+        return (
+            <div className="p-4 space-y-4">
+                <div>
+                    <h2 className="text-xl font-semibold text-white">Music</h2>
+                </div>
+
+                {/* Import Button */}
                 <label className="block w-full">
                     <input
                         type="file"
@@ -143,86 +161,241 @@ export function MusicPanel() {
                         onChange={handleCustomUpload}
                         className="hidden"
                     />
-                    <Button
-                        variant="outline"
-                        className="w-full border-gray-600 hover:bg-gray-700"
-                    >
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                         <Upload className="mr-2 h-4 w-4" />
                         Import music file
                     </Button>
                 </label>
+
+                {/* Library */}
+                <div>
+                    <h3 className="text-lg font-medium text-white mb-3">Library</h3>
+
+                    {/* Featured */}
+                    <div className="mb-4">
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4">
+                            <h4 className="text-lg font-medium text-white">Featured</h4>
+                            <p className="text-sm text-white/80">Most popular tracks</p>
+                        </div>
+                    </div>
+
+                    {/* Categories Grid 2x3 */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {musicCategories.map((category) => (
+                            <div
+                                key={category.id}
+                                onClick={() => handleCategorySelect(category.id)}
+                                className={`bg-gradient-to-r ${category.color} rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity`}
+                            >
+                                <h4 className="text-lg font-medium text-white">{category.name}</h4>
+                                <p className="text-sm text-white/80">{category.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
+        )
+    }
 
-            {/* Tracks Section */}
-            <div>
-                <h3 className="text-sm font-medium text-white mb-3">Tracks</h3>
-                <div className="space-y-3">
-                    {presetTracks.map((track) => (
-                        <Card
-                            key={track.id}
-                            className={`p-3 bg-gray-800 border-gray-700 cursor-pointer transition-all hover:bg-gray-750 ${selectedTrack === track.id ? 'ring-2 ring-blue-500' : ''
-                                }`}
-                            onClick={() => handleTrackSelect(track.id)}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                        <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${categoryColors[track.category as keyof typeof categoryColors]}`} />
-                                        <h4 className="text-sm font-medium text-white">{track.name}</h4>
+    // Vista categoria - lista tracce come foto 3
+    if (currentView === 'category' && selectedCategory) {
+        const category = musicCategories.find(c => c.id === selectedCategory)
+        const tracks = categoryTracks[selectedCategory as keyof typeof categoryTracks] || []
+
+        return (
+            <div className="p-4 space-y-4">
+                <div>
+                    <h2 className="text-xl font-semibold text-white">Music</h2>
+                </div>
+
+                {/* Import Button */}
+                <label className="block w-full">
+                    <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleCustomUpload}
+                        className="hidden"
+                    />
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import music file
+                    </Button>
+                </label>
+
+                {/* Library */}
+                <div>
+                    <h3 className="text-lg font-medium text-white mb-3">Library</h3>
+
+                    {/* Back Button */}
+                    <Button
+                        variant="ghost"
+                        onClick={() => setCurrentView('main')}
+                        className="mb-4 text-white hover:bg-gray-700"
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                    </Button>
+
+                    {/* Featured */}
+                    <div className="mb-4">
+                        <h4 className="text-lg font-medium text-white mb-2">Featured</h4>
+                        <p className="text-sm text-gray-400 mb-3">Most popular tracks</p>
+                    </div>
+
+                    {/* Tracks List */}
+                    <div className="space-y-3">
+                        {tracks.map((track) => (
+                            <div
+                                key={track.id}
+                                className="bg-card rounded-lg p-4 hover:bg-gray-700 transition-colors"
+                            >
+                                <div className="flex items-center justify-between min-w-0">
+                                    <div className="flex-1 min-w-0 mr-3">
+                                        <h4 className="text-lg font-medium text-white truncate">{track.name}</h4>
                                     </div>
-                                    <p className="text-xs text-gray-400">{track.description}</p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
-                                    </p>
+                                    <div className="flex items-center space-x-2 flex-shrink-0">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation() // Previene la propagazione del click
+                                                console.log('Play preview:', track.name)
+                                            }}
+                                            className="text-gray-400 hover:text-white"
+                                        >
+                                            <Play className="h-5 w-5" />
+                                        </Button>
+                                        {/* Waveform - contenuta senza overflow con pattern fisso */}
+                                        <div className="flex items-center space-x-px max-w-[120px] overflow-hidden">
+                                            {Array.from({ length: 40 }, (_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className="w-0.5 bg-gray-500 rounded-full flex-shrink-0"
+                                                    style={{
+                                                        height: `${Math.sin(i * 0.2) * 6 + Math.sin(i * 0.1) * 4 + 8}px`
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <span className="text-sm text-gray-400 text-right w-10">{track.duration}</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation() // Previene la propagazione del click
+                                                handleTrackSelect(track.id) // Seleziona la traccia
+                                            }}
+                                            className="text-gray-400 hover:text-white"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
+    // Vista file importato - come foto 4
+    if (currentView === 'imported' && importedFile) {
+        return (
+            <div className="p-4 space-y-4">
+                <div>
+                    <h2 className="text-xl font-semibold text-white">Music</h2>
+                </div>
+
+                {/* Tracks */}
+                <div>
+                    <h3 className="text-lg font-medium text-white mb-3">Tracks</h3>
+
+                    {/* Imported File Preview */}
+                    <div className="bg-card rounded-lg p-4 border border-gray-600">
+                        <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                                <h4 className="text-lg font-medium text-white">1. {importedFile.name}</h4>
+                                <p className="text-sm text-gray-400">{formatDuration(importedFile)}</p>
+                            </div>
+                            <div className="flex items-center space-x-2">
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        togglePreview(track.id)
-                                    }}
                                     className="text-gray-400 hover:text-white"
                                 >
-                                    {isPlaying && selectedTrack === track.id ? (
-                                        <Pause className="h-4 w-4" />
-                                    ) : (
-                                        <Play className="h-4 w-4" />
-                                    )}
+                                    <Volume2 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-gray-400 hover:text-white"
+                                >
+                                    <Play className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-gray-400 hover:text-white"
+                                >
+                                    <ArrowLeft className="h-4 w-4 rotate-90" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleRemoveImported}
+                                    className="text-gray-400 hover:text-white"
+                                >
+                                    <X className="h-4 w-4" />
                                 </Button>
                             </div>
-                        </Card>
-                    ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Import Button */}
+                <label className="block w-full">
+                    <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleCustomUpload}
+                        className="hidden"
+                    />
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import music file
+                    </Button>
+                </label>
+
+                {/* Library */}
+                <div>
+                    <h3 className="text-lg font-medium text-white mb-3">Library</h3>
+
+                    {/* Featured */}
+                    <div className="mb-4">
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4">
+                            <h4 className="text-lg font-medium text-white">Featured</h4>
+                            <p className="text-sm text-white/80">Most popular tracks</p>
+                        </div>
+                    </div>
+
+                    {/* Categories Grid 2x3 */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {musicCategories.map((category) => (
+                            <div
+                                key={category.id}
+                                onClick={() => handleCategorySelect(category.id)}
+                                className={`bg-gradient-to-r ${category.color} rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity`}
+                            >
+                                <h4 className="text-lg font-medium text-white">{category.name}</h4>
+                                <p className="text-sm text-white/80">{category.description}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
+        )
+    }
 
-            {/* Library Categories */}
-            <div>
-                <h3 className="text-sm font-medium text-white mb-3">Library</h3>
-                <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(categoryColors).map(([category, gradient]) => (
-                        <Card
-                            key={category}
-                            className={`p-3 bg-gradient-to-r ${gradient} cursor-pointer hover:opacity-80 transition-opacity`}
-                        >
-                            <h4 className="text-sm font-medium text-white capitalize">{category}</h4>
-                            <p className="text-xs text-white/80 mt-1">
-                                {presetTracks.filter(t => t.category === category).length} tracks
-                            </p>
-                        </Card>
-                    ))}
-                </div>
-            </div>
-
-            {/* Featured Section */}
-            <div>
-                <h3 className="text-sm font-medium text-white mb-3">Featured</h3>
-                <Card className="p-4 bg-gradient-to-r from-blue-600 to-purple-600">
-                    <h4 className="text-sm font-medium text-white mb-1">Most popular tracks</h4>
-                    <p className="text-xs text-white/80">Curated selection of trending music</p>
-                </Card>
-            </div>
-        </div>
-    )
+    return null
 }
