@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { ZoomIn, ZoomOut, Upload, Music } from 'lucide-react'
-import { Player } from '@/components/editor/player/Player'
+
 
 // Componente per renderizzare ogni blocco di animazione (clip)
 function AnimationBlock({
@@ -419,10 +419,7 @@ export function Timeline() {
                         })}
                     </div>
 
-                    {/* Player integrato nella timeline */}
-                    <div className="border-t border-border/50 mt-2">
-                        <Player />
-                    </div>
+
                 </div>
             </div>
         </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEditorStore } from '@/lib/store'
 import { VideoPreview } from '@/components/editor/preview/VideoPreview'
 import { Timeline } from '@/components/editor/timeline/Timeline'
+import { Player } from '@/components/editor/player/Player'
 import { Sidebar } from '@/components/editor/sidebar/Sidebar'
 import { Header } from '@/components/editor/Header'
 
@@ -86,9 +87,14 @@ export function VideoEditor() {
                         </div>
                     </div>
 
-                    {/* Timeline con Player integrato - sotto */}
-                    <div className="w-full rounded-lg border border-border shadow-sm" style={{ height: '280px', backgroundColor: '#0f0f0f' }}>
+                    {/* Timeline separata - sopra */}
+                    <div className="w-full rounded-lg border border-border shadow-sm mb-4" style={{ height: '200px', backgroundColor: '#0f0f0f' }}>
                         <Timeline />
+                    </div>
+
+                    {/* Player separato - sotto */}
+                    <div className="w-full">
+                        <Player />
                     </div>
                 </div>
             </div>
