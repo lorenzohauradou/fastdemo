@@ -95,30 +95,28 @@ function AnimationBlock({
     return (
         <div
             ref={blockRef}
-            className={`absolute h-4 top-1/2 -translate-y-1/2 rounded cursor-grab flex items-center justify-center group border ${isSelected ? 'border-2 shadow-lg z-10' : 'border'}`}
+            className={`absolute h-3 top-1/2 -translate-y-1/2 rounded cursor-grab flex items-center justify-center group border ${isSelected ? 'border-2 shadow-lg z-10' : 'border'}`}
             style={blockStyle}
             onMouseDown={(e) => handleMouseDown(e, 'move')}
         >
             {/* Maniglia Sinistra */}
             <div
-                className="absolute -left-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
+                className="absolute -left-0.5 top-0 h-full w-1.5 cursor-ew-resize flex items-center justify-center"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
             >
-                <div className={`h-full w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
+                <div className={`h-2/3 w-0.5 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
             </div>
 
-            <span className="text-white text-[10px] font-bold truncate px-2 pointer-events-none">
-                {animation.type === 'zoom' ? `Zoom ${animation.properties.level || ''}x` : animation.properties.content}
+            <span className="text-white text-[8px] font-bold truncate px-1 pointer-events-none">
+                {animation.type === 'zoom' ? `${animation.properties.level || ''}x` : animation.properties.content}
             </span>
-
-
 
             {/* Maniglia Destra */}
             <div
-                className="absolute -right-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
+                className="absolute -right-0.5 top-0 h-full w-1.5 cursor-ew-resize flex items-center justify-center"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
             >
-                <div className={`h-full w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
+                <div className={`h-2/3 w-0.5 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
             </div>
         </div>
     )
@@ -225,7 +223,7 @@ export function Timeline() {
     const duration = currentProject.duration
     const timelineWidth = timelineContainerRef.current ? timelineContainerRef.current.offsetWidth : 1000
     // Sottrai la larghezza del label per allineare correttamente
-    const availableWidth = timelineWidth - 96 // 24 * 4 = 96px per il label
+    const availableWidth = timelineWidth - 80 // 80px per il label compatto
     const pixelsPerSecond = (availableWidth * timelineZoom) / duration
 
     // Funzione per il movimento fluido del playhead
@@ -235,7 +233,7 @@ export function Timeline() {
         const timelineRect = e.currentTarget.getBoundingClientRect()
 
         const updatePosition = (clientX: number) => {
-            const x = clientX - timelineRect.left - 96 // Sottrai l'offset del label
+            const x = clientX - timelineRect.left - 80 // Sottrai l'offset del label (ridotto per layout compatto)
             const newTime = Math.max(0, x / pixelsPerSecond)
             setCurrentTime(Math.min(duration, newTime))
         }
@@ -328,98 +326,97 @@ export function Timeline() {
 
     // Calcola la posizione del playhead con una transizione CSS per la fluidità
     const playheadStyle = {
-        transform: `translateX(${96 + currentTime * pixelsPerSecond}px)`, // Aggiungi l'offset del label
+        transform: `translateX(${80 + currentTime * pixelsPerSecond}px)`, // Aggiungi l'offset del label (ridotto per layout compatto)
     }
 
     return (
-        <div className="flex flex-col h-full bg-background text-foreground select-none">
-            {/* Controlli */}
-            <div className="flex items-center justify-between px-4 py-1 border-b border-border">
-                <div className="flex items-center space-x-2">
-
-                    <span className="text-xs text-muted-foreground font-mono">
-                        {new Date(currentTime * 1000).toISOString().substr(14, 5)} / {new Date(duration * 1000).toISOString().substr(14, 5)}
-                    </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAddAnimation('text')}
-                        className="text-xs px-2 py-1 h-6"
-                    >
-                        + Testo
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAddAnimation('zoom')}
-                        className="text-xs px-2 py-1 h-6"
-                    >
-                        + Zoom
-                    </Button>
-                </div>
-                <div className="flex items-center space-x-1">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setTimelineZoom(Math.max(1, timelineZoom - 1))}
-                        className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
-                    >
-                        <ZoomOut className="h-4 w-4" />
-                    </Button>
-                    <span className="text-xs text-muted-foreground w-8 text-center">{timelineZoom.toFixed(1)}x</span>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setTimelineZoom(Math.min(20, timelineZoom + 1))}
-                        className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
-                    >
-                        <ZoomIn className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
-            {/* Timeline */}
-            <div
-                ref={timelineContainerRef}
-                className="flex-1 overflow-x-auto p-4 relative cursor-pointer"
-                onMouseDown={handleTimelineScrub}
-            >
-                <div className="relative h-full" style={{ width: `${timelineWidth * timelineZoom}px` }}>
-                    {/* Playhead */}
-                    <div className="absolute top-0 h-full w-0.5 bg-red-500 z-20 pointer-events-none" style={playheadStyle}>
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 rounded-full border-2 border-background"></div>
+        <div className="h-full bg-background text-foreground select-none flex flex-col">
+            {/* Timeline compatta */}
+            <div className="h-32 border-t border-border">
+                {/* Controlli superiori */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+                    <div className="flex items-center space-x-4">
+                        <span className="text-xs text-muted-foreground font-mono">
+                            {new Date(currentTime * 1000).toISOString().substr(14, 5)} / {new Date(duration * 1000).toISOString().substr(14, 5)}
+                        </span>
+                        <div className="flex items-center space-x-1">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddAnimation('text')}
+                                className="text-xs px-2 py-1 h-6"
+                            >
+                                + Testo
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddAnimation('zoom')}
+                                className="text-xs px-2 py-1 h-6"
+                            >
+                                + Zoom
+                            </Button>
+                        </div>
                     </div>
+                    <div className="flex items-center space-x-1">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setTimelineZoom(Math.max(1, timelineZoom - 1))}
+                            className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
+                        >
+                            <ZoomOut className="h-4 w-4" />
+                        </Button>
+                        <span className="text-xs text-muted-foreground w-8 text-center">{timelineZoom.toFixed(1)}x</span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setTimelineZoom(Math.min(20, timelineZoom + 1))}
+                            className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
+                        >
+                            <ZoomIn className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
 
-                    {/* Tracce */}
-                    <div className="space-y-1">
-                        {tracks.map(track => {
-                            const trackAnimations = currentProject.animations.filter(a => a.type === track.type)
-                            return (
-                                <div key={track.id} className="h-10 flex items-center relative">
-                                    <div className="w-24 text-[10px] text-muted-foreground font-semibold shrink-0 pr-2 text-right">{track.label}</div>
-                                    <div className="flex-1 h-full relative bg-muted/20 rounded-md border border-border/50" style={{ marginLeft: '0px' }}>
+                {/* Area timeline */}
+                <div
+                    ref={timelineContainerRef}
+                    className="flex-1 overflow-x-auto relative cursor-pointer"
+                    onMouseDown={handleTimelineScrub}
+                >
+                    <div className="relative h-full px-4 py-2" style={{ width: `${Math.max(timelineWidth, timelineWidth * timelineZoom)}px` }}>
+                        {/* Playhead */}
+                        <div className="absolute top-0 h-full w-0.5 bg-red-500 z-20 pointer-events-none" style={playheadStyle}>
+                            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full"></div>
+                        </div>
 
-                                        {trackAnimations.map(anim => (
-                                            <AnimationBlock
-                                                key={anim.id}
-                                                animation={anim}
-                                                track={track}
-                                                pixelsPerSecond={pixelsPerSecond}
-                                                updateAnimation={updateAnimation}
-                                                selectedAnimation={selectedAnimation}
-                                                setSelectedAnimation={setSelectedAnimation}
-                                                projectDuration={duration}
-                                            />
-                                        ))}
+                        {/* Tracce compatte */}
+                        <div className="flex flex-col h-full justify-center space-y-0.5">
+                            {tracks.map(track => {
+                                const trackAnimations = currentProject.animations.filter(a => a.type === track.type)
+                                return (
+                                    <div key={track.id} className="h-6 flex items-center relative">
+                                        <div className="w-20 text-[9px] text-muted-foreground font-semibold shrink-0 pr-2 text-right uppercase tracking-wide">{track.label}</div>
+                                        <div className="flex-1 h-4 relative bg-muted/10 rounded border border-border/30">
+                                            {trackAnimations.map(anim => (
+                                                <AnimationBlock
+                                                    key={anim.id}
+                                                    animation={anim}
+                                                    track={track}
+                                                    pixelsPerSecond={pixelsPerSecond}
+                                                    updateAnimation={updateAnimation}
+                                                    selectedAnimation={selectedAnimation}
+                                                    setSelectedAnimation={setSelectedAnimation}
+                                                    projectDuration={duration}
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
+                        </div>
                     </div>
-
-
                 </div>
             </div>
         </div>
