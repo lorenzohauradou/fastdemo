@@ -148,6 +148,7 @@ export function Timeline() {
         { id: 'text', label: 'TEXT', type: 'text' as const, color: '#10b981' }, // Verde
         { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f59e0b' }, // Arancione
         { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#8b5cf6' }, // Viola
+        { id: 'clip', label: 'CLIP', type: 'clip' as const, color: '#3b82f6' }, // Blu per le clip video
     ]
 
     // Funzione per generare thumbnails dal video

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 export interface Animation {
   id: string
-  type: 'zoom' | 'pan' | 'text' | 'voiceover' | 'background' | 'logo' | 'video' | 'audio'
+  type: 'zoom' | 'pan' | 'text' | 'voiceover' | 'background' | 'logo' | 'video' | 'audio' | 'clip'
   startTime: number
   endTime: number
   properties: Record<string, any>
