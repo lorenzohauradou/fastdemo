@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Play, Pause, Upload, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ export function Player() {
 
     const videoRef = useRef<HTMLVideoElement>(null)
     const audioRef = useRef<HTMLAudioElement>(null)
+    const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
 
     // Sincronizza il video con il tempo corrente
     useEffect(() => {
@@ -71,7 +72,8 @@ export function Player() {
                     musicSettings: {
                         type: 'custom',
                         track: audioUrl,
-                        volume: 0.5
+                        volume: 0.5,
+                        fileName: file.name // Salva il nome del file
                     }
                 })
             }
@@ -83,8 +85,63 @@ export function Player() {
         setSelectedPanel('music')
     }
 
+    // Funzione per generare thumbnail reali dai video (come nella timeline precedente)
+    const generateVideoThumbnail = async (videoUrl: string, clipId: string) => {
+        return new Promise<string>((resolve) => {
+            const video = document.createElement('video')
+            video.crossOrigin = 'anonymous'
+            video.src = videoUrl
+            video.muted = true
+
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+
+            video.addEventListener('loadedmetadata', () => {
+                canvas.width = 64
+                canvas.height = 40
+                video.currentTime = Math.min(1, video.duration / 4) // Prendi frame al 25% del video
+            })
+
+            video.addEventListener('seeked', () => {
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+                    const thumbnail = canvas.toDataURL('image/jpeg', 0.8)
+                    setVideoThumbnails(prev => ({ ...prev, [clipId]: thumbnail }))
+                    resolve(thumbnail)
+                }
+            })
+
+            video.addEventListener('error', () => {
+                console.error('Errore nel caricamento del video per thumbnail:', videoUrl)
+                resolve('') // Risolvi con stringa vuota in caso di errore
+            })
+        })
+    }
+
     const videoSrc = currentProject?.videoUrl || (currentProject?.videoFile ? URL.createObjectURL(currentProject.videoFile) : '')
     const audioSrc = currentProject?.musicSettings?.track || ''
+
+    // Genera thumbnails per le clip video quando cambiano
+    useEffect(() => {
+        // Processa le clip dalle animazioni
+        if (currentProject?.animations) {
+            const clipsToProcess = currentProject.animations
+                .filter(a => a.type === 'clip' && a.properties.url && !videoThumbnails[a.id])
+
+            console.log('Clip da processare per thumbnails:', clipsToProcess.length)
+
+            clipsToProcess.forEach(clip => {
+                console.log('Generando thumbnail per clip:', clip.id, clip.properties.url)
+                generateVideoThumbnail(clip.properties.url, clip.id)
+            })
+        }
+
+        // Processa anche il video principale del progetto
+        if (videoSrc && !videoThumbnails['main-video']) {
+            console.log('Generando thumbnail per video principale:', videoSrc)
+            generateVideoThumbnail(videoSrc, 'main-video')
+        }
+    }, [currentProject?.animations, videoSrc, videoThumbnails])
 
     const handleAddVideoClip = () => {
         const input = document.createElement('input')
@@ -128,8 +185,8 @@ export function Player() {
     }
 
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 h-32">
-            <div className="flex items-center space-x-6 h-full">
+        <div className="bg-background h-20 flex items-center px-4 pt-10">
+            <div className="flex items-center space-x-6 h-full w-full">
                 {/* Play Button come in foto 2 - più grande e stile diverso */}
                 <button
                     onClick={handlePlayPause}
@@ -159,36 +216,60 @@ export function Player() {
 
                             {/* Container per le clip video */}
                             <div className="flex items-center space-x-2">
-                                {/* Clip video esistenti dalla timeline */}
-                                {currentProject?.animations && currentProject.animations.filter(a => a.type === 'clip').length > 0 && (
-                                    <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-2 flex items-center space-x-1">
-                                        {/* Thumbnails delle clip reali */}
-                                        {currentProject.animations
-                                            .filter(a => a.type === 'clip')
-                                            .map((clip, index) => (
-                                                <div
-                                                    key={clip.id}
-                                                    className="w-16 h-10 rounded border border-zinc-600 flex items-center justify-center relative overflow-hidden"
-                                                    style={{
-                                                        background: `linear-gradient(45deg, hsl(${index * 60 + 200}, 70%, 50%), hsl(${(index + 1) * 60 + 200}, 70%, 60%))`
-                                                    }}
-                                                    title={clip.properties.name}
-                                                >
+                                <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-2 flex items-center space-x-1">
+                                    {/* Video principale del progetto */}
+                                    {videoSrc && (
+                                        <div
+                                            className="w-16 h-10 rounded border-2 border-blue-500 relative overflow-hidden"
+                                            title="Video principale"
+                                        >
+                                            {videoThumbnails['main-video'] ? (
+                                                <img
+                                                    src={videoThumbnails['main-video']}
+                                                    alt="Video principale"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-r from-blue-500 to-green-500 flex items-center justify-center">
                                                     <div className="w-2 h-2 bg-white rounded-full opacity-80" />
                                                 </div>
-                                            ))
-                                        }
-                                    </div>
-                                )}
-
-                                {/* Fallback per video legacy */}
-                                {videoSrc && currentProject?.animations && currentProject.animations.filter(a => a.type === 'clip').length === 0 && (
-                                    <div className="bg-zinc-800 rounded-lg border border-zinc-700 p-2 flex items-center space-x-1">
-                                        <div className="w-16 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded border border-zinc-600 flex items-center justify-center">
-                                            <div className="w-2 h-2 bg-white rounded-full opacity-80" />
+                                            )}
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+
+                                    {/* Clip video aggiuntive dalla timeline */}
+                                    {currentProject?.animations && currentProject.animations
+                                        .filter(a => a.type === 'clip')
+                                        .map((clip, index) => {
+                                            const thumbnail = videoThumbnails[clip.id]
+                                            console.log(`Clip ${clip.id} - Thumbnail disponibile:`, !!thumbnail)
+                                            return (
+                                                <div
+                                                    key={clip.id}
+                                                    className="w-16 h-10 rounded border-2 border-blue-500 relative overflow-hidden"
+                                                    title={clip.properties.name}
+                                                >
+                                                    {thumbnail ? (
+                                                        <img
+                                                            src={thumbnail}
+                                                            alt="Video thumbnail"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            className="w-full h-full flex items-center justify-center"
+                                                            style={{
+                                                                background: `linear-gradient(45deg, hsl(${index * 60 + 200}, 70%, 50%), hsl(${(index + 1) * 60 + 200}, 70%, 60%))`
+                                                            }}
+                                                        >
+                                                            <div className="w-2 h-2 bg-white rounded-full opacity-80" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })
+                                    }
+                                </div>
 
                                 {/* Bottone + per aggiungere clip */}
                                 <button
@@ -209,7 +290,7 @@ export function Player() {
                                     <audio ref={audioRef} src={audioSrc} />
                                     <div className="flex items-center space-x-3 flex-1">
                                         <span className="text-sm text-green-400 flex-shrink-0 font-medium">
-                                            {currentProject?.musicSettings?.type === 'custom' ? 'drugo.mp3' : 'Library Track'}
+                                            {currentProject?.musicSettings?.fileName || 'Audio Track'}
                                         </span>
                                         {/* Waveform più grande */}
                                         <div className="flex-1 flex items-center justify-center h-6">

@@ -30,6 +30,7 @@ export interface Project {
     type: 'preset' | 'custom'
     track?: string
     volume: number
+    fileName?: string
   }
 }
 
