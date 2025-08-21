@@ -126,4 +126,14 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Nasconde le scrollbar ma mantiene la funzionalità scroll */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  *::-webkit-scrollbar {
+    display: none; /* WebKit */
+  }
 }

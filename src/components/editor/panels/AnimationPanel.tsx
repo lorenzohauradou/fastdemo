@@ -7,34 +7,99 @@ import { Card } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import { ZoomIn, Move, Sparkles } from 'lucide-react'
 
-const animationTemplates = [
+// Animazioni Camera
+const cameraAnimations = [
     {
         id: 'basic',
         name: 'Basic',
-        description: 'Simple zoom and pan',
-        preview: '/animations/basic-preview.gif',
-        type: 'zoom' as const
+        type: 'zoom' as const,
+        selected: true
     },
     {
         id: 'continuous-glide',
         name: 'Continuous Glide',
-        description: 'Smooth continuous movement',
-        preview: '/animations/glide-preview.gif',
-        type: 'pan' as const
+        type: 'pan' as const,
+        selected: false
     },
     {
         id: 'skewed',
         name: 'Skewed',
-        description: 'Angled perspective movement',
-        preview: '/animations/skewed-preview.gif',
-        type: 'pan' as const
+        type: 'pan' as const,
+        selected: false
     },
     {
         id: 'orbit-glide',
         name: 'Orbit Glide',
-        description: 'Circular motion around point',
-        preview: '/animations/orbit-preview.gif',
-        type: 'pan' as const
+        type: 'pan' as const,
+        selected: false
+    }
+]
+
+// Animazioni Intro come da foto
+const introAnimations = [
+    {
+        id: 'none',
+        name: 'None',
+        selected: true
+    },
+    {
+        id: 'slide-down-fade',
+        name: 'Slide down and fade',
+        selected: false
+    },
+    {
+        id: 'slide-left-fade',
+        name: 'Slide left and fade',
+        selected: false
+    },
+    {
+        id: 'slide-right-fade',
+        name: 'Slide right and fade',
+        selected: false
+    },
+    {
+        id: 'quick-slide-away',
+        name: 'Quick slide away',
+        selected: false
+    },
+    {
+        id: 'quick-slide-towards',
+        name: 'Quick slide towards',
+        selected: false
+    }
+]
+
+// Animazioni Outro come da foto
+const outroAnimations = [
+    {
+        id: 'none',
+        name: 'None',
+        selected: true
+    },
+    {
+        id: 'slide-up-fade',
+        name: 'Slide up and fade',
+        selected: false
+    },
+    {
+        id: 'slide-left-fade-outro',
+        name: 'Slide left and fade',
+        selected: false
+    },
+    {
+        id: 'slide-right-fade-outro',
+        name: 'Slide right and fade',
+        selected: false
+    },
+    {
+        id: 'quick-slide-towards-outro',
+        name: 'Quick slide towards',
+        selected: false
+    },
+    {
+        id: 'quick-slide-away-outro',
+        name: 'Quick slide away',
+        selected: false
     }
 ]
 
@@ -42,51 +107,22 @@ export function AnimationPanel() {
     const {
         currentTime,
         addAnimation,
-        selectedAnimation
+        selectedAnimation,
+        currentProject
     } = useEditorStore()
 
-    const [intensity, setIntensity] = useState([5])
-    const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+    const [selectedCamera, setSelectedCamera] = useState('basic')
+    const [selectedIntro, setSelectedIntro] = useState('none')
+    const [selectedOutro, setSelectedOutro] = useState('none')
 
-    const handleAddZoom = () => {
-        const animation = {
-            type: 'zoom' as const,
-            startTime: currentTime,
-            endTime: currentTime + 3,
-            properties: {
-                level: 1 + (intensity[0] / 10),
-                x: 0,
-                y: 0
-            }
-        }
+    const handleCameraSelect = (cameraId: string) => {
+        setSelectedCamera(cameraId)
 
-        addAnimation(animation)
-    }
-
-    const handleAddPan = () => {
-        const animation = {
-            type: 'pan' as const,
-            startTime: currentTime,
-            endTime: currentTime + 3,
-            properties: {
-                from_x: 0,
-                from_y: 0,
-                to_x: intensity[0] * 10,
-                to_y: intensity[0] * 5
-            }
-        }
-
-        addAnimation(animation)
-    }
-
-    const handleTemplateSelect = (templateId: string) => {
-        const template = animationTemplates.find(t => t.id === templateId)
-        if (!template) return
-
-        setSelectedTemplate(templateId)
+        const camera = cameraAnimations.find(c => c.id === cameraId)
+        if (!camera) return
 
         let animation
-        switch (template.id) {
+        switch (camera.id) {
             case 'basic':
                 animation = {
                     type: 'zoom' as const,
@@ -133,118 +169,125 @@ export function AnimationPanel() {
         addAnimation(animation)
     }
 
+    const handleIntroSelect = (introId: string) => {
+        setSelectedIntro(introId)
+        console.log('Selected intro:', introId)
+    }
+
+    const handleOutroSelect = (outroId: string) => {
+        setSelectedOutro(outroId)
+        console.log('Selected outro:', outroId)
+    }
+
+    // Componente per la preview video
+    const VideoPreview = ({ className }: { className?: string }) => {
+        if (!currentProject?.videoUrl && !currentProject?.videoFile) {
+            return (
+                <div className={`bg-gray-800 rounded flex items-center justify-center ${className}`}>
+                    <div className="text-gray-500 text-xs">No video</div>
+                </div>
+            )
+        }
+
+        const videoSrc = currentProject.videoUrl || (currentProject.videoFile ? URL.createObjectURL(currentProject.videoFile) : '')
+
+        return (
+            <div className={`bg-black rounded overflow-hidden ${className}`}>
+                <video
+                    src={videoSrc}
+                    className="w-full h-full object-cover"
+                    muted
+                    loop
+                    autoPlay={false}
+                />
+            </div>
+        )
+    }
+
     return (
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-6 h-full overflow-y-auto">
             {/* Header */}
             <div>
-                <h2 className="text-lg font-semibold text-white mb-2">Animation</h2>
-                <p className="text-sm text-gray-400">Add camera movements and effects</p>
+                <h2 className="text-xl font-semibold text-white">Animation</h2>
             </div>
 
             {/* Camera Animation Style */}
             <div>
-                <h3 className="text-sm font-medium text-white mb-3">Camera animation style</h3>
+                <h3 className="text-lg font-medium text-white mb-4">Camera animation style</h3>
                 <div className="grid grid-cols-2 gap-3">
-                    {animationTemplates.map((template) => (
-                        <Card
-                            key={template.id}
-                            className={`p-3 bg-gray-800 border-gray-700 cursor-pointer transition-all hover:bg-gray-750 ${selectedTemplate === template.id ? 'ring-2 ring-blue-500' : ''
+                    {cameraAnimations.map((camera) => (
+                        <div
+                            key={camera.id}
+                            onClick={() => handleCameraSelect(camera.id)}
+                            className={`cursor-pointer rounded-lg overflow-hidden transition-all ${selectedCamera === camera.id
+                                ? 'ring-2 ring-blue-500'
+                                : 'hover:ring-1 hover:ring-gray-500'
                                 }`}
-                            onClick={() => handleTemplateSelect(template.id)}
                         >
-                            <div className="aspect-video bg-gray-700 rounded mb-2 flex items-center justify-center">
-                                <div className="w-8 h-8 bg-blue-500 rounded animate-pulse" />
+                            <VideoPreview className="aspect-video" />
+                            <div className="p-3 bg-card">
+                                <h4 className="text-sm font-medium text-white text-center">{camera.name}</h4>
                             </div>
-                            <h4 className="text-sm font-medium text-white">{template.name}</h4>
-                            <p className="text-xs text-gray-400 mt-1">{template.description}</p>
-                        </Card>
+                        </div>
                     ))}
                 </div>
             </div>
 
-            {/* Intensity Control */}
-            <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                    <label className="text-sm text-gray-300">Intensity</label>
-                    <span className="text-sm text-gray-400">{intensity[0]}</span>
-                </div>
-                <Slider
-                    value={intensity}
-                    onValueChange={setIntensity}
-                    max={10}
-                    min={1}
-                    step={1}
-                    className="w-full"
-                />
-            </div>
-
-            {/* Quick Actions */}
-            <div className="space-y-3">
-                <h3 className="text-sm font-medium text-white">Quick Actions</h3>
-
-                <Button
-                    onClick={handleAddZoom}
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-                >
-                    <ZoomIn className="mr-2 h-4 w-4" />
-                    Add Zoom
-                </Button>
-
-                <Button
-                    onClick={handleAddPan}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                    <Move className="mr-2 h-4 w-4" />
-                    Add Pan
-                </Button>
-            </div>
-
-            {/* Intro Templates */}
+            {/* Intro */}
             <div>
-                <h3 className="text-sm font-medium text-white mb-3">Intro</h3>
+                <h3 className="text-lg font-medium text-white mb-4">Intro</h3>
                 <div className="grid grid-cols-2 gap-3">
-                    <Card className="p-3 bg-blue-600 cursor-pointer hover:bg-blue-700 transition-colors">
-                        <div className="aspect-video bg-blue-700 rounded mb-2 flex items-center justify-center">
-                            <Sparkles className="h-6 w-6 text-white" />
+                    {introAnimations.map((intro) => (
+                        <div
+                            key={intro.id}
+                            onClick={() => handleIntroSelect(intro.id)}
+                            className={`cursor-pointer rounded-lg overflow-hidden transition-all ${selectedIntro === intro.id
+                                ? 'ring-2 ring-blue-500'
+                                : 'hover:ring-1 hover:ring-gray-500'
+                                }`}
+                        >
+                            {intro.id === 'none' ? (
+                                <div className="aspect-video bg-card rounded flex items-center justify-center">
+                                    <span className="text-white text-lg font-medium">None</span>
+                                </div>
+                            ) : (
+                                <VideoPreview className="aspect-video" />
+                            )}
+                            <div className="p-3 bg-card">
+                                <h4 className="text-sm font-medium text-white text-center">{intro.name}</h4>
+                            </div>
                         </div>
-                        <h4 className="text-sm font-medium text-white">None</h4>
-                    </Card>
-
-                    <Card className="p-3 bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors">
-                        <div className="aspect-video bg-gray-700 rounded mb-2 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-gradient-to-r from-blue-400 to-purple-500 rounded" />
-                        </div>
-                        <h4 className="text-sm font-medium text-white">Slide down and fade</h4>
-                    </Card>
-
-                    <Card className="p-3 bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors">
-                        <div className="aspect-video bg-gray-700 rounded mb-2 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-gradient-to-l from-green-400 to-blue-500 rounded" />
-                        </div>
-                        <h4 className="text-sm font-medium text-white">Slide left and fade</h4>
-                    </Card>
-
-                    <Card className="p-3 bg-gray-800 border-gray-700 cursor-pointer hover:bg-gray-750 transition-colors">
-                        <div className="aspect-video bg-gray-700 rounded mb-2 flex items-center justify-center">
-                            <div className="w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-500 rounded" />
-                        </div>
-                        <h4 className="text-sm font-medium text-white">Slide right and fade</h4>
-                    </Card>
+                    ))}
                 </div>
             </div>
 
-            {/* Current Animation Info */}
-            {selectedAnimation && (
-                <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-                    <h4 className="text-sm font-medium text-white mb-2">Selected Animation</h4>
-                    <div className="space-y-1 text-xs text-gray-400">
-                        <div>Type: {selectedAnimation.type}</div>
-                        <div>Start: {selectedAnimation.startTime.toFixed(1)}s</div>
-                        <div>End: {selectedAnimation.endTime.toFixed(1)}s</div>
-                        <div>Duration: {(selectedAnimation.endTime - selectedAnimation.startTime).toFixed(1)}s</div>
-                    </div>
+            {/* Outro */}
+            <div>
+                <h3 className="text-lg font-medium text-white mb-4">Outro</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    {outroAnimations.map((outro) => (
+                        <div
+                            key={outro.id}
+                            onClick={() => handleOutroSelect(outro.id)}
+                            className={`cursor-pointer rounded-lg overflow-hidden transition-all ${selectedOutro === outro.id
+                                ? 'ring-2 ring-blue-500'
+                                : 'hover:ring-1 hover:ring-gray-500'
+                                }`}
+                        >
+                            {outro.id === 'none' ? (
+                                <div className="aspect-video bg-card rounded flex items-center justify-center">
+                                    <span className="text-white text-lg font-medium">None</span>
+                                </div>
+                            ) : (
+                                <VideoPreview className="aspect-video" />
+                            )}
+                            <div className="p-3 bg-card">
+                                <h4 className="text-sm font-medium text-white text-center">{outro.name}</h4>
+                            </div>
+                        </div>
+                    ))}
                 </div>
-            )}
+            </div>
         </div>
     )
 }
