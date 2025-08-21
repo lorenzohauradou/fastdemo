@@ -215,7 +215,9 @@ export function Timeline() {
 
     const duration = currentProject.duration
     const timelineWidth = timelineContainerRef.current ? timelineContainerRef.current.offsetWidth : 1000
-    const pixelsPerSecond = (timelineWidth * timelineZoom) / duration
+    // Sottrai la larghezza del label per allineare correttamente
+    const availableWidth = timelineWidth - 96 // 24 * 4 = 96px per il label
+    const pixelsPerSecond = (availableWidth * timelineZoom) / duration
 
     // Funzione per il movimento fluido del playhead
     const handleTimelineScrub = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -224,7 +226,7 @@ export function Timeline() {
         const timelineRect = e.currentTarget.getBoundingClientRect()
 
         const updatePosition = (clientX: number) => {
-            const x = clientX - timelineRect.left
+            const x = clientX - timelineRect.left - 96 // Sottrai l'offset del label
             const newTime = Math.max(0, x / pixelsPerSecond)
             setCurrentTime(Math.min(duration, newTime))
         }
@@ -255,7 +257,7 @@ export function Timeline() {
 
     // Calcola la posizione del playhead con una transizione CSS per la fluidità
     const playheadStyle = {
-        transform: `translateX(${currentTime * pixelsPerSecond}px)`,
+        transform: `translateX(${96 + currentTime * pixelsPerSecond}px)`, // Aggiungi l'offset del label
         transition: isPlaying ? 'transform 0.1s linear' : 'none',
     }
 
@@ -334,7 +336,7 @@ export function Timeline() {
                             return (
                                 <div key={track.id} className="h-10 flex items-center relative">
                                     <div className="w-24 text-[10px] text-muted-foreground font-semibold shrink-0 pr-2 text-right">{track.label}</div>
-                                    <div className="flex-1 h-full relative bg-muted/20 rounded-md border border-border/50">
+                                    <div className="flex-1 h-full relative bg-muted/20 rounded-md border border-border/50" style={{ marginLeft: '0px' }}>
                                         {track.type === 'video' && (
                                             <div className="flex h-full items-center overflow-hidden">
                                                 {videoThumbnails.length > 0 ? (

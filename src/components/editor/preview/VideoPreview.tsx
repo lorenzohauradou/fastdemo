@@ -63,9 +63,9 @@ export function VideoPreview() {
 
         let transform = `scale(${zoom})`
 
-        // Trova l'animazione attiva al tempo corrente (non selezionata)
+        // Trova l'animazione attiva al tempo corrente
         const activeAnimation = currentProject.animations.find(anim =>
-            currentTime >= anim.startTime && currentTime <= anim.endTime && anim.id !== selectedAnimation?.id
+            anim.type === 'zoom' && currentTime >= anim.startTime && currentTime <= anim.endTime
         )
 
         if (activeAnimation?.type === 'zoom') {
