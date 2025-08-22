@@ -59,13 +59,13 @@ function AnimationBlock({
                 updateAnimation(animation.id, { startTime: newStartTime, endTime: newEndTime })
 
             } else if (dragMode === 'resize-right') {
-                const minDuration = 1.5 // Durata minima di 1.5 secondi --- lunghezza pulsanti colorati
+                const minDuration = 1 // Durata minima di 1 secondo --- lunghezza pulsanti colorati
                 const newEndTime = Math.max(startTime + minDuration, endTime + deltaTime)
                 if (newEndTime > projectDuration) return
                 updateAnimation(animation.id, { endTime: newEndTime })
 
             } else if (dragMode === 'resize-left') {
-                const minDuration = 1.5 // Durata minima di 1.5 secondi
+                const minDuration = 1 // Durata minima di 1 secondo
                 const newStartTime = Math.min(endTime - minDuration, startTime + deltaTime)
                 if (newStartTime < 0) return
                 updateAnimation(animation.id, { startTime: newStartTime })
@@ -108,7 +108,7 @@ function AnimationBlock({
             </div>
 
             <span className="text-white text-[8px] font-bold truncate px-1 pointer-events-none">
-                {animation.type === 'zoom' ? `${animation.properties.level || ''}x` : animation.properties.content}
+                {animation.type === 'zoom' ? `${animation.properties.end?.level || animation.properties.level || '1'}x` : animation.properties.content}
             </span>
 
             {/* Maniglia Destra */}
@@ -258,7 +258,7 @@ export function Timeline() {
             type: trackType,
             startTime: currentTime,
             endTime: Math.min(currentTime + 3, duration),
-            properties: trackType === 'zoom' ? { level: 1.5 } : { content: 'Nuovo Testo' }
+            properties: trackType === 'zoom' ? { level: 1.5 } : { content: 'New Text' }
         })
     }
     // con il blob funziona
@@ -322,6 +322,47 @@ export function Timeline() {
         setSelectedPanel('music')
     }
 
+    const handleImportVideo = () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'video/*'
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0]
+            if (file) {
+                // Crea un elemento video temporaneo per ottenere la durata
+                const video = document.createElement('video')
+                video.src = URL.createObjectURL(file)
+                video.onloadedmetadata = () => {
+                    const clipDuration = video.duration
+                    const currentClips = currentProject?.animations.filter(a => a.type === 'clip') || []
+                    const totalClipDuration = currentClips.reduce((acc, clip) => acc + (clip.endTime - clip.startTime), 0)
+
+                    // Aggiungi la clip come animazione nella timeline
+                    addAnimation({
+                        type: 'clip',
+                        startTime: totalClipDuration,
+                        endTime: totalClipDuration + clipDuration,
+                        properties: {
+                            file,
+                            url: URL.createObjectURL(file),
+                            name: file.name,
+                            duration: clipDuration
+                        }
+                    })
+
+                    // Aggiorna la durata totale del progetto se necessario
+                    const newTotalDuration = totalClipDuration + clipDuration
+                    if (newTotalDuration > (currentProject?.duration || 0)) {
+                        updateProject({
+                            duration: newTotalDuration
+                        })
+                    }
+                }
+            }
+        }
+        input.click()
+    }
+
 
 
     // Calcola la posizione del playhead con una transizione CSS per la fluidità
@@ -346,7 +387,7 @@ export function Timeline() {
                                 onClick={() => handleAddAnimation('text')}
                                 className="text-xs px-2 py-1 h-6"
                             >
-                                + Testo
+                                + Text
                             </Button>
                             <Button
                                 variant="outline"
@@ -395,22 +436,48 @@ export function Timeline() {
                         <div className="flex flex-col h-full justify-center space-y-0.5">
                             {tracks.map(track => {
                                 const trackAnimations = currentProject.animations.filter(a => a.type === track.type)
+                                const hasMainVideo = currentProject.videoUrl || currentProject.videoFile
+                                const hasClipContent = track.type === 'clip' ? (trackAnimations.length > 0 || hasMainVideo) : trackAnimations.length > 0
+
                                 return (
                                     <div key={track.id} className="h-6 flex items-center relative">
                                         <div className="w-20 text-[9px] text-muted-foreground font-semibold shrink-0 pr-2 text-right uppercase tracking-wide">{track.label}</div>
                                         <div className="flex-1 h-4 relative bg-muted/10 rounded border border-border/30">
-                                            {trackAnimations.map(anim => (
-                                                <AnimationBlock
-                                                    key={anim.id}
-                                                    animation={anim}
-                                                    track={track}
-                                                    pixelsPerSecond={pixelsPerSecond}
-                                                    updateAnimation={updateAnimation}
-                                                    selectedAnimation={selectedAnimation}
-                                                    setSelectedAnimation={setSelectedAnimation}
-                                                    projectDuration={duration}
-                                                />
-                                            ))}
+                                            {/* Contenuto speciale per la traccia CLIP */}
+                                            {track.type === 'clip' && !hasClipContent ? (
+                                                <div className="absolute inset-0 flex items-center justify-center space-x-2">
+                                                    <button
+                                                        className="px-2 py-1 text-[8px] text-muted-foreground hover:text-foreground bg-muted/20 hover:bg-muted/40 rounded border border-border/50 transition-colors"
+                                                        onClick={() => console.log('Record screen - funzionalità da implementare')}
+                                                    >
+                                                        Record screen
+                                                    </button>
+                                                    <button
+                                                        className="px-2 py-1 text-[8px] text-muted-foreground hover:text-foreground bg-muted/20 hover:bg-muted/40 rounded border border-border/50 transition-colors"
+                                                        onClick={handleImportVideo}
+                                                    >
+                                                        Import image or video
+                                                    </button>
+                                                </div>
+                                            ) : track.type === 'clip' && hasMainVideo ? (
+                                                // Mostra il video principale come blocco blu nella traccia CLIP
+                                                <div className="absolute inset-0 bg-blue-500 rounded flex items-center justify-center">
+                                                    <span className="text-white text-[8px] font-bold">Video Clip</span>
+                                                </div>
+                                            ) : (
+                                                trackAnimations.map(anim => (
+                                                    <AnimationBlock
+                                                        key={anim.id}
+                                                        animation={anim}
+                                                        track={track}
+                                                        pixelsPerSecond={pixelsPerSecond}
+                                                        updateAnimation={updateAnimation}
+                                                        selectedAnimation={selectedAnimation}
+                                                        setSelectedAnimation={setSelectedAnimation}
+                                                        projectDuration={duration}
+                                                    />
+                                                ))
+                                            )}
                                         </div>
                                     </div>
                                 )

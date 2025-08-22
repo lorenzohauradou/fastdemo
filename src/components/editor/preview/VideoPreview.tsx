@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { VideoUpload } from '@/components/editor/upload/VideoUpload'
 import { Upload, Search } from 'lucide-react'
@@ -88,41 +88,56 @@ export function VideoPreview() {
     const getVideoTransform = () => {
         if (!currentProject) return {}
 
-        // Se c'è un'animazione di zoom selezionata e siamo nel suo range temporale, usa il zoom interattivo
-        if (selectedAnimation?.type === 'zoom' &&
-            currentTime >= selectedAnimation.startTime &&
-            currentTime <= selectedAnimation.endTime) {
+        // Trova l'animazione zoom attiva al tempo corrente (indipendentemente dalla selezione)
+        const activeZoomAtCurrentTime = currentProject.animations.find(anim =>
+            anim.type === 'zoom' &&
+            currentTime >= anim.startTime &&
+            currentTime <= anim.endTime
+        )
 
-            const finalZoom = interactiveZoom
-            const finalX = zoomPosition.x
-            const finalY = zoomPosition.y
+        if (activeZoomAtCurrentTime) {
+            // Se l'animazione attiva è quella selezionata, usa i valori interattivi per l'editing
+            if (selectedAnimation?.id === activeZoomAtCurrentTime.id) {
+                const finalZoom = interactiveZoom
+                const finalX = zoomPosition.x / finalZoom
+                const finalY = zoomPosition.y / finalZoom
 
-            return {
-                transform: `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`,
-                cursor: 'grab'
+                return {
+                    transform: `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`,
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    transformOrigin: 'center center'
+                }
+            } else {
+                // Se l'animazione attiva NON è quella selezionata, usa i valori salvati
+                const props = activeZoomAtCurrentTime.properties
+                const startProps = props.start || {}
+                const endProps = props.end || {}
+
+                // Calcola il progresso dell'animazione (0-1)
+                const progress = (currentTime - activeZoomAtCurrentTime.startTime) /
+                    (activeZoomAtCurrentTime.endTime - activeZoomAtCurrentTime.startTime)
+
+                // Interpola tra start e end
+                const startZoom = startProps.level || 1
+                const endZoom = endProps.level || startZoom
+                const startX = startProps.x || 0
+                const startY = startProps.y || 0
+                const endX = endProps.x || startX
+                const endY = endProps.y || startY
+
+                const currentZoom = startZoom + (endZoom - startZoom) * progress
+                const currentX = (startX + (endX - startX) * progress) / currentZoom
+                const currentY = (startY + (endY - startY) * progress) / currentZoom
+
+                return {
+                    transform: `scale(${currentZoom}) translate(${currentX}px, ${currentY}px)`,
+                    transformOrigin: 'center center'
+                }
             }
         }
 
-        let transform = `scale(${zoom})`
-
-        if (activeZoomAnimation?.type === 'zoom') {
-            const zoomLevel = activeZoomAnimation.properties.level || 1
-            const x = activeZoomAnimation.properties.x || 0
-            const y = activeZoomAnimation.properties.y || 0
-
-            // Calcola il progresso dell'animazione (0-1)
-            const progress = (currentTime - activeZoomAnimation.startTime) /
-                (activeZoomAnimation.endTime - activeZoomAnimation.startTime)
-
-            // Interpola i valori
-            const currentZoom = 1 + (zoomLevel - 1) * progress
-            const currentX = x * progress
-            const currentY = y * progress
-
-            transform = `scale(${currentZoom}) translate(${currentX}px, ${currentY}px)`
-        }
-
-        return { transform }
+        // Nessuna animazione zoom attiva, usa il zoom base della timeline
+        return { transform: `scale(${zoom})` }
     }
 
     const handleTimeUpdate = () => {
@@ -131,26 +146,37 @@ export function VideoPreview() {
         }
     }
 
-    // Gestori per il zoom interattivo
-    const handleWheel = (e: React.WheelEvent) => {
+    // Gestori per il zoom interattivo - controllo libero e fluido
+    const handleWheel = useCallback((e: React.WheelEvent) => {
+        // Permetti zoom sempre quando c'è un'animazione zoom selezionata
         if (!selectedAnimation || selectedAnimation.type !== 'zoom') return
         if (currentTime < selectedAnimation.startTime || currentTime > selectedAnimation.endTime) return
 
         e.preventDefault()
-        const delta = e.deltaY > 0 ? -0.1 : 0.1
-        const newZoom = Math.max(0.5, Math.min(5, interactiveZoom + delta))
+        e.stopPropagation()
+        const delta = e.deltaY > 0 ? -0.05 : 0.05  // Incrementi più piccoli per controllo più preciso
+        const newZoom = Math.max(0.5, Math.min(10, interactiveZoom + delta))  // Zoom massimo aumentato a 10x
         setInteractiveZoom(newZoom)
 
         // Aggiorna l'animazione in tempo reale
-        updateAnimation(selectedAnimation.id, {
-            properties: {
-                ...selectedAnimation.properties,
+        const updatedProps = {
+            ...selectedAnimation.properties,
+            start: {
+                level: selectedAnimation.properties.level || 1.0,
+                x: 0, // Posizione centrale di partenza
+                y: 0
+            },
+            end: {
                 level: newZoom,
                 x: zoomPosition.x,
                 y: zoomPosition.y
             }
+        }
+        console.log('🔍 Aggiornamento zoom:', { level: newZoom, x: zoomPosition.x, y: zoomPosition.y })
+        updateAnimation(selectedAnimation.id, {
+            properties: updatedProps
         })
-    }
+    }, [selectedAnimation, currentTime, interactiveZoom, zoomPosition, updateAnimation])
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!selectedAnimation || selectedAnimation.type !== 'zoom') return
@@ -167,22 +193,33 @@ export function VideoPreview() {
         const deltaX = e.clientX - lastMousePos.x
         const deltaY = e.clientY - lastMousePos.y
 
+        // Sensibilità aumentata per controllo più fluido
+        const sensitivity = 1
         const newPosition = {
-            x: zoomPosition.x + deltaX * 0.5,
-            y: zoomPosition.y + deltaY * 0.5
+            x: zoomPosition.x + deltaX * sensitivity,
+            y: zoomPosition.y + deltaY * sensitivity
         }
 
         setZoomPosition(newPosition)
         setLastMousePos({ x: e.clientX, y: e.clientY })
 
         // Aggiorna l'animazione in tempo reale
-        updateAnimation(selectedAnimation.id, {
-            properties: {
-                ...selectedAnimation.properties,
+        const updatedProps = {
+            ...selectedAnimation.properties,
+            start: {
+                level: selectedAnimation.properties.level || 1.0,
+                x: 0, // Posizione centrale di partenza
+                y: 0
+            },
+            end: {
                 level: interactiveZoom,
                 x: newPosition.x,
                 y: newPosition.y
             }
+        }
+        console.log('🔍 Aggiornamento posizione:', { level: interactiveZoom, x: newPosition.x, y: newPosition.y })
+        updateAnimation(selectedAnimation.id, {
+            properties: updatedProps
         })
     }
 
@@ -193,16 +230,39 @@ export function VideoPreview() {
     // Sincronizza lo zoom interattivo con l'animazione selezionata
     useEffect(() => {
         if (selectedAnimation?.type === 'zoom') {
-            setInteractiveZoom(selectedAnimation.properties.level || 1)
-            setZoomPosition({
-                x: selectedAnimation.properties.x || 0,
-                y: selectedAnimation.properties.y || 0
-            })
+            // Usa i valori end se disponibili, altrimenti i valori diretti o default
+            const endProps = selectedAnimation.properties.end
+            const level = endProps?.level || selectedAnimation.properties.level || 1
+            const x = endProps?.x || selectedAnimation.properties.x || 0
+            const y = endProps?.y || selectedAnimation.properties.y || 0
+
+            setInteractiveZoom(level)
+            setZoomPosition({ x, y })
         } else {
             setInteractiveZoom(1)
             setZoomPosition({ x: 0, y: 0 })
         }
     }, [selectedAnimation])
+
+    // Gestisci l'evento wheel con passive: false per evitare errori console
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
+        const wheelHandler = (e: WheelEvent) => {
+            // Converti l'evento nativo in React.WheelEvent-like
+            const reactEvent = {
+                preventDefault: () => e.preventDefault(),
+                stopPropagation: () => e.stopPropagation(),
+                deltaY: e.deltaY
+            } as React.WheelEvent
+
+            handleWheel(reactEvent)
+        }
+
+        container.addEventListener('wheel', wheelHandler, { passive: false })
+        return () => container.removeEventListener('wheel', wheelHandler)
+    }, [handleWheel])
 
     if (!currentProject?.videoUrl) {
         return (
@@ -262,7 +322,7 @@ export function VideoPreview() {
         <div
             ref={containerRef}
             className="relative w-full h-full flex items-center justify-center overflow-hidden bg-background"
-            onWheel={handleWheel}
+
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -304,21 +364,56 @@ export function VideoPreview() {
                 />
             )}
 
-            {/* Indicatore quando zona zoom è attiva - usa la stessa logica dell'effetto zoom */}
-            {activeZoomAnimation?.type === 'zoom' && (
-                <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm rounded-lg p-3 text-primary-foreground text-sm">
-                    <div className="flex items-center space-x-2">
-                        <Search className="h-4 w-4" />
-                        <span>Zoom Mode Active</span>
+            {/* Indicatore quando zona zoom è attiva */}
+            {(() => {
+                const activeZoomAtCurrentTime = currentProject?.animations.find(anim =>
+                    anim.type === 'zoom' &&
+                    currentTime >= anim.startTime &&
+                    currentTime <= anim.endTime
+                )
+
+                if (!activeZoomAtCurrentTime) return null
+
+                const isSelected = selectedAnimation?.id === activeZoomAtCurrentTime.id
+
+                // Calcola i valori da mostrare
+                let displayZoom, displayX, displayY
+                if (isSelected) {
+                    displayZoom = interactiveZoom
+                    displayX = zoomPosition.x
+                    displayY = zoomPosition.y
+                } else {
+                    const props = activeZoomAtCurrentTime.properties
+                    const startProps = props.start || {}
+                    const endProps = props.end || {}
+                    const progress = (currentTime - activeZoomAtCurrentTime.startTime) /
+                        (activeZoomAtCurrentTime.endTime - activeZoomAtCurrentTime.startTime)
+
+                    displayZoom = (startProps.level || 1) + ((endProps.level || startProps.level || 1) - (startProps.level || 1)) * progress
+                    displayX = (startProps.x || 0) + ((endProps.x || startProps.x || 0) - (startProps.x || 0)) * progress
+                    displayY = (startProps.y || 0) + ((endProps.y || startProps.y || 0) - (startProps.y || 0)) * progress
+                }
+
+                return (
+                    <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm rounded-lg p-3 text-primary-foreground text-sm">
+                        <div className="flex items-center space-x-2">
+                            <Search className="h-4 w-4" />
+                            <span>{isSelected ? 'Zoom Mode Active' : 'Zoom Preview'}</span>
+                        </div>
+                        {isSelected && (
+                            <div className="text-xs mt-1 opacity-80">
+                                Scroll to zoom • Drag to pan
+                            </div>
+                        )}
+                        <div className="text-xs">
+                            {displayZoom.toFixed(2)}x zoom
+                        </div>
+                        <div className="text-xs opacity-60">
+                            Position: {displayX.toFixed(0)}, {displayY.toFixed(0)}
+                        </div>
                     </div>
-                    <div className="text-xs mt-1 opacity-80">
-                        Scroll to zoom • Drag to pan
-                    </div>
-                    <div className="text-xs">
-                        {interactiveZoom.toFixed(1)}x zoom
-                    </div>
-                </div>
-            )}
+                )
+            })()}
 
             {/* Overlay per mostrare informazioni di debug */}
             {process.env.NODE_ENV === 'development' && (

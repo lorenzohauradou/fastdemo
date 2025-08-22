@@ -36,6 +36,7 @@ export function Header() {
             }
 
             console.log('📊 Dati da inviare:', renderData)
+            console.log('🔍 Animazioni dettagliate:', JSON.stringify(renderData.animations, null, 2))
 
             // Usa l'API client per avviare il rendering
             const result = await api.startRender(renderData)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -36,18 +36,30 @@ export function ZoomControls() {
     const handlePresetZoom = (zoomValue: number) => {
         setVideoZoom([zoomValue])
         setIsZoomActive(true)
+        // Ora il zoom si imposta solo manualmente, senza creare automaticamente animazioni
+    }
 
-        // Aggiungi automaticamente un'animazione di zoom alla timeline
+    const createZoomAnimation = () => {
+        if (!isZoomActive || videoZoom[0] === 100) return
+
         const animation = {
             type: 'zoom' as const,
             startTime: currentTime,
-            endTime: currentTime + 2,
+            endTime: currentTime + 3, // Durata più lunga per effetto più visibile
             properties: {
-                level: zoomValue / 100,
-                x: zoomPosition.x,
-                y: zoomPosition.y
+                start: {
+                    level: 1.0,
+                    x: 640,
+                    y: 360
+                },
+                end: {
+                    level: videoZoom[0] / 100,
+                    x: zoomPosition.x || 640,
+                    y: zoomPosition.y || 360
+                }
             }
         }
+        console.log('🔍 Creazione manuale animazione zoom:', animation)
         addAnimation(animation)
     }
 
@@ -178,6 +190,19 @@ export function ZoomControls() {
                             />
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Add Zoom Animation Button */}
+            {isZoomActive && (
+                <div className="mt-4 border-t border-gray-700 pt-4">
+                    <Button
+                        onClick={createZoomAnimation}
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                        size="sm"
+                    >
+                        Add Zoom to Timeline
+                    </Button>
                 </div>
             )}
 
