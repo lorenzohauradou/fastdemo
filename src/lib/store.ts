@@ -44,7 +44,7 @@ interface EditorState {
   zoom: number
   
   // UI State
-  selectedPanel: 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background'
+  selectedPanel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background'
   selectedAnimation: Animation | null
   
   // Actions
@@ -53,7 +53,7 @@ interface EditorState {
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
   setZoom: (zoom: number) => void
-  setSelectedPanel: (panel: 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background') => void
+  setSelectedPanel: (panel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background') => void
   addAnimation: (animation: Omit<Animation, 'id'>) => void
   updateAnimation: (id: string, updates: Partial<Animation>) => void
   removeAnimation: (id: string) => void
@@ -66,7 +66,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   currentTime: 0,
   isPlaying: false,
   zoom: 1,
-  selectedPanel: 'music',
+  selectedPanel: 'scene',
   selectedAnimation: null,
   
   // Actions
