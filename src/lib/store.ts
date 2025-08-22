@@ -24,6 +24,7 @@ export interface Project {
   duration: number
   animations: Animation[]
   backgroundSettings?: Record<string, any>
+  deviceSettings?: Record<string, any>
   audioTrack?: string
   templateId?: string
   musicSettings?: {

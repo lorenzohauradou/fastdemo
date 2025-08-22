@@ -32,6 +32,7 @@ export function Header() {
                 duration: currentProject.duration,
                 animations: currentProject.animations,
                 backgroundSettings: currentProject.backgroundSettings,
+                deviceSettings: currentProject.deviceSettings,
                 musicSettings: currentProject.musicSettings
             }
 

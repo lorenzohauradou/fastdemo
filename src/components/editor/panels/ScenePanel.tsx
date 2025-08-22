@@ -4,16 +4,38 @@ import { useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Slider } from '@/components/ui/slider'
 import { Monitor, Smartphone, Laptop, Square, RotateCcw, Volume2, X, Edit, ArrowLeft } from 'lucide-react'
 
 export function ScenePanel() {
     const { currentProject, updateProject } = useEditorStore()
     const [showBackgroundEdit, setShowBackgroundEdit] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
+    const [selectedDevice, setSelectedDevice] = useState<string>('rectangle')
+    const [borderRadius, setBorderRadius] = useState([0])
 
     // Funzione per aggiornare il background del progetto
     const updateBackground = (backgroundSettings: Record<string, any>) => {
         updateProject({ backgroundSettings })
+    }
+
+    // Funzione per aggiornare le impostazioni del device
+    const updateDeviceSettings = (deviceSettings: Record<string, any>) => {
+        updateProject({
+            deviceSettings: {
+                ...currentProject?.deviceSettings,
+                ...deviceSettings
+            }
+        })
+    }
+
+    // Funzione per gestire il cambio di border radius
+    const handleBorderRadiusChange = (value: number[]) => {
+        setBorderRadius(value)
+        updateDeviceSettings({
+            type: selectedDevice,
+            borderRadius: value[0]
+        })
     }
 
     // Device templates
@@ -21,7 +43,6 @@ export function ScenePanel() {
         { id: 'rectangle', name: 'Rectangle', icon: Square },
         { id: 'macbook', name: 'Macbook', icon: Laptop },
         { id: 'iphone', name: 'iPhone', icon: Smartphone },
-        { id: 'samsung', name: 'Samsung', icon: Smartphone },
     ]
 
     // Background options
@@ -412,13 +433,16 @@ export function ScenePanel() {
                 <div>
                     <h3 className="text-sm font-medium text-foreground mb-3">Device</h3>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         {devices.map((device) => {
                             const Icon = device.icon
+                            const isSelected = selectedDevice === device.id
                             return (
                                 <Card
                                     key={device.id}
-                                    className="cursor-pointer hover:bg-muted/50 transition-colors border-2 border-primary"
+                                    className={`cursor-pointer hover:bg-muted/50 transition-colors border-2 ${isSelected ? 'border-primary' : 'border-border'
+                                        }`}
+                                    onClick={() => setSelectedDevice(device.id)}
                                 >
                                     <CardContent className="p-3 text-center">
                                         <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mx-auto mb-2 flex items-center justify-center">
@@ -432,6 +456,26 @@ export function ScenePanel() {
                             )
                         })}
                     </div>
+
+                    {/* Rectangle Settings */}
+                    {selectedDevice === 'rectangle' && (
+                        <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-border">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium text-foreground">Corner Roundness</label>
+                                    <span className="text-sm text-muted-foreground">{borderRadius[0]}px</span>
+                                </div>
+                                <Slider
+                                    value={borderRadius}
+                                    onValueChange={handleBorderRadiusChange}
+                                    max={20}
+                                    min={0}
+                                    step={1}
+                                    className="w-full"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

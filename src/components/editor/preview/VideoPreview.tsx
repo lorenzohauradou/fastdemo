@@ -336,6 +336,7 @@ export function VideoPreview() {
                     ...getVideoTransform(),
                     maxWidth: '80%',
                     maxHeight: '80%',
+                    borderRadius: currentProject.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
                 }}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={() => {
