@@ -331,8 +331,12 @@ export function VideoPreview() {
             <video
                 ref={videoRef}
                 src={currentProject.videoUrl}
-                className="w-full h-full object-contain transition-transform duration-100 ease-out select-none"
-                style={getVideoTransform()}
+                className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out select-none"
+                style={{
+                    ...getVideoTransform(),
+                    maxWidth: '80%',
+                    maxHeight: '80%',
+                }}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={() => {
                     if (videoRef.current) {
@@ -415,18 +419,7 @@ export function VideoPreview() {
                 )
             })()}
 
-            {/* Overlay per mostrare informazioni di debug */}
-            {process.env.NODE_ENV === 'development' && (
-                <div className="absolute top-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded-lg text-sm font-mono">
-                    <div>Time: {currentTime.toFixed(2)}s</div>
-                    <div>Zoom: {zoom.toFixed(2)}x</div>
-                    <div>Interactive Zoom: {interactiveZoom.toFixed(2)}x</div>
-                    <div>Animations: {currentProject.animations.length}</div>
-                    {selectedAnimation && (
-                        <div>Selected: {selectedAnimation.type}</div>
-                    )}
-                </div>
-            )}
+
 
             {/* Overlay per le animazioni di testo */}
             {currentProject.animations
