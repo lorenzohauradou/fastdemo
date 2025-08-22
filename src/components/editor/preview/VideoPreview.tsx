@@ -321,8 +321,8 @@ export function VideoPreview() {
     return (
         <div
             ref={containerRef}
-            className="relative w-full h-full flex items-center justify-center overflow-hidden bg-background"
-
+            className="relative w-full h-full flex items-center justify-center overflow-hidden"
+            style={getBackgroundStyle()}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

@@ -7,9 +7,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Monitor, Smartphone, Laptop, Square, RotateCcw, Volume2, X, Edit, ArrowLeft } from 'lucide-react'
 
 export function ScenePanel() {
-    const { currentProject } = useEditorStore()
+    const { currentProject, updateProject } = useEditorStore()
     const [showBackgroundEdit, setShowBackgroundEdit] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
+
+    // Funzione per aggiornare il background del progetto
+    const updateBackground = (backgroundSettings: Record<string, any>) => {
+        updateProject({ backgroundSettings })
+    }
 
     // Device templates
     const devices = [
@@ -133,7 +138,16 @@ export function ScenePanel() {
                         {/* Done Button */}
                         <Button
                             className="w-full h-8"
-                            onClick={() => setShowColorPicker(false)}
+                            onClick={() => {
+                                // Applica il colore custom selezionato
+                                updateBackground({
+                                    type: 'solid',
+                                    color: selectedColor,
+                                    opacity: 1
+                                })
+                                console.log('Background custom applicato:', selectedColor)
+                                setShowColorPicker(false)
+                            }}
                         >
                             Done
                         </Button>
@@ -153,6 +167,31 @@ export function ScenePanel() {
             { id: 'black', name: 'Black', color: '#000000' },
             { id: 'custom', name: 'Custom', gradient: 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24)' },
         ]
+
+        // Funzione per gestire la selezione del colore
+        const handleColorSelect = (colorMode: typeof colorModes[0]) => {
+            if (colorMode.id === 'custom') {
+                setShowColorPicker(true)
+                return
+            }
+
+            // Applica il background selezionato al progetto
+            if (colorMode.gradient) {
+                updateBackground({
+                    type: 'gradient',
+                    gradient: colorMode.gradient,
+                    opacity: 1
+                })
+            } else {
+                updateBackground({
+                    type: 'solid',
+                    color: colorMode.color,
+                    opacity: 1
+                })
+            }
+
+            console.log('Background applicato:', colorMode.name, colorMode.color || colorMode.gradient)
+        }
 
         const backgroundTypes = [
             { id: '3d', name: '3D scene', active: true },
@@ -197,11 +236,7 @@ export function ScenePanel() {
                                             backgroundColor: color.color,
                                             background: color.gradient || color.color,
                                         }}
-                                        onClick={() => {
-                                            if (color.id === 'custom') {
-                                                setShowColorPicker(true)
-                                            }
-                                        }}
+                                        onClick={() => handleColorSelect(color)}
                                     />
                                     <p className="text-xs font-medium text-foreground">
                                         {color.name}
