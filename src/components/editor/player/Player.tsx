@@ -540,7 +540,7 @@ export function Player() {
     // ===== GESTIONE AGGIORNAMENTI CLIP =====
     const handleClipUpdate = (clipId: string, updates: any, isAudio = false) => {
         if (clipId === 'main-video') {
-            // Video principale: trattalo come una normale clip nelle animazioni
+            // Video principale: aggiorna solo le proprietà del progetto, NON creare animazioni
             console.log('🎬 RESIZE MAIN-VIDEO - handleClipUpdate chiamato con:', {
                 clipId,
                 updates,
@@ -548,33 +548,21 @@ export function Player() {
                 newDuration: updates.endTime || duration
             })
 
-            // Cerca se esiste già un'animazione per il main-video
-            let existingMainVideoAnimation = currentProject?.animations.find(a => a.id === 'main-video')
+            // Aggiorna le proprietà del progetto principale
+            const newDuration = updates.endTime || duration
+            const trimStart = updates.properties?.trimStart || 0
+            const trimEnd = updates.properties?.trimEnd || 0
 
-            if (!existingMainVideoAnimation) {
-                // Se non esiste, crea l'animazione per il main-video
-                const newAnimation = {
-                    type: 'clip' as const,
-                    startTime: 0,
-                    endTime: updates.endTime || duration,
-                    properties: {
-                        name: 'Main Video',
-                        url: videoSrc,
-                        originalDuration: currentProject?.duration || 10,
-                        duration: updates.endTime || duration,
-                        trimStart: updates.properties?.trimStart || 0,
-                        trimEnd: updates.properties?.trimEnd || 0,
-                        isMainVideo: true,
-                        ...updates.properties
-                    }
+            updateProject({
+                duration: newDuration,
+                videoTrimming: {
+                    start: trimStart,
+                    end: trimEnd,
+                    duration: newDuration
                 }
-                addAnimation(newAnimation)
-                console.log('✅ Creata nuova animazione per main-video')
-            } else {
-                // Se esiste, aggiornala
-                updateAnimation(clipId, updates)
-                console.log('✅ Aggiornata animazione esistente per main-video')
-            }
+            })
+
+            console.log('✅ Aggiornato video principale - durata:', newDuration, 'trimming:', { trimStart, trimEnd })
         } else if (clipId === 'main-audio') {
             // Audio principale: aggiorna solo se necessario
             if (updates.endTime && updates.endTime !== duration) {
