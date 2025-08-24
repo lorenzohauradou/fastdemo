@@ -590,7 +590,7 @@ export function Player() {
                 })
             }
         } else {
-            // Clip multiple: aggiorna l'animazione specifica SENZA influenzare altre clip
+            // Clip multiple: aggiorna l'animazione specifica E mantieni le clip attaccate
             console.log('🔧 RESIZE CLIP - handleClipUpdate chiamato con:', {
                 clipId,
                 updates,
@@ -598,23 +598,38 @@ export function Player() {
                 currentEndTime: currentProject?.animations.find(a => a.id === clipId)?.endTime
             })
 
+            // Ottieni la clip corrente prima dell'aggiornamento
+            const currentClip = currentProject?.animations.find(a => a.id === clipId)
+            const originalEndTime = currentClip?.endTime || 0
+
+            // Aggiorna la clip corrente
             updateAnimation(clipId, updates)
 
-            // Debug immediato: verifica che l'animazione sia stata aggiornata
-            console.log('✅ DOPO updateAnimation - animazione aggiornata:',
-                currentProject?.animations.find(a => a.id === clipId)
-            )
+            // Se è stata modificata l'endTime, sposta le clip successive per mantenerle attaccate
+            if (updates.endTime && updates.endTime !== originalEndTime) {
+                const deltaTime = updates.endTime - originalEndTime
+
+                // Ottieni tutte le clip ordinate per startTime
+                const allClips = currentProject?.animations?.filter(a => a.type === 'clip').sort((a, b) => a.startTime - b.startTime) || []
+                const currentClipIndex = allClips.findIndex(clip => clip.id === clipId)
+
+                // Sposta tutte le clip successive
+                for (let i = currentClipIndex + 1; i < allClips.length; i++) {
+                    const nextClip = allClips[i]
+                    console.log(`📎 Spostando clip ${nextClip.id} di ${deltaTime}s`)
+
+                    updateAnimation(nextClip.id, {
+                        startTime: nextClip.startTime + deltaTime,
+                        endTime: nextClip.endTime + deltaTime
+                    })
+                }
+            }
 
             // Controlla se il currentTime è oltre la nuova endTime della clip modificata
             if (updates.endTime && currentTime > updates.endTime && selectedClip === clipId) {
-                // Se la clip è stata compressa e il currentTime è oltre la nuova fine,
-                // sposta il currentTime alla fine della clip compressa
                 console.log('Clip compressa, spostando currentTime da', currentTime, 'a', updates.endTime)
                 setCurrentTime(updates.endTime)
             }
-
-            // NON ricalcolare la durata totale qui per evitare che le clip si allunghino
-            // La durata totale dovrebbe essere calcolata solo quando si aggiungono/rimuovono clip
         }
     }
 

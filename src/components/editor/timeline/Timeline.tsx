@@ -252,8 +252,26 @@ export function Timeline() {
 
         const updatePosition = (clientX: number) => {
             const x = clientX - timelineRect.left - 80 // Sottrai l'offset del label (ridotto per layout compatto)
-            const newTime = Math.max(0, x / pixelsPerSecond)
-            setCurrentTime(Math.min(duration, newTime))
+            let newTime = Math.max(0, x / pixelsPerSecond)
+
+            // Se è selezionata una clip specifica, converti il tempo relativo in tempo globale
+            if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
+                const selectedClipData = currentProject?.animations?.find(a => a.id === selectedClip)
+                if (selectedClipData) {
+                    // Limita il tempo alla durata della clip selezionata
+                    const clipDuration = selectedClipData.endTime - selectedClipData.startTime
+                    newTime = Math.min(newTime, clipDuration)
+                    // Converti da tempo relativo a tempo globale
+                    newTime = selectedClipData.startTime + newTime
+                }
+            } else {
+                // Per main-video o modalità unified, usa la durata totale
+                newTime = Math.min(newTime, duration)
+            }
+
+            console.log('🎯 Timeline scrub:', { relativeTime: x / pixelsPerSecond, globalTime: newTime, selectedClip })
+            console.log('🎯 Timeline SUPERIORE: Impostando currentTime a', newTime)
+            setCurrentTime(newTime)
         }
 
         updatePosition(e.clientX)
@@ -401,9 +419,25 @@ export function Timeline() {
 
 
 
-    // Calcola la posizione del playhead con una transizione CSS per la fluidità
+    // Calcola la posizione del playhead - TEMPO RELATIVO per clip specifiche
+    let relativeTime = currentTime
+    let playheadDuration = duration
+
+    // Se è selezionata una clip specifica (non main-video), calcola il tempo relativo
+    if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
+        const selectedClipData = currentProject?.animations?.find(a => a.id === selectedClip)
+        if (selectedClipData) {
+            // Tempo relativo alla clip selezionata (0 = inizio clip, durata = fine clip)
+            relativeTime = Math.max(0, Math.min(
+                currentTime - selectedClipData.startTime,
+                selectedClipData.endTime - selectedClipData.startTime
+            ))
+            playheadDuration = selectedClipData.endTime - selectedClipData.startTime
+        }
+    }
+
     const playheadStyle = {
-        transform: `translateX(${80 + currentTime * pixelsPerSecond}px)`, // Aggiungi l'offset del label (ridotto per layout compatto)
+        transform: `translateX(${80 + relativeTime * pixelsPerSecond}px)`,
     }
 
     return (
@@ -414,7 +448,7 @@ export function Timeline() {
                 <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
                     <div className="flex items-center space-x-4">
                         <span className="text-xs text-muted-foreground font-mono">
-                            {new Date(currentTime * 1000).toISOString().substr(14, 5)} / {new Date(duration * 1000).toISOString().substr(14, 5)}
+                            {new Date(relativeTime * 1000).toISOString().substr(14, 5)} / {new Date(playheadDuration * 1000).toISOString().substr(14, 5)}
                         </span>
                         <div className="flex items-center space-x-1">
                             <Button

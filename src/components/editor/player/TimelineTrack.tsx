@@ -37,13 +37,24 @@ export function TimelineTrack({
     const timelineRef = useRef<HTMLDivElement>(null)
 
     const handleTimelineClick = (e: React.MouseEvent) => {
-        // Non fare nulla se si clicca su una clip
-        if ((e.target as HTMLElement).closest('.resizable-clip')) return
+        // Controlla se il click è su un'area di controllo della clip (bordi di resize)
+        const target = e.target as HTMLElement
+        const isResizeHandle = target.classList.contains('resize-handle') || target.closest('.resize-handle')
+        const isClipBody = target.closest('.resizable-clip') && !isResizeHandle
+
+        // Se è su un resize handle, lascia che la clip lo gestisca
+        if (isResizeHandle) return
+
+        // Se è sul corpo della clip, priorità alla timeline (movimento barra)
+        if (isClipBody) {
+            e.stopPropagation()
+        }
 
         if (!timelineRef.current) return
         const rect = timelineRef.current.getBoundingClientRect()
         const x = e.clientX - rect.left
         const newTime = Math.max(0, Math.min(duration, x / pixelsPerSecond))
+        console.log('🎯 TimelineTrack INFERIORE click:', newTime, 'x:', x, 'pixelsPerSecond:', pixelsPerSecond)
         onTimelineClick(newTime)
     }
 

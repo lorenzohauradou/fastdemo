@@ -81,117 +81,31 @@ export const createVideoClips = (
     videoThumbnails: { [key: string]: string }
 ): VideoClip[] => {
     const clips: VideoClip[] = []
-    let currentStartTime = 0
 
-    // Ordina sempre le clip per timestamp di creazione per mantenere l'ordine
-    const sortedClipAnimations = clipAnimations.sort((a, b) => {
-        const getTimestamp = (id: string) => {
-            const match = id.match(/anim_(\d+)_/)
-            return match ? parseInt(match[1]) : 0
-        }
-
-        const timestampA = getTimestamp(a.id)
-        const timestampB = getTimestamp(b.id)
-
-        if (timestampA && timestampB) {
-            return timestampA - timestampB
-        }
-
-        return a.startTime - b.startTime
-    })
-
-    // Se c'è un video principale E delle clip, crea una clip principale dalle animazioni o dal progetto
-    if (hasMainVideo && hasMultipleClips) {
-        // Cerca se esiste già un'animazione per il video principale
-        let mainVideoClip = sortedClipAnimations.find(clip => clip.id === 'main-video' || clip.properties?.isMainVideo)
+    // LOGICA CORRETTA: Includi sempre il video principale se esiste
+    if (hasMainVideo && videoSrc) {
+        console.log('🎬 createVideoClips: Aggiungendo video principale')
         
-        if (!mainVideoClip) {
-            // Se non esiste, crea una clip principale dalle impostazioni del progetto
-            const mainVideoDuration = currentProject?.videoTrimming?.duration || currentProject?.duration || 10
-            mainVideoClip = {
-                id: 'main-video',
-                type: 'clip',
-                startTime: 0,
-                endTime: mainVideoDuration,
-                properties: {
-                    name: 'Main Video',
-                    url: videoSrc,
-                    originalDuration: currentProject?.duration || 10,
-                    duration: mainVideoDuration,
-                    trimStart: currentProject?.videoTrimming?.start || 0,
-                    trimEnd: currentProject?.videoTrimming?.end || 0,
-                    isMainVideo: true
-                }
-            }
-        }
-
-        // Aggiungi la clip principale
-        clips.push({
-            ...mainVideoClip,
-            startTime: 0,
-            endTime: mainVideoClip.endTime,
-            properties: {
-                ...mainVideoClip.properties,
-                originalDuration: mainVideoClip.properties?.originalDuration || (currentProject?.duration || 10),
-                isMainVideo: true
-            },
-            thumbnail: videoThumbnails['main-video']
-        })
-        currentStartTime = mainVideoClip.endTime
-
-        // Poi aggiungi le altre clip (escludi la main-video se era già nelle animazioni)
-        const otherClips = sortedClipAnimations.filter(clip => 
-            clip.id !== 'main-video' && !clip.properties?.isMainVideo
-        )
+        // Calcola l'endTime del video principale
+        let mainVideoEndTime = currentProject?.duration || 10
         
-        otherClips.forEach((clip, index) => {
-            const clipDuration = clip.properties?.duration || (clip.endTime - clip.startTime)
-
-            clips.push({
-                ...clip,
-                startTime: currentStartTime,
-                endTime: currentStartTime + clipDuration,
-                properties: {
-                    ...clip.properties,
-                    originalDuration: clip.properties?.originalDuration || clipDuration,
-                    duration: clipDuration,
-                    index: index + 1
-                },
-                thumbnail: videoThumbnails[clip.id]
-            })
-            currentStartTime += clipDuration
-        })
-
-            } else if (hasMultipleClips) {
-            // Solo clip multiple: usa ESATTAMENTE i valori salvati nelle animazioni
-            sortedClipAnimations.forEach((clip, index) => {
-                clips.push({
-                    ...clip,
-                    // USA ESATTAMENTE startTime e endTime dall'animazione salvata
-                    startTime: clip.startTime,
-                    endTime: clip.endTime,
-                    properties: {
-                        ...clip.properties,
-                        // Assicurati che originalDuration sia sempre definita
-                        originalDuration: clip.properties?.originalDuration || (clip.endTime - clip.startTime),
-                        // Usa la durata dalle proprietà se disponibile, altrimenti calcola
-                        duration: clip.properties?.duration || (clip.endTime - clip.startTime),
-                        index: index
-                    },
-                    thumbnail: videoThumbnails[clip.id]
-                })
-            })
-
-    } else if (hasMainVideo) {
-        // Solo video principale: una sola clip che rappresenta tutto il video
+        // Se ci sono clip aggiuntive, il video principale finisce quando inizia la prima clip
+        if (hasMultipleClips && clipAnimations.length > 0) {
+            const sortedClipAnimations = clipAnimations.sort((a, b) => a.startTime - b.startTime)
+            const firstAdditionalClip = sortedClipAnimations[0]
+            mainVideoEndTime = firstAdditionalClip.startTime
+            console.log('🎬 Video principale finisce a:', mainVideoEndTime, 'perché inizia la prima clip aggiuntiva')
+        }
+        
         clips.push({
             id: 'main-video',
             startTime: 0,
-            endTime: currentProject?.duration || 10,
+            endTime: mainVideoEndTime,
             properties: {
                 name: 'Main Video',
                 url: videoSrc,
                 originalDuration: currentProject?.duration || 10,
+                duration: mainVideoEndTime,
                 trimStart: currentProject?.videoTrimming?.start || 0,
                 trimEnd: currentProject?.videoTrimming?.end || 0
             },
@@ -199,6 +113,44 @@ export const createVideoClips = (
         })
     }
 
+    // Poi aggiungi le clip aggiuntive se esistono
+    if (hasMultipleClips) {
+        console.log('🎬 createVideoClips: Aggiungendo clip aggiuntive:', clipAnimations.length)
+        
+        // Ordina le clip per startTime (ordine temporale nella timeline)
+        const sortedClipAnimations = clipAnimations.sort((a, b) => a.startTime - b.startTime)
+        
+        sortedClipAnimations.forEach((clip, index) => {
+            const videoClip: VideoClip = {
+                id: clip.id,
+                startTime: clip.startTime,
+                endTime: clip.endTime,
+                properties: {
+                    name: clip.properties?.name || `Clip ${index + 1}`,
+                    url: clip.properties?.url,
+                    originalDuration: clip.properties?.originalDuration || clip.properties?.duration || (clip.endTime - clip.startTime),
+                    duration: clip.properties?.duration || (clip.endTime - clip.startTime),
+                    trimStart: clip.properties?.trimStart || 0,
+                    trimEnd: clip.properties?.trimEnd || 0,
+                    index: index,
+                    file: clip.properties?.file
+                },
+                thumbnail: videoThumbnails[clip.id]
+            }
+            
+            console.log(`🎬 Clip aggiuntiva ${index + 1}:`, {
+                id: videoClip.id,
+                startTime: videoClip.startTime,
+                endTime: videoClip.endTime,
+                duration: videoClip.endTime - videoClip.startTime,
+                url: videoClip.properties.url?.substring(0, 50) + '...'
+            })
+            
+            clips.push(videoClip)
+        })
+    }
+
+    console.log('🎬 createVideoClips: Risultato finale:', clips.length, 'clip create')
     return clips
 }
 

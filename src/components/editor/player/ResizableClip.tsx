@@ -21,22 +21,13 @@ export function ResizableClip({
 }: ResizableClipProps) {
     const [isDragging, setIsDragging] = useState(false)
     const [dragMode, setDragMode] = useState<'move' | 'resize-left' | 'resize-right' | null>(null)
+    const [dragPreview, setDragPreview] = useState<{ startTime: number; endTime: number; properties?: any } | null>(null)
     const startXRef = useRef(0)
     const initialValuesRef = useRef({ startTime: 0, endTime: 0 })
-    const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    // Debounced update function per migliorare le performance
-    const debouncedUpdate = useCallback((updates: any) => {
-        if (updateTimeoutRef.current) {
-            clearTimeout(updateTimeoutRef.current)
-        }
-        updateTimeoutRef.current = setTimeout(() => {
-            console.log('🎯 ResizableClip - debouncedUpdate chiamato con:', updates)
-            onUpdate(updates)
-        }, 16) // ~60fps
-    }, [onUpdate])
-
-    const duration = clip.endTime - clip.startTime
+    // Usa dragPreview se stiamo trascinando, altrimenti i valori originali della clip
+    const currentClip = dragPreview || clip
+    const duration = currentClip.endTime - currentClip.startTime
     const originalDuration = clip.properties?.originalDuration || duration
 
     const handleMouseDown = (e: React.MouseEvent, mode: 'move' | 'resize-left' | 'resize-right') => {
@@ -59,20 +50,20 @@ export function ResizableClip({
             if (dragMode === 'move') {
                 const newStartTime = Math.max(0, startTime + deltaTime)
                 const newEndTime = newStartTime + (endTime - startTime)
-                debouncedUpdate({ startTime: newStartTime, endTime: newEndTime })
+                // Solo preview durante il drag, non aggiornare lo store
+                setDragPreview({ startTime: newStartTime, endTime: newEndTime })
 
             } else if (dragMode === 'resize-right') {
-                const minDuration = 1.0 // Durata minima di 1 secondo
-                const maxDuration = originalDuration // Non può superare la durata originale
+                const minDuration = 1.0
+                const maxDuration = originalDuration
                 const currentDuration = endTime - startTime
                 const newDuration = Math.min(maxDuration, Math.max(minDuration, currentDuration + deltaTime))
                 const newEndTime = startTime + newDuration
-
-                // Calcola il trim end basato sulla nuova durata
                 const trimEnd = Math.max(0, originalDuration - newDuration)
 
-                debouncedUpdate({
+                setDragPreview({
                     endTime: newEndTime,
+                    startTime: startTime,
                     properties: {
                         ...clip.properties,
                         trimEnd: trimEnd,
@@ -81,17 +72,16 @@ export function ResizableClip({
                 })
 
             } else if (dragMode === 'resize-left') {
-                const minDuration = 1.0 // Durata minima di 1 secondo
-                const maxDuration = originalDuration // Non può superare la durata originale
+                const minDuration = 1.0
+                const maxDuration = originalDuration
                 const currentDuration = endTime - startTime
                 const newDuration = Math.min(maxDuration, Math.max(minDuration, currentDuration - deltaTime))
                 const newStartTime = endTime - newDuration
-
-                // Calcola il trim start basato sul nuovo start time
                 const trimStart = Math.max(0, startTime - newStartTime + (clip.properties?.trimStart || 0))
 
-                debouncedUpdate({
+                setDragPreview({
                     startTime: Math.max(0, newStartTime),
+                    endTime: endTime,
                     properties: {
                         ...clip.properties,
                         trimStart: trimStart,
@@ -101,7 +91,15 @@ export function ResizableClip({
             }
         }
 
-        const handleMouseUp = () => setIsDragging(false)
+        const handleMouseUp = () => {
+            // Solo quando finisce il drag, aggiorna lo store
+            if (dragPreview) {
+                console.log('🎯 ResizableClip - Aggiornamento finale:', dragPreview)
+                onUpdate(dragPreview)
+            }
+            setIsDragging(false)
+            setDragPreview(null)
+        }
 
         if (isDragging) {
             window.addEventListener('mousemove', handleMouseMove)
@@ -112,19 +110,12 @@ export function ResizableClip({
             window.removeEventListener('mousemove', handleMouseMove)
             window.removeEventListener('mouseup', handleMouseUp)
         }
-    }, [isDragging, dragMode, clip, pixelsPerSecond, debouncedUpdate, originalDuration])
+    }, [isDragging, dragMode, clip, pixelsPerSecond, onUpdate, originalDuration, dragPreview])
 
-    // Cleanup del timeout quando il componente viene smontato
-    useEffect(() => {
-        return () => {
-            if (updateTimeoutRef.current) {
-                clearTimeout(updateTimeoutRef.current)
-            }
-        }
-    }, [])
+
 
     const clipStyle = {
-        left: `${clip.startTime * pixelsPerSecond}px`,
+        left: `${currentClip.startTime * pixelsPerSecond}px`,
         width: `${duration * pixelsPerSecond}px`,
     }
 
