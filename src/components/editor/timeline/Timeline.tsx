@@ -139,7 +139,8 @@ export function Timeline() {
         selectedAnimation,
         setSelectedAnimation,
         updateProject,
-        setSelectedPanel
+        setSelectedPanel,
+        selectedClip
     } = useEditorStore()
 
     const tracks = [
@@ -220,7 +221,24 @@ export function Timeline() {
         )
     }
 
-    const duration = currentProject.duration
+    // Determina la durata da usare per la timeline
+    const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
+    const hasMultipleClips = clipAnimations.length > 0
+    const hasMainVideo = currentProject.videoUrl || currentProject.videoFile
+
+    // Se c'è una clip selezionata, usa la sua durata specifica
+    let timelineDuration = currentProject.duration
+    if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
+        const selectedClipData = currentProject.animations.find(a => a.id === selectedClip)
+        if (selectedClipData) {
+            timelineDuration = selectedClipData.properties?.duration || (selectedClipData.endTime - selectedClipData.startTime)
+        }
+    } else if (selectedClip === 'main-video' && hasMainVideo) {
+        // Se è selezionato il video principale, usa la sua durata
+        timelineDuration = currentProject.duration
+    }
+
+    const duration = timelineDuration
     const timelineWidth = timelineContainerRef.current ? timelineContainerRef.current.offsetWidth : 1000
     // Sottrai la larghezza del label per allineare correttamente
     const availableWidth = timelineWidth - 80 // 80px per il label compatto
@@ -254,11 +272,29 @@ export function Timeline() {
     }
 
     const handleAddAnimation = (trackType: 'text' | 'zoom') => {
+        const baseProperties = trackType === 'zoom' ? { level: 1.5 } : { content: 'New Text' }
+
+        // Se c'è una clip selezionata (diversa dal video principale), associa l'animazione a quella clip
+        const properties = hasMultipleClips && selectedClip && selectedClip !== 'main-video'
+            ? { ...baseProperties, clipId: selectedClip }
+            : baseProperties
+
+        // Calcola il tempo relativo alla clip selezionata
+        let relativeStartTime = currentTime
+        let relativeEndTime = Math.min(currentTime + 3, duration)
+
+        // Se è selezionata una clip specifica, i tempi sono relativi a quella clip (0 - clipDuration)
+        if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
+            // I tempi sono già relativi alla clip selezionata grazie alla nuova logica di durata
+            relativeStartTime = Math.max(0, Math.min(currentTime, duration - 1))
+            relativeEndTime = Math.min(relativeStartTime + 3, duration)
+        }
+
         addAnimation({
             type: trackType,
-            startTime: currentTime,
-            endTime: Math.min(currentTime + 3, duration),
-            properties: trackType === 'zoom' ? { level: 1.5 } : { content: 'New Text' }
+            startTime: relativeStartTime,
+            endTime: relativeEndTime,
+            properties
         })
     }
     // con il blob funziona
@@ -435,8 +471,27 @@ export function Timeline() {
                         {/* Tracce compatte */}
                         <div className="flex flex-col h-full justify-center space-y-0.5">
                             {tracks.map(track => {
-                                const trackAnimations = currentProject.animations.filter(a => a.type === track.type)
-                                const hasMainVideo = currentProject.videoUrl || currentProject.videoFile
+                                // Filtra le animazioni in base alla clip selezionata
+                                let trackAnimations: any[]
+
+                                if (track.type === 'clip') {
+                                    // Per la traccia CLIP, mostra sempre tutte le clip
+                                    trackAnimations = currentProject.animations.filter(a => a.type === track.type)
+                                } else if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
+                                    // Per altre tracce con clip multiple: mostra solo le animazioni della clip selezionata
+                                    trackAnimations = currentProject.animations.filter(a =>
+                                        a.type === track.type && a.properties?.clipId === selectedClip
+                                    )
+                                } else if (selectedClip === 'main-video' || !hasMultipleClips) {
+                                    // Per il video principale o quando non ci sono clip multiple: mostra tutte le animazioni del tipo
+                                    trackAnimations = currentProject.animations.filter(a =>
+                                        a.type === track.type && !a.properties?.clipId
+                                    )
+                                } else {
+                                    // Nessuna clip selezionata con clip multiple: non mostrare animazioni
+                                    trackAnimations = []
+                                }
+
                                 const hasClipContent = track.type === 'clip' ? (trackAnimations.length > 0 || hasMainVideo) : trackAnimations.length > 0
 
                                 return (

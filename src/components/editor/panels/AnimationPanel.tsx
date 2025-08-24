@@ -10,9 +10,9 @@ import { ZoomIn, Move, Sparkles } from 'lucide-react'
 // Animazioni Camera
 const cameraAnimations = [
     {
-        id: 'basic',
-        name: 'Basic',
-        type: 'zoom' as const,
+        id: 'none',
+        name: 'None',
+        type: 'none' as const,
         selected: true
     },
     {
@@ -35,85 +35,16 @@ const cameraAnimations = [
     }
 ]
 
-// Animazioni Intro come da foto
-const introAnimations = [
-    {
-        id: 'none',
-        name: 'None',
-        selected: true
-    },
-    {
-        id: 'slide-down-fade',
-        name: 'Slide down and fade',
-        selected: false
-    },
-    {
-        id: 'slide-left-fade',
-        name: 'Slide left and fade',
-        selected: false
-    },
-    {
-        id: 'slide-right-fade',
-        name: 'Slide right and fade',
-        selected: false
-    },
-    {
-        id: 'quick-slide-away',
-        name: 'Quick slide away',
-        selected: false
-    },
-    {
-        id: 'quick-slide-towards',
-        name: 'Quick slide towards',
-        selected: false
-    }
-]
-
-// Animazioni Outro come da foto
-const outroAnimations = [
-    {
-        id: 'none',
-        name: 'None',
-        selected: true
-    },
-    {
-        id: 'slide-up-fade',
-        name: 'Slide up and fade',
-        selected: false
-    },
-    {
-        id: 'slide-left-fade-outro',
-        name: 'Slide left and fade',
-        selected: false
-    },
-    {
-        id: 'slide-right-fade-outro',
-        name: 'Slide right and fade',
-        selected: false
-    },
-    {
-        id: 'quick-slide-towards-outro',
-        name: 'Quick slide towards',
-        selected: false
-    },
-    {
-        id: 'quick-slide-away-outro',
-        name: 'Quick slide away',
-        selected: false
-    }
-]
-
 export function AnimationPanel() {
     const {
         currentTime,
         addAnimation,
         selectedAnimation,
-        currentProject
+        currentProject,
+        updateProject
     } = useEditorStore()
 
-    const [selectedCamera, setSelectedCamera] = useState('basic')
-    const [selectedIntro, setSelectedIntro] = useState('none')
-    const [selectedOutro, setSelectedOutro] = useState('none')
+    const [selectedCamera, setSelectedCamera] = useState('none')
 
     const handleCameraSelect = (cameraId: string) => {
         setSelectedCamera(cameraId)
@@ -121,24 +52,31 @@ export function AnimationPanel() {
         const camera = cameraAnimations.find(c => c.id === cameraId)
         if (!camera) return
 
+        // Per continuous glide, impostiamo le cameraSettings globali invece di un'animazione specifica
+        if (camera.id === 'continuous-glide') {
+            updateProject({
+                cameraSettings: {
+                    type: 'continuous_glide',
+                    intensity: 0.15,
+                    zoom_range: 0.1,
+                    direction: 'diagonal'
+                }
+            })
+            console.log('Impostato Continuous Glide come animazione camera globale')
+            return
+        }
+
+        // Reset camera settings per altri tipi
+        updateProject({
+            cameraSettings: undefined
+        })
+        if (camera.id === 'none') {
+            console.log('🎬 Nessuna animazione camera selezionata')
+            return
+        }
+
         let animation
         switch (camera.id) {
-            case 'basic':
-                animation = {
-                    type: 'zoom' as const,
-                    startTime: currentTime,
-                    endTime: currentTime + 2,
-                    properties: { level: 1.5, x: 0, y: 0 }
-                }
-                break
-            case 'continuous-glide':
-                animation = {
-                    type: 'pan' as const,
-                    startTime: currentTime,
-                    endTime: currentTime + 4,
-                    properties: { from_x: -100, from_y: 0, to_x: 100, to_y: 0 }
-                }
-                break
             case 'skewed':
                 animation = {
                     type: 'pan' as const,
@@ -169,15 +107,6 @@ export function AnimationPanel() {
         addAnimation(animation)
     }
 
-    const handleIntroSelect = (introId: string) => {
-        setSelectedIntro(introId)
-        console.log('Selected intro:', introId)
-    }
-
-    const handleOutroSelect = (outroId: string) => {
-        setSelectedOutro(outroId)
-        console.log('Selected outro:', outroId)
-    }
 
     // Componente per la preview video
     const VideoPreview = ({ className }: { className?: string }) => {
@@ -227,62 +156,6 @@ export function AnimationPanel() {
                             <VideoPreview className="aspect-video" />
                             <div className="p-3 bg-card">
                                 <h4 className="text-sm font-medium text-white text-center">{camera.name}</h4>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Intro */}
-            <div>
-                <h3 className="text-lg font-medium text-white mb-4">Intro</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    {introAnimations.map((intro) => (
-                        <div
-                            key={intro.id}
-                            onClick={() => handleIntroSelect(intro.id)}
-                            className={`cursor-pointer rounded-lg overflow-hidden transition-all ${selectedIntro === intro.id
-                                ? 'ring-2 ring-blue-500'
-                                : 'hover:ring-1 hover:ring-gray-500'
-                                }`}
-                        >
-                            {intro.id === 'none' ? (
-                                <div className="aspect-video bg-card rounded flex items-center justify-center">
-                                    <span className="text-white text-lg font-medium">None</span>
-                                </div>
-                            ) : (
-                                <VideoPreview className="aspect-video" />
-                            )}
-                            <div className="p-3 bg-card">
-                                <h4 className="text-sm font-medium text-white text-center">{intro.name}</h4>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Outro */}
-            <div>
-                <h3 className="text-lg font-medium text-white mb-4">Outro</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    {outroAnimations.map((outro) => (
-                        <div
-                            key={outro.id}
-                            onClick={() => handleOutroSelect(outro.id)}
-                            className={`cursor-pointer rounded-lg overflow-hidden transition-all ${selectedOutro === outro.id
-                                ? 'ring-2 ring-blue-500'
-                                : 'hover:ring-1 hover:ring-gray-500'
-                                }`}
-                        >
-                            {outro.id === 'none' ? (
-                                <div className="aspect-video bg-card rounded flex items-center justify-center">
-                                    <span className="text-white text-lg font-medium">None</span>
-                                </div>
-                            ) : (
-                                <VideoPreview className="aspect-video" />
-                            )}
-                            <div className="p-3 bg-card">
-                                <h4 className="text-sm font-medium text-white text-center">{outro.name}</h4>
                             </div>
                         </div>
                     ))}

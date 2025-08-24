@@ -91,8 +91,9 @@ class ApiClient {
     /**
      * Avvia il rendering di un video
      */
-    async startRender(renderData: RenderRequest): Promise<RenderResponse> {
-        const response = await fetch('/api/render', {
+    async startRender(renderData: RenderRequest, useRemotion: boolean = false): Promise<RenderResponse> {
+        const endpoint = useRemotion ? '/api/render/remotion' : '/api/render'
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

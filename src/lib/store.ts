@@ -32,6 +32,20 @@ export interface Project {
     track?: string
     volume: number
     fileName?: string
+    trimStart?: number
+    trimEnd?: number
+    duration?: number
+  }
+  videoTrimming?: {
+    start: number
+    end: number
+    duration: number
+  }
+  cameraSettings?: {
+    type?: string
+    intensity?: number
+    zoom_range?: number
+    direction?: string
   }
 }
 
@@ -47,6 +61,7 @@ interface EditorState {
   // UI State
   selectedPanel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background'
   selectedAnimation: Animation | null
+  selectedClip: string | null
   
   // Actions
   setCurrentProject: (project: Project) => void
@@ -59,6 +74,7 @@ interface EditorState {
   updateAnimation: (id: string, updates: Partial<Animation>) => void
   removeAnimation: (id: string) => void
   setSelectedAnimation: (animation: Animation | null) => void
+  setSelectedClip: (clipId: string | null) => void
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -69,6 +85,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   zoom: 1,
   selectedPanel: 'scene',
   selectedAnimation: null,
+  selectedClip: null,
   
   // Actions
   setCurrentProject: (project) => set({ currentProject: project }),
@@ -130,5 +147,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
   }),
   
-  setSelectedAnimation: (animation) => set({ selectedAnimation: animation })
+  setSelectedAnimation: (animation) => set({ selectedAnimation: animation }),
+  setSelectedClip: (clipId) => set({ selectedClip: clipId })
 }))

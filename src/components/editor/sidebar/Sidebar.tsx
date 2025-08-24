@@ -5,7 +5,7 @@ import { MusicPanel } from '@/components/editor/panels/MusicPanel'
 import { AnimationPanel } from '@/components/editor/panels/AnimationPanel'
 import { TextPanel } from '@/components/editor/panels/TextPanel'
 import { LogosPanel } from '@/components/editor/panels/LogosPanel'
-import { TemplatesPanel } from '@/components/editor/panels/TemplatesPanel'
+//import { TemplatesPanel } from '@/components/editor/panels/TemplatesPanel'
 import { LogoHeadlinePanel } from '@/components/editor/panels/LogoHeadlinePanel'
 import { BackgroundPanel } from '@/components/editor/panels/BackgroundPanel'
 import { ScenePanel } from '@/components/editor/panels/ScenePanel'
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Music, Zap, Type, Image, Layout, FileText, Palette, Clapperboard } from 'lucide-react'
 
 const panels = [
-    { id: 'templates' as const, label: 'Templates', icon: Layout },
+    // { id: 'templates' as const, label: 'Templates', icon: Layout },
     { id: 'scene' as const, label: 'Scene', icon: Clapperboard },
     { id: 'text' as const, label: 'Text', icon: Type },
     { id: 'animation' as const, label: 'Animation', icon: Zap },
@@ -40,8 +40,6 @@ export function Sidebar() {
                 return <LogoHeadlinePanel />
             case 'background':
                 return <BackgroundPanel />
-            case 'templates':
-                return <TemplatesPanel />
             default:
                 return <ScenePanel />
         }

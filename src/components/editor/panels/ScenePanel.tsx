@@ -5,13 +5,15 @@ import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
-import { Monitor, Smartphone, Laptop, Square, RotateCcw, Volume2, X, Edit, ArrowLeft } from 'lucide-react'
+import { Monitor, Square, RotateCcw, Volume2, X, Edit, ArrowLeft } from 'lucide-react'
 
 export function ScenePanel() {
     const { currentProject, updateProject } = useEditorStore()
     const [showBackgroundEdit, setShowBackgroundEdit] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
-    const [selectedDevice, setSelectedDevice] = useState<string>('rectangle')
+    const [selectedDevice, setSelectedDevice] = useState<string>(
+        currentProject?.deviceSettings?.type || 'rectangle'
+    )
     const [borderRadius, setBorderRadius] = useState([0])
 
     // Funzione per aggiornare il background del progetto
@@ -41,8 +43,9 @@ export function ScenePanel() {
     // Device templates
     const devices = [
         { id: 'rectangle', name: 'Rectangle', icon: Square },
-        { id: 'macbook', name: 'Macbook', icon: Laptop },
-        { id: 'iphone', name: 'iPhone', icon: Smartphone },
+        // { id: 'macbook', name: 'MacBook', icon: Laptop },
+        // { id: 'iphone', name: 'iPhone', icon: Smartphone },
+        // { id: 'ipad', name: 'iPad', icon: Tablet },
     ]
 
     // Background options
@@ -80,7 +83,6 @@ export function ScenePanel() {
                 <div
                     className="fixed inset-0 z-[100] bg-black/10"
                     onClick={() => {
-                        console.log('Backdrop clicked - closing color picker')
                         setShowColorPicker(false)
                     }}
                 />
@@ -166,7 +168,6 @@ export function ScenePanel() {
                                     color: selectedColor,
                                     opacity: 1
                                 })
-                                console.log('Background custom applicato:', selectedColor)
                                 setShowColorPicker(false)
                             }}
                         >
@@ -211,7 +212,6 @@ export function ScenePanel() {
                 })
             }
 
-            console.log('Background applicato:', colorMode.name, colorMode.color || colorMode.gradient)
         }
 
         const backgroundTypes = [
@@ -433,20 +433,25 @@ export function ScenePanel() {
                 <div>
                     <h3 className="text-sm font-medium text-foreground mb-3">Device</h3>
 
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                         {devices.map((device) => {
-                            const Icon = device.icon
                             const isSelected = selectedDevice === device.id
                             return (
                                 <Card
                                     key={device.id}
                                     className={`cursor-pointer hover:bg-muted/50 transition-colors border-2 ${isSelected ? 'border-primary' : 'border-border'
                                         }`}
-                                    onClick={() => setSelectedDevice(device.id)}
+                                    onClick={() => {
+                                        setSelectedDevice(device.id)
+                                        // Aggiorna le impostazioni del dispositivo nel progetto
+                                        updateDeviceSettings({
+                                            type: device.id,
+                                            borderRadius: device.id === 'rectangle' ? borderRadius[0] : 0
+                                        })
+                                    }}
                                 >
                                     <CardContent className="p-3 text-center">
-                                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mx-auto mb-2 flex items-center justify-center">
-                                            <Icon className="h-4 w-4 text-white" />
+                                        <div className="w-24 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg mx-auto mb-2 flex items-center justify-center">
                                         </div>
                                         <p className="text-xs font-medium text-foreground">
                                             {device.name}
@@ -468,7 +473,7 @@ export function ScenePanel() {
                                 <Slider
                                     value={borderRadius}
                                     onValueChange={handleBorderRadiusChange}
-                                    max={20}
+                                    max={50}
                                     min={0}
                                     step={1}
                                     className="w-full"

@@ -33,7 +33,8 @@ export function Header() {
                 animations: currentProject.animations,
                 backgroundSettings: currentProject.backgroundSettings,
                 deviceSettings: currentProject.deviceSettings,
-                musicSettings: currentProject.musicSettings
+                musicSettings: currentProject.musicSettings,
+                cameraSettings: currentProject.cameraSettings
             }
 
             console.log('📊 Dati da inviare:', renderData)
@@ -41,7 +42,6 @@ export function Header() {
 
             // Usa l'API client per avviare il rendering
             const result = await api.startRender(renderData)
-            console.log('✅ Rendering avviato:', result)
 
             // Mostra un messaggio di successo
             const message = result.note

@@ -22,19 +22,56 @@ export function VideoPreview() {
         isPlaying,
         zoom,
         selectedAnimation,
-        updateAnimation
+        updateAnimation,
+        selectedClip
     } = useEditorStore()
 
-    // Sincronizza il video con il tempo corrente
+    // Determina quale video mostrare in base alla clip selezionata
+    const getCurrentVideoSource = () => {
+        if (!currentProject) return null
+
+        // Se c'è una clip selezionata, mostra il video di quella clip
+        if (selectedClip && selectedClip !== 'main-video') {
+            const clipAnimation = currentProject.animations.find(a => a.id === selectedClip && a.type === 'clip')
+            if (clipAnimation?.properties?.url) {
+                return clipAnimation.properties.url
+            }
+        }
+
+        // Altrimenti mostra il video principale del progetto
+        return currentProject.videoUrl
+    }
+
+    const currentVideoSource = getCurrentVideoSource()
+
+    // Sincronizza il video con il tempo corrente, considerando il trimming della clip selezionata
     useEffect(() => {
         if (videoRef.current && Math.abs(videoRef.current.currentTime - currentTime) > 0.1) {
-            videoRef.current.currentTime = currentTime
+            let videoTime = currentTime
+
+            // Se c'è una clip selezionata, calcola il tempo relativo considerando il trimming
+            if (selectedClip && selectedClip !== 'main-video') {
+                const clipAnimation = currentProject?.animations.find(a => a.id === selectedClip && a.type === 'clip')
+                if (clipAnimation) {
+                    // Calcola il tempo relativo nella clip
+                    const relativeTime = currentTime - clipAnimation.startTime
+                    const trimStart = clipAnimation.properties?.trimStart || 0
+                    videoTime = Math.max(0, trimStart + relativeTime)
+                }
+            } else if (selectedClip === 'main-video' && currentProject?.videoTrimming) {
+                // Per il video principale, usa i valori di trimming salvati
+                const trimStart = currentProject.videoTrimming.start || 0
+                videoTime = Math.max(0, trimStart + currentTime)
+            }
+
+            videoRef.current.currentTime = videoTime
         }
+
         // Sincronizza anche l'audio se presente
         if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 0.1) {
             audioRef.current.currentTime = currentTime
         }
-    }, [currentTime])
+    }, [currentTime, selectedClip, currentProject])
 
     // Gestisce play/pause
     useEffect(() => {
@@ -68,14 +105,28 @@ export function VideoPreview() {
     const getActiveZoomAnimation = () => {
         if (!currentProject) return null
 
+        // Determina se ci sono clip multiple
+        const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
+        const hasMultipleClips = clipAnimations.length > 0
+
+        // Filtra le animazioni in base alla clip selezionata
+        let relevantAnimations = currentProject.animations
+        if (hasMultipleClips && selectedClip) {
+            relevantAnimations = currentProject.animations.filter(anim =>
+                anim.type === 'zoom' &&
+                (anim.properties?.clipId === selectedClip || (!anim.properties?.clipId && selectedClip === 'main-video'))
+            )
+        } else {
+            relevantAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
+        }
+
         // Trova SOLO l'animazione zoom selezionata se è attiva al tempo corrente
-        // Questo evita conflitti con animazioni zoom multiple
         return selectedAnimation?.type === 'zoom' &&
             currentTime >= selectedAnimation.startTime &&
-            currentTime <= selectedAnimation.endTime
+            currentTime <= selectedAnimation.endTime &&
+            relevantAnimations.some(anim => anim.id === selectedAnimation.id)
             ? selectedAnimation
-            : currentProject.animations.find(anim =>
-                anim.type === 'zoom' &&
+            : relevantAnimations.find(anim =>
                 currentTime >= anim.startTime &&
                 currentTime <= anim.endTime &&
                 anim.startTime < anim.endTime
@@ -88,9 +139,23 @@ export function VideoPreview() {
     const getVideoTransform = () => {
         if (!currentProject) return {}
 
+        // Determina se ci sono clip multiple
+        const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
+        const hasMultipleClips = clipAnimations.length > 0
+
+        // Filtra le animazioni in base alla clip selezionata
+        let relevantAnimations = currentProject.animations
+        if (hasMultipleClips && selectedClip) {
+            relevantAnimations = currentProject.animations.filter(anim =>
+                anim.type === 'zoom' &&
+                (anim.properties?.clipId === selectedClip || (!anim.properties?.clipId && selectedClip === 'main-video'))
+            )
+        } else {
+            relevantAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
+        }
+
         // Trova l'animazione zoom attiva al tempo corrente (indipendentemente dalla selezione)
-        const activeZoomAtCurrentTime = currentProject.animations.find(anim =>
-            anim.type === 'zoom' &&
+        const activeZoomAtCurrentTime = relevantAnimations.find(anim =>
             currentTime >= anim.startTime &&
             currentTime <= anim.endTime
         )
@@ -264,7 +329,7 @@ export function VideoPreview() {
         return () => container.removeEventListener('wheel', wheelHandler)
     }, [handleWheel])
 
-    if (!currentProject?.videoUrl) {
+    if (!currentVideoSource) {
         return (
             <div className="flex items-center justify-center w-full h-full p-8">
                 <div className="max-w-md w-full">
@@ -330,17 +395,17 @@ export function VideoPreview() {
         >
             <video
                 ref={videoRef}
-                src={currentProject.videoUrl}
+                src={currentVideoSource}
                 className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out select-none"
                 style={{
                     ...getVideoTransform(),
                     maxWidth: '80%',
                     maxHeight: '80%',
-                    borderRadius: currentProject.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
+                    borderRadius: currentProject?.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
                 }}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={() => {
-                    if (videoRef.current) {
+                    if (videoRef.current && currentProject) {
                         // Aggiorna la durata del progetto se necessario
                         const duration = videoRef.current.duration
                         if (duration !== currentProject.duration) {
@@ -356,13 +421,13 @@ export function VideoPreview() {
             />
 
             {/* Audio separato per la traccia musicale */}
-            {currentProject.musicSettings?.track && (
+            {currentProject?.musicSettings?.track && (
                 <audio
                     ref={audioRef}
                     src={currentProject.musicSettings.track}
                     preload="metadata"
                     onLoadedMetadata={() => {
-                        if (audioRef.current) {
+                        if (audioRef.current && currentProject) {
                             audioRef.current.volume = currentProject.musicSettings?.volume || 0.5
                         }
                     }}
@@ -371,8 +436,24 @@ export function VideoPreview() {
 
             {/* Indicatore quando zona zoom è attiva */}
             {(() => {
-                const activeZoomAtCurrentTime = currentProject?.animations.find(anim =>
-                    anim.type === 'zoom' &&
+                if (!currentProject) return null
+
+                // Determina se ci sono clip multiple
+                const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
+                const hasMultipleClips = clipAnimations.length > 0
+
+                // Filtra le animazioni in base alla clip selezionata
+                let relevantAnimations = currentProject.animations
+                if (hasMultipleClips && selectedClip) {
+                    relevantAnimations = currentProject.animations.filter(anim =>
+                        anim.type === 'zoom' &&
+                        (anim.properties?.clipId === selectedClip || (!anim.properties?.clipId && selectedClip === 'main-video'))
+                    )
+                } else {
+                    relevantAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
+                }
+
+                const activeZoomAtCurrentTime = relevantAnimations.find(anim =>
                     currentTime >= anim.startTime &&
                     currentTime <= anim.endTime
                 )
@@ -423,9 +504,28 @@ export function VideoPreview() {
 
 
             {/* Overlay per le animazioni di testo */}
-            {currentProject.animations
-                .filter(anim => anim.type === 'text' && currentTime >= anim.startTime && currentTime <= anim.endTime)
-                .map((textAnim, index) => (
+            {(() => {
+                if (!currentProject) return null
+
+                // Determina se ci sono clip multiple
+                const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
+                const hasMultipleClips = clipAnimations.length > 0
+
+                // Filtra le animazioni di testo in base alla clip selezionata
+                let textAnimations = currentProject.animations.filter(anim =>
+                    anim.type === 'text' &&
+                    currentTime >= anim.startTime &&
+                    currentTime <= anim.endTime
+                )
+
+                if (hasMultipleClips && selectedClip) {
+                    textAnimations = textAnimations.filter(anim =>
+                        anim.properties?.clipId === selectedClip ||
+                        (!anim.properties?.clipId && selectedClip === 'main-video')
+                    )
+                }
+
+                return textAnimations.map((textAnim, index) => (
                     <div
                         key={`text-${textAnim.id}-${index}`}
                         className="absolute pointer-events-none"
@@ -448,10 +548,10 @@ export function VideoPreview() {
                         )}
                     </div>
                 ))
-            }
+            })()}
 
             {/* Overlay per le animazioni logo */}
-            {currentProject.animations
+            {currentProject?.animations
                 .filter(anim => anim.type === 'logo' && currentTime >= anim.startTime && currentTime <= anim.endTime)
                 .map((logoAnim, index) => {
                     const progress = (currentTime - logoAnim.startTime) / (logoAnim.endTime - logoAnim.startTime)
