@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { ZoomIn, ZoomOut, Upload, Music } from 'lucide-react'
+import { ZoomIn, ZoomOut } from 'lucide-react'
 
 
 // Componente per renderizzare ogni blocco di animazione (clip)
@@ -130,7 +130,6 @@ export function Timeline() {
         currentProject,
         currentTime,
         setCurrentTime,
-
         zoom: timelineZoom,
         setZoom: setTimelineZoom,
         addAnimation,
@@ -139,15 +138,13 @@ export function Timeline() {
         selectedAnimation,
         setSelectedAnimation,
         updateProject,
-        setSelectedPanel,
-        selectedClip
+        setSelectedPanel
     } = useEditorStore()
 
     const tracks = [
         { id: 'text', label: 'TEXT', type: 'text' as const, color: '#10b981' }, // Verde
         { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f59e0b' }, // Arancione
         { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#8b5cf6' }, // Viola
-        { id: 'clip', label: 'CLIP', type: 'clip' as const, color: '#3b82f6' }, // Blu per le clip video
     ]
 
     // Funzione per generare thumbnails dal video
@@ -221,24 +218,8 @@ export function Timeline() {
         )
     }
 
-    // Determina la durata da usare per la timeline
-    const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
-    const hasMultipleClips = clipAnimations.length > 0
-    const hasMainVideo = currentProject.videoUrl || currentProject.videoFile
-
-    // Se c'è una clip selezionata, usa la sua durata specifica
-    let timelineDuration = currentProject.duration
-    if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
-        const selectedClipData = currentProject.animations.find(a => a.id === selectedClip)
-        if (selectedClipData) {
-            timelineDuration = selectedClipData.properties?.duration || (selectedClipData.endTime - selectedClipData.startTime)
-        }
-    } else if (selectedClip === 'main-video' && hasMainVideo) {
-        // Se è selezionato il video principale, usa la sua durata
-        timelineDuration = currentProject.duration
-    }
-
-    const duration = timelineDuration
+    // Solo video principale
+    const duration = currentProject.duration
     const timelineWidth = timelineContainerRef.current ? timelineContainerRef.current.offsetWidth : 1000
     // Sottrai la larghezza del label per allineare correttamente
     const availableWidth = timelineWidth - 80 // 80px per il label compatto
@@ -251,26 +232,9 @@ export function Timeline() {
         const timelineRect = e.currentTarget.getBoundingClientRect()
 
         const updatePosition = (clientX: number) => {
-            const x = clientX - timelineRect.left - 80 // Sottrai l'offset del label (ridotto per layout compatto)
-            let newTime = Math.max(0, x / pixelsPerSecond)
+            const x = clientX - timelineRect.left - 80 // Sottrai l'offset del label
+            const newTime = Math.max(0, Math.min(x / pixelsPerSecond, duration))
 
-            // Se è selezionata una clip specifica, converti il tempo relativo in tempo globale
-            if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
-                const selectedClipData = currentProject?.animations?.find(a => a.id === selectedClip)
-                if (selectedClipData) {
-                    // Limita il tempo alla durata della clip selezionata
-                    const clipDuration = selectedClipData.endTime - selectedClipData.startTime
-                    newTime = Math.min(newTime, clipDuration)
-                    // Converti da tempo relativo a tempo globale
-                    newTime = selectedClipData.startTime + newTime
-                }
-            } else {
-                // Per main-video o modalità unified, usa la durata totale
-                newTime = Math.min(newTime, duration)
-            }
-
-            console.log('🎯 Timeline scrub:', { relativeTime: x / pixelsPerSecond, globalTime: newTime, selectedClip })
-            console.log('🎯 Timeline SUPERIORE: Impostando currentTime a', newTime)
             setCurrentTime(newTime)
         }
 
@@ -290,28 +254,15 @@ export function Timeline() {
     }
 
     const handleAddAnimation = (trackType: 'text' | 'zoom') => {
-        const baseProperties = trackType === 'zoom' ? { level: 1.5 } : { content: 'New Text' }
+        const properties = trackType === 'zoom' ? { level: 1.5 } : { content: 'New Text' }
 
-        // Se c'è una clip selezionata (diversa dal video principale), associa l'animazione a quella clip
-        const properties = hasMultipleClips && selectedClip && selectedClip !== 'main-video'
-            ? { ...baseProperties, clipId: selectedClip }
-            : baseProperties
-
-        // Calcola il tempo relativo alla clip selezionata
-        let relativeStartTime = currentTime
-        let relativeEndTime = Math.min(currentTime + 3, duration)
-
-        // Se è selezionata una clip specifica, i tempi sono relativi a quella clip (0 - clipDuration)
-        if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
-            // I tempi sono già relativi alla clip selezionata grazie alla nuova logica di durata
-            relativeStartTime = Math.max(0, Math.min(currentTime, duration - 1))
-            relativeEndTime = Math.min(relativeStartTime + 3, duration)
-        }
+        const startTime = Math.max(0, Math.min(currentTime, duration - 1))
+        const endTime = Math.min(startTime + 3, duration)
 
         addAnimation({
             type: trackType,
-            startTime: relativeStartTime,
-            endTime: relativeEndTime,
+            startTime,
+            endTime,
             properties
         })
     }
@@ -376,68 +327,13 @@ export function Timeline() {
         setSelectedPanel('music')
     }
 
-    const handleImportVideo = () => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.accept = 'video/*'
-        input.onchange = async (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0]
-            if (file) {
-                // Crea un elemento video temporaneo per ottenere la durata
-                const video = document.createElement('video')
-                video.src = URL.createObjectURL(file)
-                video.onloadedmetadata = () => {
-                    const clipDuration = video.duration
-                    const currentClips = currentProject?.animations.filter(a => a.type === 'clip') || []
-                    const totalClipDuration = currentClips.reduce((acc, clip) => acc + (clip.endTime - clip.startTime), 0)
-
-                    // Aggiungi la clip come animazione nella timeline
-                    addAnimation({
-                        type: 'clip',
-                        startTime: totalClipDuration,
-                        endTime: totalClipDuration + clipDuration,
-                        properties: {
-                            file,
-                            url: URL.createObjectURL(file),
-                            name: file.name,
-                            duration: clipDuration
-                        }
-                    })
-
-                    // Aggiorna la durata totale del progetto se necessario
-                    const newTotalDuration = totalClipDuration + clipDuration
-                    if (newTotalDuration > (currentProject?.duration || 0)) {
-                        updateProject({
-                            duration: newTotalDuration
-                        })
-                    }
-                }
-            }
-        }
-        input.click()
-    }
 
 
 
-    // Calcola la posizione del playhead - TEMPO RELATIVO per clip specifiche
-    let relativeTime = currentTime
-    let playheadDuration = duration
 
-    // Se è selezionata una clip specifica (non main-video), calcola il tempo relativo
-    if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
-        const selectedClipData = currentProject?.animations?.find(a => a.id === selectedClip)
-        if (selectedClipData) {
-            // Tempo relativo alla clip selezionata (0 = inizio clip, durata = fine clip)
-            relativeTime = Math.max(0, Math.min(
-                currentTime - selectedClipData.startTime,
-                selectedClipData.endTime - selectedClipData.startTime
-            ))
-            playheadDuration = selectedClipData.endTime - selectedClipData.startTime
-        }
-    }
-
+    // Calcola la posizione del playhead
     const playheadStyle = {
-        transform: `translateX(${80 + relativeTime * pixelsPerSecond}px)`,
+        transform: `translateX(${80 + currentTime * pixelsPerSecond}px)`,
     }
 
     return (
@@ -448,7 +344,7 @@ export function Timeline() {
                 <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
                     <div className="flex items-center space-x-4">
                         <span className="text-xs text-muted-foreground font-mono">
-                            {new Date(relativeTime * 1000).toISOString().substr(14, 5)} / {new Date(playheadDuration * 1000).toISOString().substr(14, 5)}
+                            {new Date(currentTime * 1000).toISOString().substr(14, 5)} / {new Date(duration * 1000).toISOString().substr(14, 5)}
                         </span>
                         <div className="flex items-center space-x-1">
                             <Button
@@ -505,68 +401,24 @@ export function Timeline() {
                         {/* Tracce compatte */}
                         <div className="flex flex-col h-full justify-center space-y-0.5">
                             {tracks.map(track => {
-                                // Filtra le animazioni in base alla clip selezionata
-                                let trackAnimations: any[]
-
-                                if (track.type === 'clip') {
-                                    // Per la traccia CLIP, mostra sempre tutte le clip
-                                    trackAnimations = currentProject.animations.filter(a => a.type === track.type)
-                                } else if (hasMultipleClips && selectedClip && selectedClip !== 'main-video') {
-                                    // Per altre tracce con clip multiple: mostra solo le animazioni della clip selezionata
-                                    trackAnimations = currentProject.animations.filter(a =>
-                                        a.type === track.type && a.properties?.clipId === selectedClip
-                                    )
-                                } else if (selectedClip === 'main-video' || !hasMultipleClips) {
-                                    // Per il video principale o quando non ci sono clip multiple: mostra tutte le animazioni del tipo
-                                    trackAnimations = currentProject.animations.filter(a =>
-                                        a.type === track.type && !a.properties?.clipId
-                                    )
-                                } else {
-                                    // Nessuna clip selezionata con clip multiple: non mostrare animazioni
-                                    trackAnimations = []
-                                }
-
-                                const hasClipContent = track.type === 'clip' ? (trackAnimations.length > 0 || hasMainVideo) : trackAnimations.length > 0
+                                const trackAnimations = currentProject.animations.filter(a => a.type === track.type)
 
                                 return (
                                     <div key={track.id} className="h-6 flex items-center relative">
                                         <div className="w-20 text-[9px] text-muted-foreground font-semibold shrink-0 pr-2 text-right uppercase tracking-wide">{track.label}</div>
                                         <div className="flex-1 h-4 relative bg-muted/10 rounded border border-border/30">
-                                            {/* Contenuto speciale per la traccia CLIP */}
-                                            {track.type === 'clip' && !hasClipContent ? (
-                                                <div className="absolute inset-0 flex items-center justify-center space-x-2">
-                                                    <button
-                                                        className="px-2 py-1 text-[8px] text-muted-foreground hover:text-foreground bg-muted/20 hover:bg-muted/40 rounded border border-border/50 transition-colors"
-                                                        onClick={() => console.log('Record screen - funzionalità da implementare')}
-                                                    >
-                                                        Record screen
-                                                    </button>
-                                                    <button
-                                                        className="px-2 py-1 text-[8px] text-muted-foreground hover:text-foreground bg-muted/20 hover:bg-muted/40 rounded border border-border/50 transition-colors"
-                                                        onClick={handleImportVideo}
-                                                    >
-                                                        Import image or video
-                                                    </button>
-                                                </div>
-                                            ) : track.type === 'clip' && hasMainVideo ? (
-                                                // Mostra il video principale come blocco blu nella traccia CLIP
-                                                <div className="absolute inset-0 bg-blue-500 rounded flex items-center justify-center">
-                                                    <span className="text-white text-[8px] font-bold">Video Clip</span>
-                                                </div>
-                                            ) : (
-                                                trackAnimations.map(anim => (
-                                                    <AnimationBlock
-                                                        key={anim.id}
-                                                        animation={anim}
-                                                        track={track}
-                                                        pixelsPerSecond={pixelsPerSecond}
-                                                        updateAnimation={updateAnimation}
-                                                        selectedAnimation={selectedAnimation}
-                                                        setSelectedAnimation={setSelectedAnimation}
-                                                        projectDuration={duration}
-                                                    />
-                                                ))
-                                            )}
+                                            {trackAnimations.map(anim => (
+                                                <AnimationBlock
+                                                    key={anim.id}
+                                                    animation={anim}
+                                                    track={track}
+                                                    pixelsPerSecond={pixelsPerSecond}
+                                                    updateAnimation={updateAnimation}
+                                                    selectedAnimation={selectedAnimation}
+                                                    setSelectedAnimation={setSelectedAnimation}
+                                                    projectDuration={duration}
+                                                />
+                                            ))}
                                         </div>
                                     </div>
                                 )

@@ -21,9 +21,6 @@ export function Player() {
         setIsPlaying,
         updateProject,
         setSelectedPanel,
-        addAnimation,
-        updateAnimation,
-        removeAnimation,
         selectedClip,
         setSelectedClip
     } = useEditorStore()
@@ -32,42 +29,24 @@ export function Player() {
     const audioRef = useRef<HTMLAudioElement>(null)
     const timelineRef = useRef<HTMLDivElement>(null)
     const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
-    const [timelineZoom, setTimelineZoom] = useState(1)
-    const isChangingVideoRef = useRef(false)
-    const lastVideoUrlRef = useRef<string>('')
-    const isTransitioningRef = useRef(false)
 
     const videoSrc = currentProject?.videoUrl || (currentProject?.videoFile ? URL.createObjectURL(currentProject.videoFile) : '')
     const audioSrc = currentProject?.musicSettings?.track || ''
 
-    // Determina se ci sono clip multiple o solo il video principale
-    const clipAnimations = currentProject?.animations?.filter(a => a.type === 'clip') || []
+    // Solo video principale - nessuna clip multipla
     const hasMainVideo = !!(videoSrc || currentProject?.videoFile)
-    const hasMultipleClips = clipAnimations.length > 0
 
-    // Crea le clip per il rendering - memoizzato per evitare re-calcoli inutili
+    // Crea solo la clip del video principale
     const videoClips: VideoClip[] = useMemo(() => {
-        console.log('Ricreando videoClips - clipAnimations:', clipAnimations.length)
-        console.log('clipAnimations details:', clipAnimations.map(c => ({
-            id: c.id,
-            startTime: c.startTime,
-            endTime: c.endTime,
-            duration: c.endTime - c.startTime
-        })))
         return createVideoClips(
             currentProject,
-            clipAnimations,
             hasMainVideo,
-            hasMultipleClips,
             videoSrc,
             videoThumbnails
         )
     }, [
+        currentProject,
         hasMainVideo,
-        hasMultipleClips,
-        currentProject?.animations, // Usa direttamente le animazioni invece di clipAnimations
-        currentProject?.duration,
-        currentProject?.videoTrimming,
         videoSrc,
         videoThumbnails
     ])
@@ -81,112 +60,26 @@ export function Player() {
         return createAudioClips(currentProject, audioSrc, totalVideoDuration)
     }, [currentProject, audioSrc, videoClips])
 
-    // Sincronizza il video con il tempo corrente, considerando il trimming
+    // Sincronizza il video principale con il tempo corrente, considerando il trimming
     useEffect(() => {
-        if (!videoRef.current) return
+        if (!videoRef.current || !hasMainVideo) return
 
-        // Trova la clip video attiva al tempo corrente della timeline
-        const activeVideoClip = videoClips.find(clip =>
-            currentTime >= clip.startTime && currentTime <= clip.endTime
-        )
+        const trimStart = currentProject?.videoTrimming?.start || 0
+        // Il tempo nel video originale = trimStart + tempo della timeline
+        const actualVideoTime = trimStart + currentTime
 
-        if (activeVideoClip) {
-            // Cambia il src del video se necessario PRIMA di impostare il tempo
-            const clipUrl = activeVideoClip.properties?.url || videoSrc
-            const currentSrc = videoRef.current.src
-
-            // Controlla se dobbiamo cambiare il video E non stiamo già cambiando
-            const clipFileName = clipUrl ? clipUrl.split('/').pop() || '' : ''
-            const currentFileName = currentSrc ? currentSrc.split('/').pop() || '' : ''
-            const needsVideoChange = clipUrl &&
-                clipFileName !== currentFileName &&
-                !isChangingVideoRef.current &&
-                lastVideoUrlRef.current !== clipUrl
-
-            if (needsVideoChange) {
-                console.log('Cambiando video da', currentSrc, 'a', clipUrl)
-
-                // Imposta i flag per prevenire loop
-                isChangingVideoRef.current = true
-                lastVideoUrlRef.current = clipUrl
-
-                // Pausa il video corrente prima di cambiare src per evitare AbortError
-                if (videoRef.current && !videoRef.current.paused) {
-                    videoRef.current.pause()
-                }
-
-                videoRef.current.src = clipUrl
-
-                // Aspetta che il video sia caricato prima di impostare il tempo
-                const handleLoadedMetadata = () => {
-                    if (videoRef.current) {
-                        const relativeTime = currentTime - activeVideoClip.startTime
-                        const trimStart = activeVideoClip.properties?.trimStart || 0
-                        const actualVideoTime = trimStart + relativeTime
-
-                        const originalDuration = activeVideoClip.properties?.originalDuration || videoRef.current.duration
-                        const trimEnd = activeVideoClip.properties?.trimEnd || 0
-                        const maxVideoTime = originalDuration - trimEnd
-                        const clampedVideoTime = Math.min(actualVideoTime, maxVideoTime)
-
-                        videoRef.current.currentTime = clampedVideoTime
-                    }
-                    // Rimuovi il listener dopo l'uso
-                    videoRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata)
-                }
-
-                // Aspetta che il video sia pronto per la riproduzione
-                const handleCanPlay = () => {
-                    // Salva lo stato di riproduzione prima del cambio
-                    const wasPlaying = isPlaying
-
-                    if (videoRef.current && wasPlaying) {
-                        videoRef.current.play().catch(error => {
-                            console.error('Errore durante play dopo cambio video:', error)
-                        })
-                    }
-                    // Reset del flag dopo il caricamento
-                    isChangingVideoRef.current = false
-                    // Rimuovi il listener dopo l'uso
-                    videoRef.current?.removeEventListener('canplay', handleCanPlay)
-                }
-
-                videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata)
-                videoRef.current.addEventListener('canplay', handleCanPlay)
-            } else if (!isPlaying && !isChangingVideoRef.current) {
-                // Solo se non stiamo riproducendo, aggiorna il tempo
-                const relativeTime = currentTime - activeVideoClip.startTime
-                const trimStart = activeVideoClip.properties?.trimStart || 0
-                const actualVideoTime = trimStart + relativeTime
-
-                const originalDuration = activeVideoClip.properties?.originalDuration || 0
-                const trimEnd = activeVideoClip.properties?.trimEnd || 0
-                const maxVideoTime = originalDuration - trimEnd
-                const clampedVideoTime = Math.min(actualVideoTime, maxVideoTime)
-
-                if (Math.abs(videoRef.current.currentTime - clampedVideoTime) > 0.2) {
-                    videoRef.current.currentTime = clampedVideoTime
-                }
-            }
+        // Solo se non stiamo riproducendo, aggiorna il tempo
+        if (!isPlaying && Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.2) {
+            videoRef.current.currentTime = actualVideoTime
         }
 
         // Sincronizza l'audio solo quando non è in riproduzione
-        if (audioRef.current && !isPlaying) {
-            const activeAudioClip = audioClips.find(clip =>
-                currentTime >= clip.startTime && currentTime <= clip.endTime
-            )
-
-            if (activeAudioClip) {
-                const relativeTime = currentTime - activeAudioClip.startTime
-                const trimStart = activeAudioClip.properties?.trimStart || 0
-                const actualAudioTime = trimStart + relativeTime
-
-                if (Math.abs(audioRef.current.currentTime - actualAudioTime) > 0.2) {
-                    audioRef.current.currentTime = actualAudioTime
-                }
+        if (audioRef.current && !isPlaying && audioSrc) {
+            if (Math.abs(audioRef.current.currentTime - currentTime) > 0.2) {
+                audioRef.current.currentTime = currentTime
             }
         }
-    }, [currentTime, videoClips, audioClips, isPlaying, videoSrc])
+    }, [currentTime, isPlaying, hasMainVideo, currentProject?.videoTrimming, audioSrc])
 
     // Gestisce play/pause e volume
     useEffect(() => {
@@ -216,101 +109,46 @@ export function Player() {
 
     // ===== GESTIONE PLAYBACK =====
     const handlePlayPause = () => {
+        // Se siamo alla fine del video e premiamo play, ripartiamo dall'inizio
+        if (!isPlaying && currentTime >= duration - 0.1) {
+            setCurrentTime(0)
+
+            // Resetta anche il tempo del video e dell'audio
+            if (videoRef.current) {
+                const trimStart = currentProject?.videoTrimming?.start || 0
+                videoRef.current.currentTime = trimStart
+            }
+            if (audioRef.current) {
+                audioRef.current.currentTime = 0
+            }
+        }
+
         setIsPlaying(!isPlaying)
     }
 
     const handleTimeUpdate = () => {
-        if (videoRef.current && isPlaying && !isChangingVideoRef.current && !isTransitioningRef.current) {
+        if (videoRef.current && isPlaying && hasMainVideo) {
             const videoTime = videoRef.current.currentTime
+            const trimStart = currentProject?.videoTrimming?.start || 0
+            const timelineDuration = currentProject?.duration || 10
 
-            // LOGICA SEMPLIFICATA: Trova la clip che dovrebbe essere riprodotta al tempo corrente
-            const sortedClips = [...videoClips].sort((a, b) => a.startTime - b.startTime)
-            const currentClipIndex = sortedClips.findIndex(clip =>
-                currentTime >= clip.startTime && currentTime <= clip.endTime
-            )
+            // Calcola il nuovo tempo della timeline (tempo video - trimStart)
+            const newTime = videoTime - trimStart
 
-            if (currentClipIndex >= 0) {
-                const currentClip = sortedClips[currentClipIndex]
-
-                // Aggiorna selectedClip se necessario (solo per la timeline superiore)
-                if (selectedClip !== currentClip.id) {
-                    setSelectedClip(currentClip.id)
-                }
-
-                // Controlla se la clip corrente è finita
-                const trimStart = currentClip.properties?.trimStart || 0
-                const trimEnd = currentClip.properties?.trimEnd || 0
-                const originalDuration = currentClip.properties?.originalDuration || 0
-                const maxVideoTime = originalDuration - trimEnd
-
-                const relativeVideoTime = videoTime - trimStart
-                const timelineTime = currentClip.startTime + relativeVideoTime
-
-                const isClipFinished = timelineTime >= currentClip.endTime - 0.1 || videoTime >= maxVideoTime - 0.1
-
-                if (isClipFinished) {
-                    console.log('🎬 Clip finita, passando alla successiva:', currentClip.id)
-
-                    // C'è una clip successiva?
-                    const nextClipIndex = currentClipIndex + 1
-                    if (nextClipIndex < sortedClips.length) {
-                        const nextClip = sortedClips[nextClipIndex]
-                        console.log('➡️ Passando a:', nextClip.id)
-
-                        // Cambia video source se necessario
-                        const nextClipUrl = nextClip.properties?.url || videoSrc
-                        const currentVideoUrl = currentClip.properties?.url || videoSrc
-
-                        if (nextClipUrl !== currentVideoUrl) {
-                            isChangingVideoRef.current = true
-
-                            try {
-                                videoRef.current.pause()
-                                videoRef.current.src = nextClipUrl
-
-                                const handleLoadedData = () => {
-                                    if (videoRef.current) {
-                                        const trimStart = nextClip.properties?.trimStart || 0
-                                        videoRef.current.currentTime = trimStart
-
-                                        isChangingVideoRef.current = false
-
-                                        if (isPlaying) {
-                                            setTimeout(() => {
-                                                videoRef.current?.play().catch(console.error)
-                                            }, 50)
-                                        }
-                                    }
-                                    videoRef.current?.removeEventListener('loadeddata', handleLoadedData)
-                                }
-
-                                videoRef.current.addEventListener('loadeddata', handleLoadedData)
-                            } catch (error) {
-                                console.error('Errore durante cambio video:', error)
-                                isChangingVideoRef.current = false
-                            }
-                        }
-
-                        // Aggiorna currentTime al punto di inizio della clip successiva
-                        setCurrentTime(nextClip.startTime)
-                        setSelectedClip(nextClip.id)
-
-                    } else {
-                        // Fine di tutte le clip
-                        console.log('🏁 Fine di tutte le clip')
-                        setIsPlaying(false)
-                    }
-                } else {
-                    // Aggiorna currentTime normalmente
-                    const newTime = currentClip.startTime + relativeVideoTime
-                    if (Math.abs(newTime - currentTime) > 0.05) {
-                        setCurrentTime(Math.min(newTime, currentClip.endTime))
-                    }
-                }
-            } else {
-                // Nessuna clip trovata
-                console.log('❌ Nessuna clip trovata per currentTime:', currentTime)
+            // Controlla se abbiamo raggiunto la fine della timeline
+            if (newTime >= timelineDuration - 0.1) {
                 setIsPlaying(false)
+                setCurrentTime(timelineDuration)
+            } else {
+                // Aggiorna currentTime normalmente
+                if (Math.abs(newTime - currentTime) > 0.05) {
+                    setCurrentTime(Math.max(0, Math.min(newTime, timelineDuration)))
+                }
+            }
+
+            // Assicurati che il video principale sia selezionato
+            if (selectedClip !== 'main-video') {
+                setSelectedClip('main-video')
             }
         }
     }
@@ -347,140 +185,51 @@ export function Player() {
         setVideoThumbnails(prev => ({ ...prev, [clipId]: thumbnail }))
     }
 
-    // Genera thumbnails per le clip video quando cambiano
+    // Genera thumbnail solo per il video principale
     useEffect(() => {
-        // Processa le clip dalle animazioni
-        if (currentProject?.animations) {
-            const clipsToProcess = currentProject.animations
-                .filter(a => a.type === 'clip' && a.properties.url && !videoThumbnails[a.id])
-
-            console.log('Clip da processare per thumbnails:', clipsToProcess.length)
-
-            clipsToProcess.forEach(clip => {
-                console.log('Generando thumbnail per clip:', clip.id, clip.properties.url)
-                generateVideoThumbnail(clip.properties.url, clip.id, handleThumbnailGenerated)
-            })
-        }
-
-        // Processa anche il video principale del progetto
         if (videoSrc && !videoThumbnails['main-video']) {
             console.log('Generando thumbnail per video principale:', videoSrc)
             generateVideoThumbnail(videoSrc, 'main-video', handleThumbnailGenerated)
         }
-    }, [currentProject?.animations, videoSrc, videoThumbnails])
+    }, [videoSrc, videoThumbnails])
 
-    // Gestione tasti per eliminare clip selezionate
+    // Gestione tasti per deselezionare
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (selectedClip && (e.key === 'Escape' || e.key === 'Delete' || e.key === 'Backspace')) {
+            if (selectedClip && e.key === 'Escape') {
                 e.preventDefault()
-
-                if (selectedClip === 'main-video') {
-                    // Non permettere di cancellare il video principale, solo deselezionarlo
-                    setSelectedClip(null)
-                } else {
-                    // Rimuovi la clip dalle animazioni
-                    const clipToRemove = currentProject?.animations.find(a => a.id === selectedClip)
-                    if (clipToRemove) {
-                        removeAnimation(selectedClip)
-                        setSelectedClip(null)
-
-                        // Ricalcola la durata totale del progetto
-                        setTimeout(() => {
-                            const remainingClips = currentProject?.animations?.filter(a => a.type === 'clip' && a.id !== selectedClip) || []
-                            const mainVideoDuration = hasMainVideo ? (currentProject?.duration || 0) : 0
-
-                            let totalDuration = mainVideoDuration
-                            remainingClips.forEach(clip => {
-                                totalDuration += clip.properties?.duration || (clip.endTime - clip.startTime)
-                            })
-
-                            if (totalDuration !== currentProject?.duration) {
-                                updateProject({ duration: totalDuration })
-                            }
-                        }, 0)
-                    }
-                }
+                setSelectedClip(null)
             }
         }
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedClip, currentProject?.animations, currentProject?.duration, hasMainVideo, removeAnimation, setSelectedClip, updateProject])
-
-    // ===== GESTIONE CLIP VIDEO =====
-    const handleAddVideoClip = () => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.accept = 'video/*'
-        input.onchange = async (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0]
-            if (file) {
-                // Crea un elemento video temporaneo per ottenere la durata
-                const video = document.createElement('video')
-                video.src = URL.createObjectURL(file)
-                video.onloadedmetadata = () => {
-                    const clipDuration = video.duration
-                    const currentClips = currentProject?.animations.filter(a => a.type === 'clip') || []
-
-                    // Calcola la posizione di partenza per la nuova clip
-                    let startTime = 0
-
-                    if (currentClips.length > 0) {
-                        // Se ci sono già clip, posiziona la nuova dopo l'ultima
-                        const lastClip = currentClips.reduce((latest, clip) => {
-                            const clipEndTime = clip.endTime || (clip.startTime + (clip.properties?.duration || 0))
-                            const latestEndTime = latest.endTime || (latest.startTime + (latest.properties?.duration || 0))
-                            return clipEndTime > latestEndTime ? clip : latest
-                        })
-                        startTime = lastClip.endTime || (lastClip.startTime + (lastClip.properties?.duration || 0))
-                    } else if (hasMainVideo) {
-                        // Se c'è solo il video principale, inizia dopo di esso
-                        startTime = currentProject?.duration || 10
-                    }
-
-                    console.log('Aggiungendo nuova clip:', {
-                        hasMainVideo,
-                        mainVideoDuration: currentProject?.duration || 10,
-                        existingClipsCount: currentClips.length,
-                        newClipStartTime: startTime,
-                        newClipDuration: clipDuration
-                    })
-
-                    // Aggiungi la clip come animazione nella timeline
-                    addAnimation({
-                        type: 'clip',
-                        startTime: startTime,
-                        endTime: startTime + clipDuration,
-                        properties: {
-                            file,
-                            url: URL.createObjectURL(file),
-                            name: file.name,
-                            duration: clipDuration,
-                            originalDuration: clipDuration,
-                            trimStart: 0,
-                            trimEnd: 0
-                        }
-                    })
-
-                    // NON aggiornare manualmente la durata del progetto
-                    // La durata viene calcolata automaticamente dalle clip esistenti
-                }
-            }
-        }
-        input.click()
-    }
+    }, [selectedClip, setSelectedClip])
 
     // ===== CALCOLI TIMELINE =====
-    const totalVideoDuration = videoClips.length > 0
-        ? Math.max(...videoClips.map(clip => clip.endTime))
-        : (currentProject?.duration || 10)
-    const duration = totalVideoDuration
+    const duration = currentProject?.duration || 10
     const timelineWidth = timelineRef.current ? timelineRef.current.offsetWidth : 800
 
-    // PixelsPerSecond MOLTO COMPATTO come nell'esempio mostrato
-    // Valore molto basso per clip compatte e facilmente gestibili
-    const pixelsPerSecond = 3
+    // Calcolo dinamico di pixelsPerSecond basato sulla durata
+    const calculatePixelsPerSecond = (duration: number, timelineWidth: number) => {
+        // Vogliamo che la clip occupi circa il 70-80% della timeline disponibile
+        const targetOccupancy = 0.75
+        const idealPixelsPerSecond = (timelineWidth * targetOccupancy) / duration
+
+        // Definiamo dei range ottimali per diversi tipi di durata
+        if (duration <= 10) {
+            return Math.max(30, Math.min(50, idealPixelsPerSecond))
+        } else if (duration <= 20) {
+            return Math.max(20, Math.min(35, idealPixelsPerSecond))
+        } else if (duration <= 60) {
+            return Math.max(10, Math.min(25, idealPixelsPerSecond))
+        } else {
+            return Math.max(5, Math.min(15, idealPixelsPerSecond))
+        }
+    }
+
+    const pixelsPerSecond = calculatePixelsPerSecond(duration, timelineWidth)
+
 
     // ===== GESTIONE EVENTI TIMELINE =====
     const handleTimelineClick = (newTime: number) => {
@@ -489,66 +238,25 @@ export function Player() {
             setIsPlaying(false)
         }
 
-        // Limita il tempo ai bounds delle clip esistenti
-        const totalDuration = videoClips.length > 0
-            ? Math.max(...videoClips.map(clip => clip.endTime))
-            : (currentProject?.duration || 10)
+        // Limita il tempo alla durata del progetto
+        const clampedTime = Math.max(0, Math.min(duration, newTime))
+        setCurrentTime(clampedTime)
 
-        const clampedTime = Math.max(0, Math.min(totalDuration, newTime))
-
-        // Assicurati che il tempo sia all'interno di una clip valida
-        const activeClip = videoClips.find(clip =>
-            clampedTime >= clip.startTime && clampedTime <= clip.endTime
-        )
-
-        if (activeClip || videoClips.length === 0) {
-            setCurrentTime(clampedTime)
-        } else {
-            // Se non c'è una clip attiva, vai alla clip più vicina
-            const nearestClip = videoClips.reduce((nearest, clip) => {
-                const nearestDistance = Math.abs(clampedTime - nearest.startTime)
-                const clipDistance = Math.abs(clampedTime - clip.startTime)
-                return clipDistance < nearestDistance ? clip : nearest
-            })
-            setCurrentTime(nearestClip.startTime)
+        // Seleziona sempre il video principale
+        if (hasMainVideo) {
+            setSelectedClip('main-video')
         }
     }
 
-    // Gestione selezione clip SENZA influenzare il currentTime
+    // Gestione selezione clip
     const handleClipSelect = (clipId: string) => {
         setSelectedClip(clipId)
-        // NON modificare currentTime quando selezioni una clip manualmente
-    }
-
-    // Gestione click sulla timeline: seleziona automaticamente la clip sotto la barra rossa
-    const handleTimelineClickWithSelection = (newTime: number) => {
-        // Prima aggiorna il tempo
-        handleTimelineClick(newTime)
-
-        // Poi trova e seleziona la clip sotto la nuova posizione
-        const clipUnderPlayhead = videoClips.find(clip =>
-            newTime >= clip.startTime && newTime <= clip.endTime
-        ) || audioClips.find(clip =>
-            newTime >= clip.startTime && newTime <= clip.endTime
-        )
-
-        if (clipUnderPlayhead) {
-            setSelectedClip(clipUnderPlayhead.id)
-        }
     }
 
     // ===== GESTIONE AGGIORNAMENTI CLIP =====
     const handleClipUpdate = (clipId: string, updates: any, isAudio = false) => {
         if (clipId === 'main-video') {
-            // Video principale: aggiorna solo le proprietà del progetto, NON creare animazioni
-            console.log('🎬 RESIZE MAIN-VIDEO - handleClipUpdate chiamato con:', {
-                clipId,
-                updates,
-                currentDuration: duration,
-                newDuration: updates.endTime || duration
-            })
-
-            // Aggiorna le proprietà del progetto principale
+            // Video principale: aggiorna solo le proprietà del progetto
             const newDuration = updates.endTime || duration
             const trimStart = updates.properties?.trimStart || 0
             const trimEnd = updates.properties?.trimEnd || 0
@@ -562,7 +270,10 @@ export function Player() {
                 }
             })
 
-            console.log('✅ Aggiornato video principale - durata:', newDuration, 'trimming:', { trimStart, trimEnd })
+            // Controlla se il currentTime è oltre la nuova durata
+            if (currentTime > newDuration) {
+                setCurrentTime(newDuration)
+            }
         } else if (clipId === 'main-audio') {
             // Audio principale: aggiorna solo se necessario
             if (updates.endTime && updates.endTime !== duration) {
@@ -576,47 +287,6 @@ export function Player() {
                         duration: updates.endTime
                     }
                 })
-            }
-        } else {
-            // Clip multiple: aggiorna l'animazione specifica E mantieni le clip attaccate
-            console.log('🔧 RESIZE CLIP - handleClipUpdate chiamato con:', {
-                clipId,
-                updates,
-                currentStartTime: currentProject?.animations.find(a => a.id === clipId)?.startTime,
-                currentEndTime: currentProject?.animations.find(a => a.id === clipId)?.endTime
-            })
-
-            // Ottieni la clip corrente prima dell'aggiornamento
-            const currentClip = currentProject?.animations.find(a => a.id === clipId)
-            const originalEndTime = currentClip?.endTime || 0
-
-            // Aggiorna la clip corrente
-            updateAnimation(clipId, updates)
-
-            // Se è stata modificata l'endTime, sposta le clip successive per mantenerle attaccate
-            if (updates.endTime && updates.endTime !== originalEndTime) {
-                const deltaTime = updates.endTime - originalEndTime
-
-                // Ottieni tutte le clip ordinate per startTime
-                const allClips = currentProject?.animations?.filter(a => a.type === 'clip').sort((a, b) => a.startTime - b.startTime) || []
-                const currentClipIndex = allClips.findIndex(clip => clip.id === clipId)
-
-                // Sposta tutte le clip successive
-                for (let i = currentClipIndex + 1; i < allClips.length; i++) {
-                    const nextClip = allClips[i]
-                    console.log(`📎 Spostando clip ${nextClip.id} di ${deltaTime}s`)
-
-                    updateAnimation(nextClip.id, {
-                        startTime: nextClip.startTime + deltaTime,
-                        endTime: nextClip.endTime + deltaTime
-                    })
-                }
-            }
-
-            // Controlla se il currentTime è oltre la nuova endTime della clip modificata
-            if (updates.endTime && currentTime > updates.endTime && selectedClip === clipId) {
-                console.log('Clip compressa, spostando currentTime da', currentTime, 'a', updates.endTime)
-                setCurrentTime(updates.endTime)
             }
         }
     }
@@ -644,7 +314,7 @@ export function Player() {
 
             <div className="flex-1 flex flex-col px-4 py-3 space-y-3">
                 <TimelineTrack
-                    title={hasMultipleClips ? 'Video Clips' : 'Video Track'}
+                    title="Video Track"
                     type="video"
                     clips={videoClips}
                     currentTime={currentTime}
@@ -653,8 +323,7 @@ export function Player() {
                     selectedClip={selectedClip}
                     onClipUpdate={handleClipUpdate}
                     onClipSelect={handleClipSelect}
-                    onTimelineClick={handleTimelineClickWithSelection}
-                    onAddClip={handleAddVideoClip}
+                    onTimelineClick={handleTimelineClick}
                     timelineWidth={timelineWidth}
                 />
 
@@ -668,9 +337,11 @@ export function Player() {
                     selectedClip={selectedClip}
                     onClipUpdate={(clipId, updates) => handleClipUpdate(clipId, updates, true)}
                     onClipSelect={handleClipSelect}
-                    onTimelineClick={handleTimelineClickWithSelection}
+                    onTimelineClick={handleTimelineClick}
                     onAddClip={handleAudioImport}
+                    onOpenLibrary={handleOpenLibrary}
                     showWaveform={!!audioSrc}
+                    audioSrc={audioSrc}
                     timelineWidth={timelineWidth}
                 />
             </div>

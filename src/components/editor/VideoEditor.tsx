@@ -88,7 +88,7 @@ export function VideoEditor() {
                     </div>
 
                     {/* Timeline separata - sopra */}
-                    <div className="w-full rounded-lg border border-border shadow-sm mb-4" style={{ height: '200px', backgroundColor: '#0f0f0f' }}>
+                    <div className="w-full rounded-lg border border-border shadow-sm mb-4" style={{ height: '150px', backgroundColor: '#0f0f0f' }}>
                         <Timeline />
                     </div>
 

@@ -2,6 +2,8 @@
 
 import { useRef } from 'react'
 import { ResizableClip } from './ResizableClip'
+import { Upload, Music } from 'lucide-react'
+import { AudioWaveform } from './AudioWaveform'
 
 interface TimelineTrackProps {
     title: string
@@ -15,7 +17,9 @@ interface TimelineTrackProps {
     onClipSelect: (clipId: string) => void
     onTimelineClick: (time: number) => void
     onAddClip?: () => void
+    onOpenLibrary?: () => void
     showWaveform?: boolean
+    audioSrc?: string
     timelineWidth?: number
 }
 
@@ -31,7 +35,9 @@ export function TimelineTrack({
     onClipSelect,
     onTimelineClick,
     onAddClip,
+    onOpenLibrary,
     showWaveform = false,
+    audioSrc,
     timelineWidth = 800
 }: TimelineTrackProps) {
     const timelineRef = useRef<HTMLDivElement>(null)
@@ -54,7 +60,6 @@ export function TimelineTrack({
         const rect = timelineRef.current.getBoundingClientRect()
         const x = e.clientX - rect.left
         const newTime = Math.max(0, Math.min(duration, x / pixelsPerSecond))
-        console.log('🎯 TimelineTrack INFERIORE click:', newTime, 'x:', x, 'pixelsPerSecond:', pixelsPerSecond)
         onTimelineClick(newTime)
     }
 
@@ -64,12 +69,12 @@ export function TimelineTrack({
                 <div className="text-xs text-zinc-400 font-medium uppercase tracking-wider">
                     {title}
                 </div>
-                {onAddClip && (
+                {onAddClip && type === 'audio' && (
                     <button
                         onClick={onAddClip}
                         className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
                     >
-                        + Add {type === 'video' ? 'Clip' : 'Audio'}
+                        + Add Audio
                     </button>
                 )}
             </div>
@@ -107,10 +112,7 @@ export function TimelineTrack({
                         key={clip.id}
                         clip={clip}
                         pixelsPerSecond={pixelsPerSecond}
-                        onUpdate={(updates) => {
-                            console.log('📡 TimelineTrack - onUpdate ricevuto:', { clipId: clip.id, updates })
-                            onClipUpdate(clip.id, updates)
-                        }}
+                        onUpdate={(updates) => onClipUpdate(clip.id, updates)}
                         isSelected={selectedClip === clip.id}
                         onSelect={() => onClipSelect(clip.id)}
                         type={type}
@@ -118,39 +120,41 @@ export function TimelineTrack({
                 ))}
 
                 {/* Waveform per l'audio */}
-                {showWaveform && type === 'audio' && clips.length > 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-1">
-                        <svg className="w-full h-6" viewBox={`0 0 ${timelineWidth} 24`}>
-                            {Array.from({ length: Math.floor(timelineWidth / 4) }, (_, i) => {
-                                const height = Math.abs(Math.sin(i * 0.15)) * 18 + 2
-                                const progress = (currentTime / duration) * timelineWidth
-                                const isActive = i * 4 < progress
-                                return (
-                                    <rect
-                                        key={i}
-                                        x={i * 4}
-                                        y={(24 - height) / 2}
-                                        width="2"
-                                        height={height}
-                                        fill={isActive ? "#10b981" : "#4b5563"}
-                                        rx="1"
-                                        opacity="0.6"
-                                    />
-                                )
-                            })}
-                        </svg>
-                    </div>
+                {showWaveform && type === 'audio' && clips.length > 0 && audioSrc && (
+                    <AudioWaveform
+                        audioSrc={audioSrc}
+                        currentTime={currentTime}
+                        duration={duration}
+                        timelineWidth={timelineWidth}
+                        height={24}
+                    />
                 )}
 
                 {/* Placeholder quando non ci sono clip */}
                 {clips.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs text-zinc-500">
-                            {type === 'video'
-                                ? 'Drop video files here or click + Add Clip'
-                                : 'Drop audio files here or click + Add Audio'
-                            }
-                        </span>
+                        {type === 'audio' ? (
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={onAddClip}
+                                    className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
+                                >
+                                    <Upload className="h-4 w-4" />
+                                    Import Audio
+                                </button>
+                                <button
+                                    onClick={onOpenLibrary}
+                                    className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
+                                >
+                                    <Music className="h-4 w-4" />
+                                    Library
+                                </button>
+                            </div>
+                        ) : (
+                            <span className="text-xs text-zinc-500">
+                                Drop video files here or click + Add Clip
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

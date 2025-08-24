@@ -22,6 +22,7 @@ export interface Project {
   videoFile?: File
   videoUrl?: string
   duration: number
+  originalDuration?: number
   animations: Animation[]
   backgroundSettings?: Record<string, any>
   deviceSettings?: Record<string, any>

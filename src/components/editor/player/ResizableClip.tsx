@@ -21,14 +21,14 @@ export function ResizableClip({
 }: ResizableClipProps) {
     const [isDragging, setIsDragging] = useState(false)
     const [dragMode, setDragMode] = useState<'move' | 'resize-left' | 'resize-right' | null>(null)
-    const [dragPreview, setDragPreview] = useState<{ startTime: number; endTime: number; properties?: any } | null>(null)
+    const [visualPreview, setVisualPreview] = useState<{ startTime: number; endTime: number } | null>(null)
     const startXRef = useRef(0)
     const initialValuesRef = useRef({ startTime: 0, endTime: 0 })
 
-    // Usa dragPreview se stiamo trascinando, altrimenti i valori originali della clip
-    const currentClip = dragPreview || clip
-    const duration = currentClip.endTime - currentClip.startTime
-    const originalDuration = clip.properties?.originalDuration || duration
+    // Per il rendering visivo, usa preview se disponibile, altrimenti clip originale
+    const displayClip = visualPreview || { startTime: clip.startTime, endTime: clip.endTime }
+    const duration = displayClip.endTime - displayClip.startTime
+    const originalDuration = clip.properties?.originalDuration || (clip.endTime - clip.startTime)
 
     const handleMouseDown = (e: React.MouseEvent, mode: 'move' | 'resize-left' | 'resize-right') => {
         e.stopPropagation()
@@ -50,8 +50,7 @@ export function ResizableClip({
             if (dragMode === 'move') {
                 const newStartTime = Math.max(0, startTime + deltaTime)
                 const newEndTime = newStartTime + (endTime - startTime)
-                // Solo preview durante il drag, non aggiornare lo store
-                setDragPreview({ startTime: newStartTime, endTime: newEndTime })
+                setVisualPreview({ startTime: newStartTime, endTime: newEndTime })
 
             } else if (dragMode === 'resize-right') {
                 const minDuration = 1.0
@@ -59,17 +58,7 @@ export function ResizableClip({
                 const currentDuration = endTime - startTime
                 const newDuration = Math.min(maxDuration, Math.max(minDuration, currentDuration + deltaTime))
                 const newEndTime = startTime + newDuration
-                const trimEnd = Math.max(0, originalDuration - newDuration)
-
-                setDragPreview({
-                    endTime: newEndTime,
-                    startTime: startTime,
-                    properties: {
-                        ...clip.properties,
-                        trimEnd: trimEnd,
-                        duration: newDuration
-                    }
-                })
+                setVisualPreview({ startTime: startTime, endTime: newEndTime })
 
             } else if (dragMode === 'resize-left') {
                 const minDuration = 1.0
@@ -77,28 +66,37 @@ export function ResizableClip({
                 const currentDuration = endTime - startTime
                 const newDuration = Math.min(maxDuration, Math.max(minDuration, currentDuration - deltaTime))
                 const newStartTime = endTime - newDuration
-                const trimStart = Math.max(0, startTime - newStartTime + (clip.properties?.trimStart || 0))
-
-                setDragPreview({
-                    startTime: Math.max(0, newStartTime),
-                    endTime: endTime,
-                    properties: {
-                        ...clip.properties,
-                        trimStart: trimStart,
-                        duration: newDuration
-                    }
-                })
+                setVisualPreview({ startTime: Math.max(0, newStartTime), endTime: endTime })
             }
         }
 
         const handleMouseUp = () => {
-            // Solo quando finisce il drag, aggiorna lo store
-            if (dragPreview) {
-                console.log('🎯 ResizableClip - Aggiornamento finale:', dragPreview)
-                onUpdate(dragPreview)
+            // Solo quando finisce il drag, calcola le proprietà e aggiorna lo store
+            if (visualPreview) {
+                const newDuration = visualPreview.endTime - visualPreview.startTime
+                const currentTrimStart = clip.properties?.trimStart || 0
+
+                let updates: any = {
+                    startTime: visualPreview.startTime,
+                    endTime: visualPreview.endTime,
+                    properties: {
+                        ...clip.properties,
+                        duration: newDuration
+                    }
+                }
+
+                // Calcola trimming solo per i resize
+                if (dragMode === 'resize-right') {
+                    updates.properties.trimEnd = Math.max(0, originalDuration - newDuration - currentTrimStart)
+                } else if (dragMode === 'resize-left') {
+                    const durationChange = newDuration - (clip.endTime - clip.startTime)
+                    updates.properties.trimStart = Math.max(0, currentTrimStart - durationChange)
+                }
+
+                onUpdate(updates)
             }
             setIsDragging(false)
-            setDragPreview(null)
+            setVisualPreview(null)
         }
 
         if (isDragging) {
@@ -110,19 +108,19 @@ export function ResizableClip({
             window.removeEventListener('mousemove', handleMouseMove)
             window.removeEventListener('mouseup', handleMouseUp)
         }
-    }, [isDragging, dragMode, clip, pixelsPerSecond, onUpdate, originalDuration, dragPreview])
+    }, [isDragging, dragMode, clip, pixelsPerSecond, onUpdate, originalDuration, visualPreview])
 
 
 
     const clipStyle = {
-        left: `${currentClip.startTime * pixelsPerSecond}px`,
+        left: `${displayClip.startTime * pixelsPerSecond}px`,
         width: `${duration * pixelsPerSecond}px`,
     }
 
     return (
         <div
-            className={`resizable-clip absolute h-full rounded-lg cursor-grab flex items-center justify-center group border-2 transition-all duration-200 ${isSelected ? 'border-white shadow-xl z-10' : type === 'video' ? 'border-blue-400' : 'border-green-400'
-                } ${type === 'video' ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gradient-to-r from-green-500 to-green-600'} overflow-hidden shadow-lg`}
+            className={`resizable-clip absolute h-full rounded-lg cursor-grab flex items-center justify-center group border-2 ${isDragging ? '' : 'transition-all duration-200'} ${isSelected ? 'border-white shadow-xl z-10' : type === 'video' ? 'border-blue-400' : 'border-green-400'
+                } ${type === 'video' ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'transparent'} overflow-hidden shadow-lg`}
             style={clipStyle}
             onClick={(e) => {
                 e.stopPropagation()
@@ -134,7 +132,7 @@ export function ResizableClip({
                 className="absolute -left-0.5 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
             >
-                <div className={`h-1/2 w-0.5 rounded-full transition-all ${isSelected ? 'bg-white shadow-md' : 'bg-white/50 group-hover:bg-white/80'}`}></div>
+                <div className={`h-1/2 w-0.5 rounded-full transition-all ${isSelected ? 'bg-transparent shadow-md' : 'bg-white/50 group-hover:bg-white/80'}`}></div>
             </div>
 
             {/* Contenuto della clip */}
@@ -144,9 +142,8 @@ export function ResizableClip({
                         <img
                             src={clip.thumbnail}
                             alt="Video thumbnail"
-                            className="w-full h-full object-cover rounded opacity-90"
+                            className="w-full h-full object-cover rounded"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/20 rounded"></div>
                     </div>
                 ) : (
                     <div className="flex items-center justify-center text-center">

@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { VideoUpload } from '@/components/editor/upload/VideoUpload'
-import { Upload, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 export function VideoPreview() {
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -22,159 +22,40 @@ export function VideoPreview() {
         isPlaying,
         zoom,
         selectedAnimation,
-        updateAnimation,
-        selectedClip
+        updateAnimation
     } = useEditorStore()
 
-    // Ricalcola il video source quando cambia il tempo corrente (logica unificata con Player)
-    const currentVideoSource = useMemo(() => {
-        if (!currentProject) return null
+    // Solo video principale
+    const videoSrc = currentProject?.videoUrl || (currentProject?.videoFile ? URL.createObjectURL(currentProject.videoFile) : '')
 
-        // LOGICA UNIFICATA CON PLAYER: Crea tutte le clip (video principale + clip aggiuntive)
-        const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
-        const hasMultipleClips = clipAnimations.length > 0
-        const videoSrc = currentProject.videoUrl || (currentProject.videoFile ? URL.createObjectURL(currentProject.videoFile) : '')
-        const hasMainVideo = !!videoSrc
-
-        // Crea array di tutte le clip (stessa logica di playerUtils.ts)
-        const allClips = []
-
-        // Aggiungi video principale se esiste
-        if (hasMainVideo) {
-            // Calcola l'endTime del video principale (stessa logica di playerUtils.ts)
-            let mainVideoEndTime = currentProject.duration || 10
-
-            // Se ci sono clip aggiuntive, il video principale finisce quando inizia la prima clip
-            if (hasMultipleClips && clipAnimations.length > 0) {
-                const sortedClipAnimations = clipAnimations.sort((a, b) => a.startTime - b.startTime)
-                const firstAdditionalClip = sortedClipAnimations[0]
-                mainVideoEndTime = firstAdditionalClip.startTime
-                console.log('🎬 VideoPreview: Video principale finisce a:', mainVideoEndTime)
-            }
-
-            allClips.push({
-                id: 'main-video',
-                startTime: 0,
-                endTime: mainVideoEndTime,
-                properties: {
-                    url: videoSrc
-                }
-            })
-        }
-
-        // Aggiungi clip aggiuntive se esistono
-        if (hasMultipleClips) {
-            const sortedClipAnimations = clipAnimations.sort((a, b) => a.startTime - b.startTime)
-            allClips.push(...sortedClipAnimations)
-        }
-
-        console.log('🎬 VideoPreview: Cercando clip attiva al tempo:', currentTime)
-        console.log('🎬 VideoPreview: Tutte le clip disponibili:', allClips.map(c => ({
-            id: c.id,
-            startTime: c.startTime,
-            endTime: c.endTime,
-            url: c.properties?.url
-        })))
-
-        // Trova la clip attiva al tempo corrente
-        // LOGICA CORRETTA: Se il tempo è esattamente al confine, dai priorità alla clip che inizia
-        const activeClip = allClips.find(clip => {
-            const isInRange = currentTime >= clip.startTime && currentTime < clip.endTime
-            const isAtStart = currentTime === clip.startTime
-            return isInRange || isAtStart
-        }) || allClips.find(clip =>
-            // Fallback: se nessuna clip inizia al tempo corrente, usa la logica originale
-            currentTime >= clip.startTime && currentTime <= clip.endTime
-        )
-
-        console.log('🎬 VideoPreview: Clip attiva trovata:', activeClip?.id || 'nessuna')
-
-        if (activeClip?.properties?.url) {
-            console.log('🎬 VideoPreview: Mostrando clip:', activeClip.id, 'al tempo:', currentTime)
-            return activeClip.properties.url
-        }
-
-        console.log('🎬 VideoPreview: Nessuna clip attiva trovata')
-        return null
-    }, [currentProject, currentTime])
-
-    // Sincronizza il video con il tempo corrente, seguendo la logica unificata del Player
+    // Sincronizza il video principale con il tempo corrente
     useEffect(() => {
-        if (!videoRef.current) return
+        if (!videoRef.current || !videoSrc) return
 
-        // Trova la clip attiva al tempo corrente (stessa logica del Player)
-        const clipAnimations = currentProject?.animations?.filter(a => a.type === 'clip') || []
-        const hasMultipleClips = clipAnimations.length > 0
+        const trimStart = currentProject?.videoTrimming?.start || 0
+        // Il tempo nel video originale = trimStart + tempo della timeline
+        const actualVideoTime = trimStart + currentTime
 
-        if (hasMultipleClips) {
-            const sortedClips = clipAnimations.sort((a, b) => a.startTime - b.startTime)
-            const activeClip = sortedClips.find(clip =>
-                currentTime >= clip.startTime && currentTime <= clip.endTime
-            )
-
-            if (activeClip) {
-                // Calcola il tempo relativo nella clip attiva
-                const relativeTime = currentTime - activeClip.startTime
-                const trimStart = activeClip.properties?.trimStart || 0
-                const videoTime = Math.max(0, trimStart + relativeTime)
-
-                // CONTROLLO AGGIUNTIVO: Non sincronizzare se il tempo è troppo alto
-                if (videoTime > (activeClip.properties?.originalDuration || 60)) {
-                    console.log('🚨 VideoPreview: Tempo video troppo alto:', videoTime, 'per clip', activeClip.id, '- IGNORATO')
-                    return
-                }
-
-                if (Math.abs(videoRef.current.currentTime - videoTime) > 0.1) {
-                    console.log('🎬 VideoPreview: Sincronizzando tempo video a', videoTime, 'per clip', activeClip.id)
-                    videoRef.current.currentTime = videoTime
-                }
-            }
-        } else {
-            // Video principale - sincronizzazione diretta
-            let videoTime = currentTime
-            if (currentProject?.videoTrimming) {
-                const trimStart = currentProject.videoTrimming.start || 0
-                videoTime = Math.max(0, trimStart + currentTime)
-            }
-
-            if (Math.abs(videoRef.current.currentTime - videoTime) > 0.1) {
-                console.log('🎬 VideoPreview: Sincronizzando tempo video principale a', videoTime)
-                videoRef.current.currentTime = videoTime
-            }
+        if (Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.2) {
+            videoRef.current.currentTime = actualVideoTime
         }
 
         // Sincronizza anche l'audio se presente
-        if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 0.1) {
+        if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 0.2) {
             audioRef.current.currentTime = currentTime
         }
-    }, [currentTime, currentProject])
+    }, [currentTime, currentProject, videoSrc])
 
     // Gestisce il cambio di video source
     useEffect(() => {
-        if (videoRef.current && currentVideoSource) {
+        if (videoRef.current && videoSrc) {
             const currentSrc = videoRef.current.src
-            const newSrc = currentVideoSource.startsWith('blob:') ? currentVideoSource : `http://localhost:8000${currentVideoSource}`
-
-            if (currentSrc !== newSrc) {
-                console.log('🔄 VideoPreview: Cambiando video da', currentSrc, 'a', newSrc)
-                const wasPlaying = isPlaying
-                videoRef.current.src = newSrc
+            if (currentSrc !== videoSrc) {
+                videoRef.current.src = videoSrc
                 videoRef.current.load()
-
-                // Se era in riproduzione, riavvia il play dopo il caricamento
-                if (wasPlaying) {
-                    console.log('▶️ VideoPreview: Riavviando riproduzione dopo cambio video')
-                    const handleLoadedData = () => {
-                        if (videoRef.current && wasPlaying) {
-                            videoRef.current.play().catch(console.error)
-                        }
-                        videoRef.current?.removeEventListener('loadeddata', handleLoadedData)
-                    }
-                    videoRef.current.addEventListener('loadeddata', handleLoadedData)
-                }
             }
         }
-    }, [currentVideoSource, isPlaying])
+    }, [videoSrc])
 
     // Gestisce play/pause
     useEffect(() => {
@@ -204,32 +85,18 @@ export function VideoPreview() {
         }
     }, [isPlaying])
 
-    // Trova l'animazione zoom attiva al tempo corrente - logica condivisa
+    // Trova l'animazione zoom attiva al tempo corrente
     const getActiveZoomAnimation = () => {
         if (!currentProject) return null
 
-        // Determina se ci sono clip multiple
-        const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
-        const hasMultipleClips = clipAnimations.length > 0
-
-        // Filtra le animazioni in base alla clip selezionata
-        let relevantAnimations = currentProject.animations
-        if (hasMultipleClips && selectedClip) {
-            relevantAnimations = currentProject.animations.filter(anim =>
-                anim.type === 'zoom' &&
-                (anim.properties?.clipId === selectedClip || (!anim.properties?.clipId && selectedClip === 'main-video'))
-            )
-        } else {
-            relevantAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
-        }
+        const zoomAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
 
         // Trova SOLO l'animazione zoom selezionata se è attiva al tempo corrente
         return selectedAnimation?.type === 'zoom' &&
             currentTime >= selectedAnimation.startTime &&
-            currentTime <= selectedAnimation.endTime &&
-            relevantAnimations.some(anim => anim.id === selectedAnimation.id)
+            currentTime <= selectedAnimation.endTime
             ? selectedAnimation
-            : relevantAnimations.find(anim =>
+            : zoomAnimations.find(anim =>
                 currentTime >= anim.startTime &&
                 currentTime <= anim.endTime &&
                 anim.startTime < anim.endTime
@@ -242,23 +109,10 @@ export function VideoPreview() {
     const getVideoTransform = () => {
         if (!currentProject) return {}
 
-        // Determina se ci sono clip multiple
-        const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
-        const hasMultipleClips = clipAnimations.length > 0
+        const zoomAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
 
-        // Filtra le animazioni in base alla clip selezionata
-        let relevantAnimations = currentProject.animations
-        if (hasMultipleClips && selectedClip) {
-            relevantAnimations = currentProject.animations.filter(anim =>
-                anim.type === 'zoom' &&
-                (anim.properties?.clipId === selectedClip || (!anim.properties?.clipId && selectedClip === 'main-video'))
-            )
-        } else {
-            relevantAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
-        }
-
-        // Trova l'animazione zoom attiva al tempo corrente (indipendentemente dalla selezione)
-        const activeZoomAtCurrentTime = relevantAnimations.find(anim =>
+        // Trova l'animazione zoom attiva al tempo corrente
+        const activeZoomAtCurrentTime = zoomAnimations.find(anim =>
             currentTime >= anim.startTime &&
             currentTime <= anim.endTime
         )
@@ -308,13 +162,7 @@ export function VideoPreview() {
         return { transform: `scale(${zoom})` }
     }
 
-    const handleTimeUpdate = () => {
-        // COMPLETAMENTE DISABILITATO: Il VideoPreview non deve MAI aggiornare il currentTime
-        // Solo il Player.tsx gestisce l'aggiornamento del currentTime per evitare conflitti
-        if (videoRef.current) {
-            console.log('🎬 VideoPreview: handleTimeUpdate - SEMPRE IGNORATO (tempo video:', videoRef.current.currentTime, ')')
-        }
-    }
+
 
     // Gestori per il zoom interattivo - controllo libero e fluido
     const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -434,7 +282,7 @@ export function VideoPreview() {
         return () => container.removeEventListener('wheel', wheelHandler)
     }, [handleWheel])
 
-    if (!currentVideoSource) {
+    if (!videoSrc) {
         return (
             <div className="flex items-center justify-center w-full h-full p-8">
                 <div className="max-w-md w-full">
@@ -500,7 +348,7 @@ export function VideoPreview() {
         >
             <video
                 ref={videoRef}
-                src={currentVideoSource}
+                src={videoSrc}
                 className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out select-none"
                 style={{
                     ...getVideoTransform(),
@@ -508,14 +356,26 @@ export function VideoPreview() {
                     maxHeight: '80%',
                     borderRadius: currentProject?.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
                 }}
-                onTimeUpdate={handleTimeUpdate}
+
                 onLoadedMetadata={() => {
                     if (videoRef.current && currentProject) {
                         // Aggiorna la durata del progetto se necessario
                         const duration = videoRef.current.duration
+                        const updates: any = {}
+
                         if (duration !== currentProject.duration) {
-                            useEditorStore.getState().updateProject({ duration })
+                            updates.duration = duration
                         }
+
+                        // Salva la durata originale se non è già impostata
+                        if (!currentProject.originalDuration) {
+                            updates.originalDuration = duration
+                        }
+
+                        if (Object.keys(updates).length > 0) {
+                            useEditorStore.getState().updateProject(updates)
+                        }
+
                         // Disabilita l'audio del video se c'è una traccia audio separata
                         if (currentProject.musicSettings?.track) {
                             videoRef.current.muted = true
@@ -543,22 +403,8 @@ export function VideoPreview() {
             {(() => {
                 if (!currentProject) return null
 
-                // Determina se ci sono clip multiple
-                const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
-                const hasMultipleClips = clipAnimations.length > 0
-
-                // Filtra le animazioni in base alla clip selezionata
-                let relevantAnimations = currentProject.animations
-                if (hasMultipleClips && selectedClip) {
-                    relevantAnimations = currentProject.animations.filter(anim =>
-                        anim.type === 'zoom' &&
-                        (anim.properties?.clipId === selectedClip || (!anim.properties?.clipId && selectedClip === 'main-video'))
-                    )
-                } else {
-                    relevantAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
-                }
-
-                const activeZoomAtCurrentTime = relevantAnimations.find(anim =>
+                const zoomAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
+                const activeZoomAtCurrentTime = zoomAnimations.find(anim =>
                     currentTime >= anim.startTime &&
                     currentTime <= anim.endTime
                 )
@@ -612,23 +458,11 @@ export function VideoPreview() {
             {(() => {
                 if (!currentProject) return null
 
-                // Determina se ci sono clip multiple
-                const clipAnimations = currentProject.animations.filter(a => a.type === 'clip')
-                const hasMultipleClips = clipAnimations.length > 0
-
-                // Filtra le animazioni di testo in base alla clip selezionata
-                let textAnimations = currentProject.animations.filter(anim =>
+                const textAnimations = currentProject.animations.filter(anim =>
                     anim.type === 'text' &&
                     currentTime >= anim.startTime &&
                     currentTime <= anim.endTime
                 )
-
-                if (hasMultipleClips && selectedClip) {
-                    textAnimations = textAnimations.filter(anim =>
-                        anim.properties?.clipId === selectedClip ||
-                        (!anim.properties?.clipId && selectedClip === 'main-video')
-                    )
-                }
 
                 return textAnimations.map((textAnim, index) => (
                     <div
