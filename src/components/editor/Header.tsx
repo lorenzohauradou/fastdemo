@@ -34,7 +34,8 @@ export function Header() {
                 backgroundSettings: currentProject.backgroundSettings,
                 deviceSettings: currentProject.deviceSettings,
                 musicSettings: currentProject.musicSettings,
-                cameraSettings: currentProject.cameraSettings
+                cameraSettings: currentProject.cameraSettings,
+                videoTrimming: currentProject.videoTrimming
             }
 
             console.log('📊 Dati da inviare:', renderData)

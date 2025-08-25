@@ -152,11 +152,6 @@ export function ResizableClip({
                         </span>
                     </div>
                 )}
-
-                {/* Indicatore di trimming se presente */}
-                {(clip.properties?.trimStart || clip.properties?.trimEnd) && (
-                    <div className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full opacity-80"></div>
-                )}
             </div>
 
             {/* Handle destro per resize */}

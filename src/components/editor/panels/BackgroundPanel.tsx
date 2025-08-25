@@ -101,18 +101,24 @@ export function BackgroundPanel() {
         setSelectedBackground(backgroundId)
 
         // Aggiorna le impostazioni del progetto
-        updateProject({
-            backgroundSettings: {
-                type: background.type,
-                color: background.color,
-                gradient: background.gradient,
-                blur: background.blur,
-                opacity: opacity[0] / 100
-            }
-        })
+        if (background.type === 'none') {
+            updateProject({
+                backgroundSettings: {
+                    type: 'none'
+                }
+            })
+        } else {
+            updateProject({
+                backgroundSettings: {
+                    type: background.type,
+                    color: background.color,
+                    gradient: background.gradient,
+                    blur: background.blur,
+                    opacity: opacity[0] / 100
+                }
+            })
 
-        // Aggiungi animazione di background se necessario
-        if (background.type !== 'none') {
+            // animazione background
             const animation = {
                 type: 'background' as const,
                 startTime: currentTime,

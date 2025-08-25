@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { ZoomIn, ZoomOut } from 'lucide-react'
 
 
 // Componente per renderizzare ogni blocco di animazione (clip)
@@ -131,14 +130,12 @@ export function Timeline() {
         currentTime,
         setCurrentTime,
         zoom: timelineZoom,
-        setZoom: setTimelineZoom,
         addAnimation,
         updateAnimation,
         removeAnimation,
         selectedAnimation,
         setSelectedAnimation,
         updateProject,
-        setSelectedPanel
     } = useEditorStore()
 
     const tracks = [
@@ -323,13 +320,6 @@ export function Timeline() {
         input.click()
     }
 
-    const handleOpenLibrary = () => {
-        setSelectedPanel('music')
-    }
-
-
-
-
 
     // Calcola la posizione del playhead
     const playheadStyle = {
@@ -365,25 +355,7 @@ export function Timeline() {
                             </Button>
                         </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setTimelineZoom(Math.max(1, timelineZoom - 1))}
-                            className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
-                        >
-                            <ZoomOut className="h-4 w-4" />
-                        </Button>
-                        <span className="text-xs text-muted-foreground w-8 text-center">{timelineZoom.toFixed(1)}x</span>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setTimelineZoom(Math.min(20, timelineZoom + 1))}
-                            className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
-                        >
-                            <ZoomIn className="h-4 w-4" />
-                        </Button>
-                    </div>
+
                 </div>
 
                 {/* Area timeline */}
