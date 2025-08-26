@@ -48,10 +48,8 @@ export function TimelineTrack({
         const isResizeHandle = target.classList.contains('resize-handle') || target.closest('.resize-handle')
         const isClipBody = target.closest('.resizable-clip') && !isResizeHandle
 
-        // Se è su un resize handle, lascia che la clip lo gestisca
         if (isResizeHandle) return
 
-        // Se è sul corpo della clip, priorità alla timeline (movimento barra)
         if (isClipBody) {
             e.stopPropagation()
         }
@@ -79,13 +77,11 @@ export function TimelineTrack({
                 )}
             </div>
 
-            {/* Timeline della traccia */}
             <div
                 ref={timelineRef}
                 className="h-10 bg-zinc-800 rounded border border-zinc-700 relative cursor-pointer overflow-hidden"
                 onClick={handleTimelineClick}
             >
-                {/* Griglia di sfondo */}
                 <div className="absolute inset-0 opacity-5">
                     {Array.from({ length: Math.floor(timelineWidth / 40) }, (_, i) => (
                         <div
@@ -96,7 +92,6 @@ export function TimelineTrack({
                     ))}
                 </div>
 
-                {/* Playhead */}
                 <div
                     className="absolute top-0 h-full w-0.5 bg-red-500 z-20 pointer-events-none"
                     style={{ left: `${currentTime * pixelsPerSecond}px` }}
@@ -106,7 +101,6 @@ export function TimelineTrack({
                     )}
                 </div>
 
-                {/* Clip */}
                 {clips.map(clip => (
                     <ResizableClip
                         key={clip.id}
@@ -119,7 +113,6 @@ export function TimelineTrack({
                     />
                 ))}
 
-                {/* Waveform per l'audio */}
                 {showWaveform && type === 'audio' && clips.length > 0 && audioSrc && (
                     <AudioWaveform
                         audioSrc={audioSrc}
@@ -130,21 +123,20 @@ export function TimelineTrack({
                     />
                 )}
 
-                {/* Placeholder quando non ci sono clip */}
                 {clips.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         {type === 'audio' ? (
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={onAddClip}
-                                    className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
+                                    className="flex items-center scale-[0.8] gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
                                 >
                                     <Upload className="h-4 w-4" />
                                     Import Audio
                                 </button>
                                 <button
                                     onClick={onOpenLibrary}
-                                    className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
+                                    className="flex items-center scale-[0.8] gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
                                 >
                                     <Music className="h-4 w-4" />
                                     Library

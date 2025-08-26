@@ -3,11 +3,8 @@
 import { useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Slider } from '@/components/ui/slider'
-import { Play, Pause, Upload, Volume2, ArrowLeft, Plus, X } from 'lucide-react'
+import { Play, Upload, Volume2, ArrowLeft, Plus, X } from 'lucide-react'
 
-// Categorie principali come da foto 1
 const musicCategories = [
     {
         id: 'cinematic',
@@ -47,7 +44,6 @@ const musicCategories = [
     }
 ]
 
-// Tracce per categoria come da foto 2
 const categoryTracks = {
     cinematic: [
         { id: 'dramatic-reveal', name: 'Dramatic Reveal', duration: '1:59' },
@@ -141,11 +137,9 @@ export function MusicPanel() {
     }
 
     const formatDuration = (file: File) => {
-        // Placeholder - in realtà dovremmo calcolare la durata reale
         return '03:18'
     }
 
-    // Vista principale - griglia categorie come foto 1
     if (currentView === 'main') {
         return (
             <div className="p-4 space-y-4">
@@ -153,7 +147,6 @@ export function MusicPanel() {
                     <h2 className="text-xl font-semibold text-white">Music</h2>
                 </div>
 
-                {/* Import Button */}
                 <label className="block w-full">
                     <input
                         type="file"
@@ -161,13 +154,15 @@ export function MusicPanel() {
                         onChange={handleCustomUpload}
                         className="hidden"
                     />
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button
+                        variant="outline"
+                        className="w-full border-gray-600 hover:bg-gray-700"
+                    >
                         <Upload className="mr-2 h-4 w-4" />
                         Import music file
                     </Button>
                 </label>
 
-                {/* Library */}
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
 
@@ -179,7 +174,6 @@ export function MusicPanel() {
                         </div>
                     </div>
 
-                    {/* Categories Grid 2x3 */}
                     <div className="grid grid-cols-2 gap-3">
                         {musicCategories.map((category) => (
                             <div
@@ -197,7 +191,6 @@ export function MusicPanel() {
         )
     }
 
-    // Vista categoria - lista tracce come foto 3
     if (currentView === 'category' && selectedCategory) {
         const category = musicCategories.find(c => c.id === selectedCategory)
         const tracks = categoryTracks[selectedCategory as keyof typeof categoryTracks] || []
@@ -208,7 +201,6 @@ export function MusicPanel() {
                     <h2 className="text-xl font-semibold text-white">Music</h2>
                 </div>
 
-                {/* Import Button */}
                 <label className="block w-full">
                     <input
                         type="file"
@@ -216,17 +208,18 @@ export function MusicPanel() {
                         onChange={handleCustomUpload}
                         className="hidden"
                     />
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button
+                        variant="outline"
+                        className="w-full border-gray-600 hover:bg-gray-700"
+                    >
                         <Upload className="mr-2 h-4 w-4" />
                         Import music file
                     </Button>
                 </label>
 
-                {/* Library */}
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
 
-                    {/* Back Button */}
                     <Button
                         variant="ghost"
                         onClick={() => setCurrentView('main')}
@@ -236,13 +229,11 @@ export function MusicPanel() {
                         Back
                     </Button>
 
-                    {/* Featured */}
                     <div className="mb-4">
                         <h4 className="text-lg font-medium text-white mb-2">Featured</h4>
                         <p className="text-sm text-gray-400 mb-3">Most popular tracks</p>
                     </div>
 
-                    {/* Tracks List */}
                     <div className="space-y-3">
                         {tracks.map((track) => (
                             <div
@@ -258,7 +249,7 @@ export function MusicPanel() {
                                             variant="ghost"
                                             size="sm"
                                             onClick={(e) => {
-                                                e.stopPropagation() // Previene la propagazione del click
+                                                e.stopPropagation()
                                                 console.log('Play preview:', track.name)
                                             }}
                                             className="text-gray-400 hover:text-white"
@@ -299,7 +290,6 @@ export function MusicPanel() {
         )
     }
 
-    // Vista file importato - come foto 4
     if (currentView === 'imported' && importedFile) {
         return (
             <div className="p-4 space-y-4">
@@ -307,11 +297,9 @@ export function MusicPanel() {
                     <h2 className="text-xl font-semibold text-white">Music</h2>
                 </div>
 
-                {/* Tracks */}
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Tracks</h3>
 
-                    {/* Imported File Preview */}
                     <div className="bg-card rounded-lg p-4 border border-gray-600">
                         <div className="flex items-center justify-between">
                             <div className="flex-1">
@@ -353,7 +341,6 @@ export function MusicPanel() {
                     </div>
                 </div>
 
-                {/* Import Button */}
                 <label className="block w-full">
                     <input
                         type="file"
@@ -361,17 +348,17 @@ export function MusicPanel() {
                         onChange={handleCustomUpload}
                         className="hidden"
                     />
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    <Button
+                        variant="outline"
+                        className="w-full border-gray-600 hover:bg-gray-700"
+                    >
                         <Upload className="mr-2 h-4 w-4" />
                         Import music file
                     </Button>
                 </label>
-
-                {/* Library */}
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
 
-                    {/* Featured */}
                     <div className="mb-4">
                         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4">
                             <h4 className="text-lg font-medium text-white">Featured</h4>
@@ -379,7 +366,6 @@ export function MusicPanel() {
                         </div>
                     </div>
 
-                    {/* Categories Grid 2x3 */}
                     <div className="grid grid-cols-2 gap-3">
                         {musicCategories.map((category) => (
                             <div

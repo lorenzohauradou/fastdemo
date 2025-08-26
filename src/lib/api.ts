@@ -1,5 +1,5 @@
 /**
- * API client per DemoCraft
+ * API client
  * Gestisce tutte le chiamate alle API routes di Next.js
  */
 
@@ -169,23 +169,10 @@ class ApiClient {
 
         return response.json()
     }
-
-    /**
-     * Helper per gestire errori di rete
-     */
-    private async handleResponse(response: Response) {
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
-        }
-        return response.json()
-    }
 }
 
-// Istanza singleton del client API
 export const apiClient = new ApiClient()
 
-// Hook personalizzato per usare l'API client
 export function useApi() {
     return apiClient
 }

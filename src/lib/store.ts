@@ -15,6 +15,23 @@ export interface Animation {
   }
 }
 
+export interface BackgroundSettings {
+  type: 'none' | 'solid' | 'linear-gradient' | 'mesh-gradient' | 'image'
+  // solid
+  color?: string
+  // linear-gradient
+  gradientColors?: string[]
+  gradientAngle?: number
+  // mesh-gradient
+  meshColors?: string[]
+  meshSeed?: number
+  // image
+  imageUrl?: string
+  // common
+  opacity?: number
+  blur?: number
+}
+
 export interface Project {
   id?: string
   name: string
@@ -24,7 +41,8 @@ export interface Project {
   duration: number
   originalDuration?: number
   animations: Animation[]
-  backgroundSettings?: Record<string, any>
+  primaryColor?: string
+  backgroundSettings?: BackgroundSettings
   deviceSettings?: Record<string, any>
   audioTrack?: string
   templateId?: string
@@ -43,10 +61,11 @@ export interface Project {
     duration: number
   }
   cameraSettings?: {
-    type?: string
+    type?: 'none' | 'continuous_glide' | 'skewed_glide' | 'orbit_glide'
     intensity?: number
     zoom_range?: number
-    direction?: string
+    direction?: 'up' | 'down' | 'left' | 'right' | 'diagonal'
+    angle?: number // Per skewed_glide
   }
 }
 

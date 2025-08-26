@@ -98,7 +98,6 @@ function AnimationBlock({
             style={blockStyle}
             onMouseDown={(e) => handleMouseDown(e, 'move')}
         >
-            {/* Maniglia Sinistra */}
             <div
                 className="absolute -left-0.5 top-0 h-full w-1.5 cursor-ew-resize flex items-center justify-center"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
@@ -107,10 +106,9 @@ function AnimationBlock({
             </div>
 
             <span className="text-white text-[8px] font-bold truncate px-1 pointer-events-none">
-                {animation.type === 'zoom' ? `${animation.properties.end?.level || animation.properties.level || '1'}x` : animation.properties.content}
+                {animation.type === 'zoom' ? `${Number(animation.properties.end?.level || animation.properties.level || '1').toFixed(3)}x` : animation.properties.content}
             </span>
 
-            {/* Maniglia Destra */}
             <div
                 className="absolute -right-0.5 top-0 h-full w-1.5 cursor-ew-resize flex items-center justify-center"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
@@ -135,7 +133,6 @@ export function Timeline() {
         removeAnimation,
         selectedAnimation,
         setSelectedAnimation,
-        updateProject,
     } = useEditorStore()
 
     const tracks = [
@@ -222,7 +219,7 @@ export function Timeline() {
     const availableWidth = timelineWidth - 80 // 80px per il label compatto
     const pixelsPerSecond = (availableWidth * timelineZoom) / duration
 
-    // Funzione per il movimento fluido del playhead
+    // Funzione per il movimento playhead
     const handleTimelineScrub = (e: React.MouseEvent<HTMLDivElement>) => {
         if ((e.target as HTMLElement).closest('.group')) return
 
@@ -263,74 +260,13 @@ export function Timeline() {
             properties
         })
     }
-    // con il blob funziona
-    const handleAudioImport = async () => {
-        const input = document.createElement('input')
-        input.type = 'file'
-        input.accept = 'audio/*'
-        input.onchange = async (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0]
-            if (file) {
-                try {
-                    // Upload del file audio al backend
-                    const formData = new FormData()
-                    formData.append('file', file)
-
-                    const response = await fetch('/api/upload/audio', {
-                        method: 'POST',
-                        body: formData
-                    })
-
-                    if (response.ok) {
-                        // Usa direttamente il blob invece della route API
-                        const audioUrl = URL.createObjectURL(file)
-                        updateProject({
-                            musicSettings: {
-                                type: 'custom',
-                                track: audioUrl,
-                                volume: 0.5
-                            }
-                        })
-                    } else {
-                        console.error('Errore nell\'upload dell\'audio')
-                        // Fallback all'URL locale se l'upload fallisce
-                        const audioUrl = URL.createObjectURL(file)
-                        updateProject({
-                            musicSettings: {
-                                type: 'custom',
-                                track: audioUrl,
-                                volume: 0.5
-                            }
-                        })
-                    }
-                } catch (error) {
-                    console.error('Errore nell\'upload dell\'audio:', error)
-                    // Fallback all'URL locale in caso di errore
-                    const audioUrl = URL.createObjectURL(file)
-                    updateProject({
-                        musicSettings: {
-                            type: 'custom',
-                            track: audioUrl,
-                            volume: 0.5
-                        }
-                    })
-                }
-            }
-        }
-        input.click()
-    }
-
-
-    // Calcola la posizione del playhead
     const playheadStyle = {
         transform: `translateX(${80 + currentTime * pixelsPerSecond}px)`,
     }
 
     return (
         <div className="h-full bg-background text-foreground select-none flex flex-col">
-            {/* Timeline compatta */}
             <div className="h-32 border-t border-border">
-                {/* Controlli superiori */}
                 <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
                     <div className="flex items-center space-x-4">
                         <span className="text-xs text-muted-foreground font-mono">
@@ -357,20 +293,16 @@ export function Timeline() {
                     </div>
 
                 </div>
-
-                {/* Area timeline */}
                 <div
                     ref={timelineContainerRef}
                     className="flex-1 overflow-x-auto relative cursor-pointer"
                     onMouseDown={handleTimelineScrub}
                 >
                     <div className="relative h-full px-4 py-2" style={{ width: `${Math.max(timelineWidth, timelineWidth * timelineZoom)}px` }}>
-                        {/* Playhead */}
                         <div className="absolute top-0 h-full w-0.5 bg-red-500 z-20 pointer-events-none" style={playheadStyle}>
                             <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full"></div>
                         </div>
 
-                        {/* Tracce compatte */}
                         <div className="flex flex-col h-full justify-center space-y-0.5">
                             {tracks.map(track => {
                                 const trackAnimations = currentProject.animations.filter(a => a.type === track.type)

@@ -86,13 +86,11 @@ export function LogosPanel() {
 
     return (
         <div className="p-4 space-y-6">
-            {/* Header */}
             <div>
                 <h2 className="text-lg font-semibold text-white mb-2">Logos</h2>
                 <p className="text-sm text-gray-400">Add your brand logo to the video</p>
             </div>
 
-            {/* Custom Logo Upload */}
             <div className="space-y-3">
                 <h3 className="text-sm font-medium text-white">Upload Custom Logo</h3>
                 <label className="block w-full">
@@ -111,7 +109,6 @@ export function LogosPanel() {
                 </label>
             </div>
 
-            {/* Logo Text Customization */}
             <div className="space-y-3">
                 <h3 className="text-sm font-medium text-white">Logo Text</h3>
                 <div className="space-y-2">
@@ -129,8 +126,6 @@ export function LogosPanel() {
                     />
                 </div>
             </div>
-
-            {/* Logo Templates */}
             <div>
                 <h3 className="text-sm font-medium text-white mb-3">Logo Templates</h3>
                 <div className="grid grid-cols-2 gap-3">

@@ -50,7 +50,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         if (videoFile) {
             handleVideoFile(videoFile)
         } else {
-            alert('Per favore, carica un file video (MP4, MOV, AVI)')
+            alert('Please upload a video file (MP4, MOV, AVI)')
         }
     }, [])
 
@@ -107,14 +107,11 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
             // Upload usando l'API client
             try {
                 const result = await api.uploadVideo(file)
-                console.log('✅ Video caricato:', result)
                 setUploadProgress(100)
 
                 if (result.note) {
-                    console.info('ℹ️ Nota:', result.note)
                 }
             } catch (error) {
-                console.warn('⚠️ Errore durante upload:', error)
                 setUploadProgress(100)
             }
 
@@ -133,8 +130,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
             }
 
         } catch (error) {
-            console.error('Errore durante l\'upload:', error)
-            alert('Errore durante il caricamento del video')
+            alert('Error during video upload')
         } finally {
             setIsUploading(false)
         }
@@ -175,7 +171,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         return (
             <div className={`bg-card border border-border rounded-lg p-6 ${className}`}>
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-foreground">Video Caricato</h3>
+                    <h3 className="text-lg font-semibold text-foreground">Video Uploaded</h3>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -187,7 +183,6 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 </div>
 
                 <div className="space-y-4">
-                    {/* Video Preview */}
                     <div className="aspect-video bg-background rounded-lg overflow-hidden">
                         <video
                             src={uploadedVideo.url}
@@ -197,7 +192,6 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                         />
                     </div>
 
-                    {/* Video Info */}
                     <div className="bg-muted rounded-lg p-4">
                         <div className="flex items-center space-x-3 mb-3">
                             <FileVideo className="h-5 w-5 text-primary" />
@@ -212,7 +206,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                         {isUploading && (
                             <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-muted-foreground">Caricamento...</span>
+                                    <span className="text-sm text-muted-foreground">Uploading...</span>
                                     <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
                                 </div>
                                 <Progress value={uploadProgress} className="h-2" />
@@ -225,7 +219,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                             className="w-full bg-primary hover:bg-primary/90"
                         >
                             <Play className="mr-2 h-4 w-4" />
-                            Inizia Editing
+                            Start Editing
                         </Button>
                     </div>
                 </div>
@@ -251,13 +245,13 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
 
                     <div>
                         <h3 className="text-lg font-semibold text-foreground mb-2">
-                            {isDragging ? 'Rilascia il video qui' : 'Carica il tuo video'}
+                            {isDragging ? 'Drop the video here' : 'Upload your video'}
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                            Trascina e rilascia un file video o clicca per selezionare
+                            Drag and drop a video file or click to select
                         </p>
                         <p className="text-sm text-muted-foreground/80">
-                            Supporta MP4, MOV, AVI • Max 500MB
+                            Supports MP4, MOV, AVI • Max 500MB
                         </p>
                     </div>
 
@@ -274,7 +268,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                             variant="outline"
                             className="border-border hover:bg-muted"
                         >
-                            Seleziona File
+                            Select File
                         </Button>
                     </div>
                 </div>
@@ -283,7 +277,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
             {isUploading && (
                 <div className="mt-4 bg-card rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-foreground">Caricamento in corso...</span>
+                        <span className="text-sm text-foreground">Uploading...</span>
                         <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
                     </div>
                     <Progress value={uploadProgress} className="h-2" />

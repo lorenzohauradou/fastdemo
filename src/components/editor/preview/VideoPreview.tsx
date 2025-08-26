@@ -40,6 +40,9 @@ export function VideoPreview() {
             videoRef.current.currentTime = actualVideoTime
         }
 
+        // Sincronizza anche il video del riflesso
+
+
         // Sincronizza anche l'audio se presente
         if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 0.2) {
             audioRef.current.currentTime = currentTime
@@ -55,6 +58,9 @@ export function VideoPreview() {
                 videoRef.current.load()
             }
         }
+
+        // Aggiorna anche il video del riflesso
+
     }, [videoSrc])
 
     // Gestisce play/pause
@@ -63,6 +69,8 @@ export function VideoPreview() {
 
         if (isPlaying) {
             videoRef.current.play()
+            // Riproduci anche il video del riflesso
+
             // Riproduci anche l'audio se presente
             if (audioRef.current) {
                 console.log('Tentativo di riproduzione audio...')
@@ -78,6 +86,8 @@ export function VideoPreview() {
             }
         } else {
             videoRef.current.pause()
+            // Pausa anche il video del riflesso
+
             // Pausa anche l'audio se presente
             if (audioRef.current) {
                 audioRef.current.pause()
@@ -117,18 +127,15 @@ export function VideoPreview() {
             currentTime <= anim.endTime
         )
 
+        let zoomTransform = ''
+
         if (activeZoomAtCurrentTime) {
             // Se l'animazione attiva è quella selezionata, usa i valori interattivi per l'editing
             if (selectedAnimation?.id === activeZoomAtCurrentTime.id) {
                 const finalZoom = interactiveZoom
                 const finalX = zoomPosition.x / finalZoom
                 const finalY = zoomPosition.y / finalZoom
-
-                return {
-                    transform: `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`,
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                    transformOrigin: 'center center'
-                }
+                zoomTransform = `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`
             } else {
                 // Se l'animazione attiva NON è quella selezionata, usa i valori salvati
                 const props = activeZoomAtCurrentTime.properties
@@ -151,15 +158,20 @@ export function VideoPreview() {
                 const currentX = (startX + (endX - startX) * progress) / currentZoom
                 const currentY = (startY + (endY - startY) * progress) / currentZoom
 
-                return {
-                    transform: `scale(${currentZoom}) translate(${currentX}px, ${currentY}px)`,
-                    transformOrigin: 'center center'
-                }
+                zoomTransform = `scale(${currentZoom}) translate(${currentX}px, ${currentY}px)`
             }
+        } else {
+            // Nessuna animazione zoom attiva, usa il zoom base della timeline
+            zoomTransform = `scale(${zoom})`
         }
 
-        // Nessuna animazione zoom attiva, usa il zoom base della timeline
-        return { transform: `scale(${zoom})` }
+        return {
+            transform: zoomTransform,
+            cursor: activeZoomAtCurrentTime && selectedAnimation?.id === activeZoomAtCurrentTime.id
+                ? (isDragging ? 'grabbing' : 'grab')
+                : 'default',
+            transformOrigin: 'center center'
+        }
     }
 
 
@@ -286,16 +298,35 @@ export function VideoPreview() {
         return (
             <div className="flex items-center justify-center w-full h-full p-8">
                 <div className="max-w-md w-full">
-                    <VideoUpload
-                        onVideoUploaded={(videoData) => {
-                            // Il componente VideoUpload gestisce già la creazione del progetto
-                            console.log('Video caricato nell\'editor:', videoData)
-                        }}
-                        className="w-full"
-                    />
+                    <VideoUpload className="w-full" />
                 </div>
             </div>
         )
+    }
+
+    // Funzioni utility per generare i background (stesse del componente Remotion)
+    const generateLinearGradientCSS = (colors: string[], angle: number): string => {
+        return `linear-gradient(${angle}deg, ${colors.join(', ')})`
+    }
+
+    const generateMeshGradientCSS = (colors: string[]): string => {
+        const gradients = [
+            `radial-gradient(at 40% 20%, ${colors[0]} 0px, transparent 50%)`,
+            `radial-gradient(at 80% 0%, ${colors[1]} 0px, transparent 50%)`,
+            `radial-gradient(at 0% 50%, ${colors[2]} 0px, transparent 50%)`,
+            `radial-gradient(at 80% 50%, ${colors[3]} 0px, transparent 50%)`,
+            `radial-gradient(at 0% 100%, ${colors[0]} 0px, transparent 50%)`,
+            `radial-gradient(at 80% 100%, ${colors[1]} 0px, transparent 50%)`,
+            `radial-gradient(at 40% 100%, ${colors[2]} 0px, transparent 50%)`
+        ]
+        return gradients.join(', ')
+    }
+
+    // Verifica se c'è un background applicato
+    const hasBackground = () => {
+        if (!currentProject?.backgroundSettings) return false
+        const bg = currentProject.backgroundSettings
+        return bg.type !== 'none' && bg.type !== undefined
     }
 
     // Calcola lo stile del background
@@ -306,34 +337,50 @@ export function VideoPreview() {
         const opacity = bg.opacity || 1
 
         switch (bg.type) {
+            case 'none':
+                return { backgroundColor: 'transparent' }
             case 'solid':
                 return {
-                    backgroundColor: bg.color,
+                    backgroundColor: bg.color || '#000000',
                     opacity
                 }
-            case 'gradient':
-                return {
-                    background: bg.gradient,
-                    opacity
+            case 'linear-gradient':
+                if (bg.gradientColors && bg.gradientColors.length >= 2) {
+                    return {
+                        background: generateLinearGradientCSS(
+                            bg.gradientColors,
+                            bg.gradientAngle || 180
+                        ),
+                        opacity
+                    }
                 }
+                break
+            case 'mesh-gradient':
+                if (bg.meshColors && bg.meshColors.length >= 4) {
+                    return {
+                        background: generateMeshGradientCSS(bg.meshColors),
+                        opacity
+                    }
+                }
+                break
             case 'image':
-                return {
-                    backgroundImage: `url(${bg.imageUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                    filter: bg.blur ? `blur(${bg.blur}px)` : 'none',
-                    opacity
+                if (bg.imageUrl) {
+                    return {
+                        backgroundImage: `url(${bg.imageUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        filter: bg.blur ? `blur(${bg.blur}px)` : 'none',
+                        opacity
+                    }
                 }
-            case 'blur':
-                return {
-                    backgroundColor: bg.color,
-                    filter: `blur(${bg.blur || 20}px)`,
-                    opacity
-                }
+                break
             default:
                 return { backgroundColor: '#000000' }
         }
+
+        // Fallback
+        return { backgroundColor: '#000000' }
     }
 
     return (
@@ -346,6 +393,7 @@ export function VideoPreview() {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
         >
+            {/* VIDEO PRINCIPALE */}
             <video
                 ref={videoRef}
                 src={videoSrc}
@@ -355,6 +403,11 @@ export function VideoPreview() {
                     maxWidth: '80%',
                     maxHeight: '80%',
                     borderRadius: currentProject?.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
+                    boxShadow: hasBackground() ? '0 20px 40px rgba(0,0,0,0.3)' : 'none',
+                    // Aggiungi il riflesso solo se c'è un background
+                    ...(hasBackground() && {
+                        WebkitBoxReflect: 'below 10px linear-gradient(to bottom, transparent 60%, rgba(255, 255, 255, 0.12))',
+                    }),
                 }}
 
                 onLoadedMetadata={() => {
@@ -432,7 +485,7 @@ export function VideoPreview() {
                 }
 
                 return (
-                    <div className="absolute top-4 right-4 bg-primary/90 backdrop-blur-sm rounded-lg p-3 text-primary-foreground text-sm">
+                    <div className="absolute top-4 right-4 bg-primary backdrop-blur-sm rounded-lg p-3 text-primary-foreground text-sm">
                         <div className="flex items-center space-x-2">
                             <Search className="h-4 w-4" />
                             <span>{isSelected ? 'Zoom Mode Active' : 'Zoom Preview'}</span>
