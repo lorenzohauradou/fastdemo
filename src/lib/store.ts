@@ -51,6 +51,7 @@ export interface Project {
     track?: string
     volume: number
     fileName?: string
+    track_path?: string | null
     trimStart?: number
     trimEnd?: number
     duration?: number

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Play, Upload, Volume2, ArrowLeft, Plus, X } from 'lucide-react'
+import { useApi } from '@/lib/api'
 
 const musicCategories = [
     {
@@ -85,6 +86,8 @@ export function MusicPanel() {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [importedFile, setImportedFile] = useState<File | null>(null)
     const [volume, setVolume] = useState([50])
+    const [isUploading, setIsUploading] = useState(false)
+    const api = useApi()
 
     const handleCategorySelect = (categoryId: string) => {
         setSelectedCategory(categoryId)
@@ -101,21 +104,41 @@ export function MusicPanel() {
         })
     }
 
-    const handleCustomUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleCustomUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (!file) return
 
-        setImportedFile(file)
-        setCurrentView('imported')
+        // Verifica che sia un file audio
+        if (!file.type.startsWith('audio/')) {
+            alert('Il file deve essere un audio')
+            return
+        }
 
-        const audioUrl = URL.createObjectURL(file)
-        updateProject({
-            musicSettings: {
-                type: 'custom',
-                track: audioUrl,
-                volume: volume[0] / 100
-            }
-        })
+        setIsUploading(true)
+
+        try {
+            // Carica il file usando l'API
+            const response = await api.uploadAudio(file)
+
+            setImportedFile(file)
+            setCurrentView('imported')
+
+            // Salva il nome del file invece dell'URL blob
+            updateProject({
+                musicSettings: {
+                    type: 'custom',
+                    track: response.audioUrl, // URL per il preview locale
+                    volume: volume[0] / 100,
+                    fileName: response.filename, // Nome del file per il backend
+                    track_path: null // Sarà impostato dal backend
+                }
+            })
+        } catch (error) {
+            console.error('Errore upload audio:', error)
+            alert('Errore durante l\'upload dell\'audio')
+        } finally {
+            setIsUploading(false)
+        }
     }
 
     const handleRemoveImported = () => {
@@ -153,20 +176,21 @@ export function MusicPanel() {
                         accept="audio/*"
                         onChange={handleCustomUpload}
                         className="hidden"
+                        disabled={isUploading}
                     />
                     <Button
                         variant="outline"
                         className="w-full border-gray-600 hover:bg-gray-700"
+                        disabled={isUploading}
                     >
                         <Upload className="mr-2 h-4 w-4" />
-                        Import music file
+                        {isUploading ? 'Uploading...' : 'Import music file'}
                     </Button>
                 </label>
 
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
 
-                    {/* Featured */}
                     <div className="mb-4">
                         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4">
                             <h4 className="text-lg font-medium text-white">Featured</h4>
@@ -207,13 +231,15 @@ export function MusicPanel() {
                         accept="audio/*"
                         onChange={handleCustomUpload}
                         className="hidden"
+                        disabled={isUploading}
                     />
                     <Button
                         variant="outline"
                         className="w-full border-gray-600 hover:bg-gray-700"
+                        disabled={isUploading}
                     >
                         <Upload className="mr-2 h-4 w-4" />
-                        Import music file
+                        {isUploading ? 'Uploading...' : 'Import music file'}
                     </Button>
                 </label>
 
@@ -347,13 +373,15 @@ export function MusicPanel() {
                         accept="audio/*"
                         onChange={handleCustomUpload}
                         className="hidden"
+                        disabled={isUploading}
                     />
                     <Button
                         variant="outline"
                         className="w-full border-gray-600 hover:bg-gray-700"
+                        disabled={isUploading}
                     >
                         <Upload className="mr-2 h-4 w-4" />
-                        Import music file
+                        {isUploading ? 'Uploading...' : 'Import music file'}
                     </Button>
                 </label>
                 <div>

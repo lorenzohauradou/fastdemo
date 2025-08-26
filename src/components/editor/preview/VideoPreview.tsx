@@ -137,28 +137,16 @@ export function VideoPreview() {
                 const finalY = zoomPosition.y / finalZoom
                 zoomTransform = `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`
             } else {
-                // Se l'animazione attiva NON è quella selezionata, usa i valori salvati
+                // Se l'animazione attiva NON è quella selezionata, usa direttamente i valori finali
                 const props = activeZoomAtCurrentTime.properties
-                const startProps = props.start || {}
-                const endProps = props.end || {}
+                const endProps = props.end || props // Se non c'è 'end', usa le proprietà principali
 
-                // Calcola il progresso dell'animazione (0-1)
-                const progress = (currentTime - activeZoomAtCurrentTime.startTime) /
-                    (activeZoomAtCurrentTime.endTime - activeZoomAtCurrentTime.startTime)
+                // Usa direttamente i valori finali per uno zoom immediato
+                const finalZoom = endProps.level || props.level || 1
+                const finalX = (endProps.x || props.x || 0) / finalZoom
+                const finalY = (endProps.y || props.y || 0) / finalZoom
 
-                // Interpola tra start e end
-                const startZoom = startProps.level || 1
-                const endZoom = endProps.level || startZoom
-                const startX = startProps.x || 0
-                const startY = startProps.y || 0
-                const endX = endProps.x || startX
-                const endY = endProps.y || startY
-
-                const currentZoom = startZoom + (endZoom - startZoom) * progress
-                const currentX = (startX + (endX - startX) * progress) / currentZoom
-                const currentY = (startY + (endY - startY) * progress) / currentZoom
-
-                zoomTransform = `scale(${currentZoom}) translate(${currentX}px, ${currentY}px)`
+                zoomTransform = `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`
             }
         } else {
             // Nessuna animazione zoom attiva, usa il zoom base della timeline
@@ -243,7 +231,7 @@ export function VideoPreview() {
             },
             end: {
                 level: interactiveZoom,
-                x: newPosition.x,
+                x: newPosition.x, // Mantieni i pixel per il pan interattivo
                 y: newPosition.y
             }
         }
@@ -504,10 +492,6 @@ export function VideoPreview() {
                     </div>
                 )
             })()}
-
-
-
-            {/* Overlay per le animazioni di testo */}
             {(() => {
                 if (!currentProject) return null
 

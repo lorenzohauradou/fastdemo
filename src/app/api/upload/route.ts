@@ -22,17 +22,14 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi']
+        const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
         if (!allowedTypes.includes(file.type)) {
             return NextResponse.json(
-                { error: 'Formato non supportato. Usa MP4, MOV o AVI' },
+                { error: 'Formato non supportato. Usa MP4, MOV, AVI o WebM' },
                 { status: 400 }
             )
         }
-
-        // Prova a inoltrare al backend se disponibile
         const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
-        
         try {
             const backendFormData = new FormData()
             backendFormData.append('file', file)
@@ -58,17 +55,6 @@ export async function POST(request: NextRequest) {
         } catch (backendError) {
             console.warn('Backend not available:', backendError)
         }
-
-        // Fallback: salva solo le informazioni del file (frontend-only)
-        return NextResponse.json({
-            success: true,
-            message: 'File processato (frontend-only)',
-            filename: file.name,
-            size: file.size,
-            content_type: file.type,
-            note: 'Backend non disponibile, usando modalità frontend-only'
-        })
-
     } catch (error) {
         console.error('Errore nell\'upload:', error)
         return NextResponse.json(

@@ -13,6 +13,15 @@ export interface UploadResponse {
     note?: string
 }
 
+export interface AudioUploadResponse {
+    message: string
+    filename: string
+    originalName: string
+    size: number
+    contentType: string
+    audioUrl: string
+}
+
 export interface RenderRequest {
     name: string
     duration: number
@@ -83,6 +92,26 @@ class ApiClient {
         if (!response.ok) {
             const errorData = await response.json()
             throw new Error(errorData.error || 'Errore durante l\'upload')
+        }
+
+        return response.json()
+    }
+
+    /**
+     * Upload di un file audio
+     */
+    async uploadAudio(file: File): Promise<AudioUploadResponse> {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await fetch('/api/upload/audio', {
+            method: 'POST',
+            body: formData
+        })
+
+        if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Errore durante l\'upload dell\'audio')
         }
 
         return response.json()

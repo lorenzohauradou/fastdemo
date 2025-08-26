@@ -69,9 +69,9 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
             return
         }
 
-        const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi']
+        const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
         if (!allowedTypes.includes(file.type)) {
-            alert('Formato non supportato. Usa MP4, MOV o AVI')
+            alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
             return
         }
 
@@ -251,7 +251,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                             Drag and drop a video file or click to select
                         </p>
                         <p className="text-sm text-muted-foreground/80">
-                            Supports MP4, MOV, AVI • Max 500MB
+                            Supports MP4, MOV, AVI, WebM • Max 500MB
                         </p>
                     </div>
 
