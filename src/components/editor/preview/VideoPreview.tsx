@@ -163,7 +163,7 @@ export function VideoPreview() {
     const handleWheel = useCallback((e: React.WheelEvent) => {
         // Permetti zoom sempre quando c'è un'animazione zoom selezionata
         if (!selectedAnimation || selectedAnimation.type !== 'zoom') return
-        if (currentTime < selectedAnimation.startTime || currentTime > selectedAnimation.endTime) return
+        if (clipTime < selectedAnimation.startTime || clipTime > selectedAnimation.endTime) return
 
         e.preventDefault()
         e.stopPropagation()
@@ -189,11 +189,11 @@ export function VideoPreview() {
         updateAnimation(selectedAnimation.id, {
             properties: updatedProps
         })
-    }, [selectedAnimation, currentTime, interactiveZoom, zoomPosition, updateAnimation])
+    }, [selectedAnimation, clipTime, interactiveZoom, zoomPosition, updateAnimation])
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!selectedAnimation || selectedAnimation.type !== 'zoom') return
-        if (currentTime < selectedAnimation.startTime || currentTime > selectedAnimation.endTime) return
+        if (clipTime < selectedAnimation.startTime || clipTime > selectedAnimation.endTime) return
 
         setIsDragging(true)
         setLastMousePos({ x: e.clientX, y: e.clientY })
