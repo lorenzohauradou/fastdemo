@@ -113,6 +113,10 @@ export function TimelineTrack({
                         isSelected={selectedClip === clip.id}
                         onSelect={() => onClipSelect(clip.id)}
                         type={type}
+                        allClips={clips}
+                        onMoveAdjacentClip={(clipId, newStartTime, newEndTime) => {
+                            onClipUpdate(clipId, { startTime: newStartTime, endTime: newEndTime })
+                        }}
                     />
                 ))}
 
@@ -146,10 +150,28 @@ export function TimelineTrack({
                                 </button>
                             </div>
                         ) : (
-                            <span className="text-xs text-zinc-500">
-                                Drop video files here or click + Add Clip
-                            </span>
+                            <button
+                                onClick={onAddClip}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
+                            >
+                                <Upload className="h-3 w-3" />
+                                Add Video Clip
+                            </button>
                         )}
+                    </div>
+                )}
+
+                {/* Pulsante per aggiungere clip anche quando ci sono già clip */}
+                {type === 'video' && clips.length > 0 && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <button
+                            onClick={onAddClip}
+                            className="flex items-center gap-1 px-2 py-1 bg-zinc-700/80 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded text-xs text-zinc-300 hover:text-white transition-all duration-200"
+                            title="Add another video clip"
+                        >
+                            <Upload className="h-3 w-3" />
+                            +
+                        </button>
                     </div>
                 )}
             </div>

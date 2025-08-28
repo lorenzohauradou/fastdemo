@@ -70,7 +70,7 @@ export const generateVideoThumbnail = async (
 }
 
 /**
- * Crea solo la clip del video principale
+ * Crea le clip video dal progetto (supporta multi-clip)
  */
 export const createVideoClips = (
     currentProject: any,
@@ -78,6 +78,28 @@ export const createVideoClips = (
     videoSrc: string,
     videoThumbnails: { [key: string]: string }
 ): VideoClip[] => {
+    if (!currentProject) return []
+
+    // Se il progetto ha clips definite, usale
+    if (currentProject.clips && currentProject.clips.length > 0) {
+        return currentProject.clips.map((clip: any) => ({
+            id: clip.id,
+            startTime: clip.startTime,
+            endTime: clip.endTime,
+            properties: {
+                name: clip.name,
+                url: clip.videoUrl || videoSrc,
+                originalDuration: clip.originalDuration || clip.duration,
+                duration: clip.duration,
+                trimStart: clip.trimStart || 0,
+                trimEnd: clip.trimEnd || 0,
+                file: clip.videoFile
+            },
+            thumbnail: videoThumbnails[clip.id] || clip.thumbnail
+        }))
+    }
+
+    // Fallback per compatibilità: crea una clip dal video principale
     if (!hasMainVideo || !videoSrc) return []
 
     return [{
@@ -122,14 +144,4 @@ export const createAudioClips = (
     }
 
     return audioClips
-}
-
-/**
- * Calcola i pixels per secondo per la timeline - VALORE FISSO
- */
-export const calculatePixelsPerSecond = (
-    timelineWidth: number,
-    duration: number
-): number => {
-    return 3
 }

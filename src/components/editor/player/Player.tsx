@@ -20,6 +20,8 @@ export function Player() {
         setCurrentTime,
         setIsPlaying,
         updateProject,
+        updateClip,
+        addClip,
         setSelectedPanel,
         selectedClip,
         setSelectedClip
@@ -30,24 +32,18 @@ export function Player() {
     const timelineRef = useRef<HTMLDivElement>(null)
     const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
 
-    const videoSrc = currentProject?.videoUrl || (currentProject?.videoFile ? URL.createObjectURL(currentProject.videoFile) : '')
     const audioSrc = currentProject?.musicSettings?.track || ''
 
-    // Solo video principale - nessuna clip multipla
-    const hasMainVideo = !!(videoSrc || currentProject?.videoFile)
-
-    // Crea solo la clip del video principale
+    // Crea le clip video dal progetto (supporta multi-clip)
     const videoClips: VideoClip[] = useMemo(() => {
         return createVideoClips(
             currentProject,
-            hasMainVideo,
-            videoSrc,
+            true, // hasMainVideo - sempre true per compatibilità
+            '', // videoSrc non più necessario
             videoThumbnails
         )
     }, [
         currentProject,
-        hasMainVideo,
-        videoSrc,
         videoThumbnails
     ])
 
@@ -60,13 +56,18 @@ export function Player() {
         return createAudioClips(currentProject, audioSrc, totalVideoDuration)
     }, [currentProject, audioSrc, videoClips])
 
-    // Sincronizza il video principale con il tempo corrente, considerando il trimming
-    useEffect(() => {
-        if (!videoRef.current || !hasMainVideo) return
+    // Trova la clip video attiva al tempo corrente
+    const activeVideoClip = videoClips.find(clip =>
+        currentTime >= clip.startTime && currentTime < clip.endTime
+    )
 
-        const trimStart = currentProject?.videoTrimming?.start || 0
-        // Il tempo nel video originale = trimStart + tempo della timeline
-        const actualVideoTime = trimStart + currentTime
+    // Sincronizza il video attivo con il tempo corrente
+    useEffect(() => {
+        if (!videoRef.current || !activeVideoClip) return
+
+        const clipRelativeTime = currentTime - activeVideoClip.startTime
+        const trimStart = activeVideoClip.properties.trimStart || 0
+        const actualVideoTime = trimStart + clipRelativeTime
 
         // Solo se non stiamo riproducendo, aggiorna il tempo
         if (!isPlaying && Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.2) {
@@ -79,11 +80,11 @@ export function Player() {
                 audioRef.current.currentTime = currentTime
             }
         }
-    }, [currentTime, isPlaying, hasMainVideo, currentProject?.videoTrimming, audioSrc])
+    }, [currentTime, isPlaying, activeVideoClip, audioSrc])
 
     // Gestisce play/pause e volume
     useEffect(() => {
-        if (videoRef.current) {
+        if (videoRef.current && activeVideoClip) {
             if (isPlaying) {
                 // Solo se il video è pronto per la riproduzione
                 if (videoRef.current.readyState >= 3) { // HAVE_FUTURE_DATA
@@ -105,7 +106,7 @@ export function Player() {
                 audioRef.current.pause()
             }
         }
-    }, [isPlaying, currentProject?.musicSettings?.track, currentProject?.musicSettings?.volume])
+    }, [isPlaying, activeVideoClip, currentProject?.musicSettings?.track, currentProject?.musicSettings?.volume])
 
     // ===== GESTIONE PLAYBACK =====
     const handlePlayPause = () => {
@@ -127,26 +128,32 @@ export function Player() {
     }
 
     const handleTimeUpdate = () => {
-        if (videoRef.current && isPlaying && hasMainVideo) {
+        if (videoRef.current && isPlaying && activeVideoClip) {
             const videoTime = videoRef.current.currentTime
-            const trimStart = currentProject?.videoTrimming?.start || 0
+            const trimStart = activeVideoClip.properties.trimStart || 0
+            const clipRelativeTime = videoTime - trimStart
+            const globalTime = activeVideoClip.startTime + clipRelativeTime
             const timelineDuration = currentProject?.duration || 10
 
-            // Calcola il nuovo tempo della timeline (tempo video - trimStart)
-            const newTime = videoTime - trimStart
-
-            // Controlla se abbiamo raggiunto la fine della timeline
-            if (newTime >= timelineDuration - 0.1) {
-                setIsPlaying(false)
-                setCurrentTime(timelineDuration)
-                // Pausa anche l'audio
-                if (audioRef.current) {
-                    audioRef.current.pause()
+            // Controlla se abbiamo raggiunto la fine della clip corrente
+            if (globalTime >= activeVideoClip.endTime - 0.1) {
+                // Cerca la prossima clip
+                const nextClip = videoClips.find(clip => clip.startTime >= activeVideoClip.endTime)
+                if (nextClip) {
+                    // Passa alla prossima clip
+                    setCurrentTime(nextClip.startTime)
+                } else {
+                    // Fine del progetto
+                    setIsPlaying(false)
+                    setCurrentTime(timelineDuration)
+                    if (audioRef.current) {
+                        audioRef.current.pause()
+                    }
                 }
             } else {
                 // Aggiorna currentTime normalmente
-                if (Math.abs(newTime - currentTime) > 0.1) {
-                    setCurrentTime(Math.max(0, Math.min(newTime, timelineDuration)))
+                if (Math.abs(globalTime - currentTime) > 0.1) {
+                    setCurrentTime(Math.max(0, Math.min(globalTime, timelineDuration)))
                 }
             }
         }
@@ -179,18 +186,77 @@ export function Player() {
         setSelectedPanel('music')
     }
 
+    // ===== GESTIONE AGGIUNTA CLIP VIDEO =====
+    const handleAddVideoClip = async () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'video/*'
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0]
+            if (file) {
+                // Validazione del file
+                const maxSize = 500 * 1024 * 1024 // 500MB
+                if (file.size > maxSize) {
+                    alert('Il file è troppo grande. Dimensione massima: 500MB')
+                    return
+                }
+
+                const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
+                    return
+                }
+
+                // Crea URL locale per il preview
+                const videoUrl = URL.createObjectURL(file)
+
+                // Ottieni la durata del video
+                const tempVideo = document.createElement('video')
+                tempVideo.src = videoUrl
+
+                tempVideo.onloadedmetadata = () => {
+                    const videoDuration = tempVideo.duration
+
+                    // La nuova clip sarà automaticamente posizionata alla fine grazie alla logica nello store
+                    const newClip = {
+                        name: file.name.replace(/\.[^/.]+$/, ''),
+                        duration: videoDuration,
+                        videoFile: file,
+                        videoUrl: videoUrl,
+                        originalDuration: videoDuration,
+                        animations: [],
+                        trimStart: 0,
+                        trimEnd: 0
+                    }
+
+                    addClip(newClip)
+                }
+
+                tempVideo.onerror = () => {
+                    alert('Errore nel caricamento del video')
+                    URL.revokeObjectURL(videoUrl)
+                }
+            }
+        }
+        input.click()
+    }
+
     // ===== GESTIONE THUMBNAILS =====
     const handleThumbnailGenerated = (clipId: string, thumbnail: string) => {
         setVideoThumbnails(prev => ({ ...prev, [clipId]: thumbnail }))
     }
 
-    // Genera thumbnail solo per il video principale
+
+
+    // Genera thumbnails per tutte le clip
     useEffect(() => {
-        if (videoSrc && !videoThumbnails['main-video']) {
-            console.log('Generando thumbnail per video principale:', videoSrc)
-            generateVideoThumbnail(videoSrc, 'main-video', handleThumbnailGenerated)
-        }
-    }, [videoSrc, videoThumbnails])
+        videoClips.forEach(clip => {
+            const videoUrl = clip.properties.url
+            if (videoUrl && !videoThumbnails[clip.id]) {
+                generateVideoThumbnail(videoUrl, clip.id, handleThumbnailGenerated)
+            }
+        })
+    }, [videoClips, videoThumbnails])
 
     // Gestione tasti per deselezionare
     useEffect(() => {
@@ -241,9 +307,9 @@ export function Player() {
         const clampedTime = Math.max(0, Math.min(duration, newTime))
         setCurrentTime(clampedTime)
 
-        // Seleziona sempre il video principale
-        if (hasMainVideo) {
-            setSelectedClip('main-video')
+        // Seleziona la clip attiva se presente
+        if (activeVideoClip) {
+            setSelectedClip(activeVideoClip.id)
         }
     }
 
@@ -254,26 +320,7 @@ export function Player() {
 
     // ===== GESTIONE AGGIORNAMENTI CLIP =====
     const handleClipUpdate = (clipId: string, updates: any, isAudio = false) => {
-        if (clipId === 'main-video') {
-            // Video principale: aggiorna solo le proprietà del progetto
-            const newDuration = updates.endTime || duration
-            const trimStart = updates.properties?.trimStart || 0
-            const trimEnd = updates.properties?.trimEnd || 0
-
-            updateProject({
-                duration: newDuration,
-                videoTrimming: {
-                    start: trimStart,
-                    end: trimEnd,
-                    duration: newDuration
-                }
-            })
-
-            // Controlla se il currentTime è oltre la nuova durata
-            if (currentTime > newDuration) {
-                setCurrentTime(newDuration)
-            }
-        } else if (clipId === 'main-audio') {
+        if (isAudio && clipId === 'main-audio') {
             // Audio principale: aggiorna solo se necessario
             if (updates.endTime && updates.endTime !== duration) {
                 updateProject({
@@ -287,15 +334,41 @@ export function Player() {
                     }
                 })
             }
+        } else {
+            // Clip video: aggiorna la clip specifica
+            const clipUpdates = {
+                startTime: updates.startTime,
+                endTime: updates.endTime,
+                duration: updates.endTime - updates.startTime,
+                trimStart: updates.properties?.trimStart || 0,
+                trimEnd: updates.properties?.trimEnd || 0
+            }
+
+            updateClip(clipId, clipUpdates)
+
+            // Aggiorna la durata totale del progetto se necessario
+            const newProjectDuration = Math.max(
+                currentProject?.duration || 0,
+                updates.endTime || 0
+            )
+
+            if (newProjectDuration > (currentProject?.duration || 0)) {
+                updateProject({ duration: newProjectDuration })
+            }
+
+            // Controlla se il currentTime è oltre la nuova durata
+            if (currentTime > newProjectDuration) {
+                setCurrentTime(newProjectDuration)
+            }
         }
     }
 
     return (
         <div className="bg-zinc-900 h-40 flex border-t border-zinc-700">
-            {videoSrc && (
+            {activeVideoClip && (
                 <video
                     ref={videoRef}
-                    src={videoSrc}
+                    src={activeVideoClip.properties.url}
                     className="hidden"
                     onTimeUpdate={handleTimeUpdate}
                     muted={!!audioSrc}
@@ -323,6 +396,7 @@ export function Player() {
                         onClipUpdate={handleClipUpdate}
                         onClipSelect={handleClipSelect}
                         onTimelineClick={handleTimelineClick}
+                        onAddClip={handleAddVideoClip}
                         timelineWidth={Math.max(timelineWidth, duration * pixelsPerSecond + 200)}
                     />
                 </div>

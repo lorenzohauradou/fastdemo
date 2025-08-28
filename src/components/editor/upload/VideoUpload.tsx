@@ -139,20 +139,74 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
     const handleStartEditing = () => {
         if (!uploadedVideo) return
 
-        // Crea un nuovo progetto
-        const newProject = {
-            name: uploadedVideo.name,
-            videoUrl: uploadedVideo.url,
-            duration: 0, // Sarà aggiornato quando il video si carica
-            animations: [],
-            musicSettings: {
-                type: 'preset' as const,
-                volume: 0.5
+        // Crea un video temporaneo per ottenere la durata
+        const tempVideo = document.createElement('video')
+        tempVideo.src = uploadedVideo.url
+        tempVideo.onloadedmetadata = () => {
+            const videoDuration = tempVideo.duration
+
+            // Crea un nuovo progetto con il sistema multi-clip
+            const newProject = {
+                name: uploadedVideo.name,
+                videoUrl: uploadedVideo.url, // Manteniamo per compatibilità
+                videoFile: uploadedVideo.file, // Manteniamo per compatibilità
+                duration: videoDuration,
+                originalDuration: videoDuration,
+                clips: [{
+                    id: 'main-video',
+                    name: uploadedVideo.name,
+                    startTime: 0,
+                    endTime: videoDuration,
+                    duration: videoDuration,
+                    videoFile: uploadedVideo.file,
+                    videoUrl: uploadedVideo.url,
+                    originalDuration: videoDuration,
+                    animations: [], // Ogni clip ha le sue animazioni
+                    trimStart: 0,
+                    trimEnd: 0
+                }],
+                activeClipId: 'main-video',
+                musicSettings: {
+                    type: 'preset' as const,
+                    volume: 0.5
+                }
             }
+
+            setCurrentProject(newProject)
+            router.push('/editor')
         }
 
-        setCurrentProject(newProject)
-        router.push('/editor')
+        // Fallback se non riusciamo a ottenere la durata
+        tempVideo.onerror = () => {
+            const newProject = {
+                name: uploadedVideo.name,
+                videoUrl: uploadedVideo.url,
+                videoFile: uploadedVideo.file,
+                duration: 30, // Durata di default
+                originalDuration: 30,
+                clips: [{
+                    id: 'main-video',
+                    name: uploadedVideo.name,
+                    startTime: 0,
+                    endTime: 30,
+                    duration: 30,
+                    videoFile: uploadedVideo.file,
+                    videoUrl: uploadedVideo.url,
+                    originalDuration: 30,
+                    animations: [],
+                    trimStart: 0,
+                    trimEnd: 0
+                }],
+                activeClipId: 'main-video',
+                musicSettings: {
+                    type: 'preset' as const,
+                    volume: 0.5
+                }
+            }
+
+            setCurrentProject(newProject)
+            router.push('/editor')
+        }
     }
 
     const handleRemoveVideo = () => {

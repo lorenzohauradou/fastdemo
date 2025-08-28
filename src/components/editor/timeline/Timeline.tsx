@@ -133,6 +133,8 @@ export function Timeline() {
         removeAnimation,
         selectedAnimation,
         setSelectedAnimation,
+        getActiveClip,
+        getCurrentClipTime,
     } = useEditorStore()
 
     const tracks = [
@@ -212,12 +214,23 @@ export function Timeline() {
         )
     }
 
-    // Solo video principale
-    const duration = currentProject.duration
+    // Ottieni la clip attiva e i suoi dati
+    const activeClip = getActiveClip()
+    const clipTime = getCurrentClipTime() // Tempo relativo alla clip attiva
+    const clipDuration = activeClip?.duration || 10 // Durata della clip attiva
+
+    if (!activeClip) {
+        return (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+                Nessuna clip attiva - sposta la linea blu su una clip
+            </div>
+        )
+    }
+
     const timelineWidth = timelineContainerRef.current ? timelineContainerRef.current.offsetWidth : 1000
     // Sottrai la larghezza del label per allineare correttamente
     const availableWidth = timelineWidth - 80 // 80px per il label compatto
-    const pixelsPerSecond = (availableWidth * timelineZoom) / duration
+    const pixelsPerSecond = (availableWidth * timelineZoom) / clipDuration
 
     // Funzione per il movimento playhead
     const handleTimelineScrub = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -227,9 +240,11 @@ export function Timeline() {
 
         const updatePosition = (clientX: number) => {
             const x = clientX - timelineRect.left - 80 // Sottrai l'offset del label
-            const newTime = Math.max(0, Math.min(x / pixelsPerSecond, duration))
+            const newClipTime = Math.max(0, Math.min(x / pixelsPerSecond, clipDuration))
 
-            setCurrentTime(newTime)
+            // Converti il tempo della clip in tempo globale
+            const globalTime = activeClip ? activeClip.startTime + newClipTime : newClipTime
+            setCurrentTime(globalTime)
         }
 
         updatePosition(e.clientX)
@@ -248,10 +263,13 @@ export function Timeline() {
     }
 
     const handleAddAnimation = (trackType: 'text' | 'zoom') => {
+        if (!activeClip) return
+
         const properties = trackType === 'zoom' ? { level: 1.5 } : { content: 'New Text' }
 
-        const startTime = Math.max(0, Math.min(currentTime, duration - 1))
-        const endTime = Math.min(startTime + 3, duration)
+        // Usa il tempo relativo alla clip attiva
+        const startTime = Math.max(0, Math.min(clipTime, clipDuration - 1))
+        const endTime = Math.min(startTime + 3, clipDuration)
 
         addAnimation({
             type: trackType,
@@ -261,7 +279,7 @@ export function Timeline() {
         })
     }
     const playheadStyle = {
-        transform: `translateX(${80 + currentTime * pixelsPerSecond}px)`,
+        transform: `translateX(${80 + clipTime * pixelsPerSecond}px)`,
     }
 
     return (
@@ -269,9 +287,14 @@ export function Timeline() {
             <div className="h-36 border-t border-gray-700">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
                     <div className="flex items-center space-x-6">
-                        <span className="text-sm text-gray-300 font-mono">
-                            {new Date(currentTime * 1000).toISOString().substr(14, 5)} / {new Date(duration * 1000).toISOString().substr(14, 5)}
-                        </span>
+                        <div className="flex items-center space-x-4">
+                            <span className="text-sm text-gray-300 font-mono">
+                                Clip: {new Date(clipTime * 1000).toISOString().substr(14, 5)} / {new Date(clipDuration * 1000).toISOString().substr(14, 5)}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                                {activeClip?.name || 'No Clip'}
+                            </span>
+                        </div>
                         <div className="flex items-center space-x-2">
                             <Button
                                 variant="outline"
@@ -305,7 +328,8 @@ export function Timeline() {
 
                         <div className="flex flex-col h-full justify-center space-y-1">
                             {tracks.map(track => {
-                                const trackAnimations = currentProject.animations.filter(a => a.type === track.type)
+                                // Mostra solo le animazioni della clip attiva
+                                const trackAnimations = activeClip?.animations.filter(a => a.type === track.type) || []
 
                                 return (
                                     <div key={track.id} className="h-8 flex items-center relative mb-1">
@@ -320,7 +344,7 @@ export function Timeline() {
                                                     updateAnimation={updateAnimation}
                                                     selectedAnimation={selectedAnimation}
                                                     setSelectedAnimation={setSelectedAnimation}
-                                                    projectDuration={duration}
+                                                    projectDuration={clipDuration}
                                                 />
                                             ))}
                                         </div>

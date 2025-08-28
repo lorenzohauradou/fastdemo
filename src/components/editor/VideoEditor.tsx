@@ -24,7 +24,8 @@ export function VideoEditor() {
                     name: videoData.name,
                     videoUrl: videoData.url,
                     duration: 0, // Sarà aggiornato quando il video si carica
-                    animations: [],
+                    clips: [],
+                    activeClipId: null,
                     musicSettings: {
                         type: 'preset' as const,
                         volume: 0.5
@@ -42,7 +43,8 @@ export function VideoEditor() {
                     name: 'Demo Project',
                     videoUrl: '', // Vuoto per ora
                     duration: 30, // 30 secondi di demo
-                    animations: [],
+                    clips: [],
+                    activeClipId: null,
                     musicSettings: {
                         type: 'preset' as const,
                         volume: 0.5

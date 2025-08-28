@@ -21,24 +21,51 @@ export function VideoPreview() {
         isPlaying,
         zoom,
         selectedAnimation,
-        updateAnimation
+        updateAnimation,
+        getActiveClip,
+        getCurrentClipTime
     } = useEditorStore()
 
-    // Solo video principale
-    const videoSrc = currentProject?.videoUrl || (currentProject?.videoFile ? URL.createObjectURL(currentProject.videoFile) : '')
+    // Ottieni la clip attiva e il suo video
+    const activeClip = getActiveClip()
+    const clipTime = getCurrentClipTime()
+    const videoSrc = activeClip?.videoUrl || (activeClip?.videoFile ? URL.createObjectURL(activeClip.videoFile) : '')
 
-    // Sincronizza il video principale con il tempo corrente
+    // Sincronizza il video della clip attiva con il tempo corrente
     useEffect(() => {
-        if (!videoRef.current || !videoSrc) return
+        if (!videoRef.current || !videoSrc || !activeClip) return
 
-        const trimStart = currentProject?.videoTrimming?.start || 0
-        // Il tempo nel video originale = trimStart + tempo della timeline
-        const actualVideoTime = trimStart + currentTime
+        const trimStart = activeClip.trimStart || 0
+        // Il tempo nel video originale = trimStart + tempo relativo alla clip
+        const actualVideoTime = trimStart + clipTime
 
-        if (!isPlaying && Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.2) {
+        // Aggiorna sempre il tempo del video, sia in play che in pausa
+        if (Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.1) {
             videoRef.current.currentTime = actualVideoTime
         }
-    }, [currentTime, currentProject, videoSrc, isPlaying])
+    }, [clipTime, activeClip, videoSrc, isPlaying])
+
+    // Gestisce il cambio di clip - ricarica il video quando cambia la clip attiva
+    useEffect(() => {
+        if (videoRef.current && videoSrc && activeClip) {
+            const currentSrc = videoRef.current.src
+            const newSrc = activeClip.videoUrl || (activeClip.videoFile ? URL.createObjectURL(activeClip.videoFile) : '')
+
+            if (currentSrc !== newSrc && newSrc) {
+                videoRef.current.src = newSrc
+                videoRef.current.load()
+
+                // Imposta il tempo corretto dopo il caricamento
+                videoRef.current.onloadeddata = () => {
+                    const trimStart = activeClip.trimStart || 0
+                    const actualVideoTime = trimStart + clipTime
+                    if (videoRef.current) {
+                        videoRef.current.currentTime = actualVideoTime
+                    }
+                }
+            }
+        }
+    }, [activeClip?.id, videoSrc, clipTime])
 
     // Gestisce il cambio di video source
     useEffect(() => {
@@ -67,20 +94,20 @@ export function VideoPreview() {
         }
     }, [isPlaying])
 
-    // Trova l'animazione zoom attiva al tempo corrente
+    // Trova l'animazione zoom attiva al tempo corrente (nella clip attiva)
     const getActiveZoomAnimation = () => {
-        if (!currentProject) return null
+        if (!activeClip) return null
 
-        const zoomAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
+        const zoomAnimations = activeClip.animations.filter(anim => anim.type === 'zoom')
 
         // Trova SOLO l'animazione zoom selezionata se è attiva al tempo corrente
         return selectedAnimation?.type === 'zoom' &&
-            currentTime >= selectedAnimation.startTime &&
-            currentTime <= selectedAnimation.endTime
+            clipTime >= selectedAnimation.startTime &&
+            clipTime <= selectedAnimation.endTime
             ? selectedAnimation
             : zoomAnimations.find(anim =>
-                currentTime >= anim.startTime &&
-                currentTime <= anim.endTime &&
+                clipTime >= anim.startTime &&
+                clipTime <= anim.endTime &&
                 anim.startTime < anim.endTime
             ) || null
     }
@@ -92,14 +119,14 @@ export function VideoPreview() {
 
     // Applica le trasformazioni CSS in tempo reale per il preview
     const getVideoTransform = () => {
-        if (!currentProject) return {}
+        if (!activeClip) return {}
 
-        const zoomAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
+        const zoomAnimations = activeClip.animations.filter(anim => anim.type === 'zoom')
 
         // Trova l'animazione zoom attiva al tempo corrente
         const activeZoomAtCurrentTime = zoomAnimations.find(anim =>
-            currentTime >= anim.startTime &&
-            currentTime <= anim.endTime
+            clipTime >= anim.startTime &&
+            clipTime <= anim.endTime
         )
 
         let zoomTransform = ''
@@ -405,12 +432,12 @@ export function VideoPreview() {
 
             {/* Indicatore quando zona zoom è attiva */}
             {(() => {
-                if (!currentProject) return null
+                if (!activeClip) return null
 
-                const zoomAnimations = currentProject.animations.filter(anim => anim.type === 'zoom')
+                const zoomAnimations = activeClip.animations.filter(anim => anim.type === 'zoom')
                 const activeZoomAtCurrentTime = zoomAnimations.find(anim =>
-                    currentTime >= anim.startTime &&
-                    currentTime <= anim.endTime
+                    clipTime >= anim.startTime &&
+                    clipTime <= anim.endTime
                 )
 
                 if (!activeZoomAtCurrentTime) return null
@@ -427,7 +454,7 @@ export function VideoPreview() {
                     const props = activeZoomAtCurrentTime.properties
                     const startProps = props.start || {}
                     const endProps = props.end || {}
-                    const progress = (currentTime - activeZoomAtCurrentTime.startTime) /
+                    const progress = (clipTime - activeZoomAtCurrentTime.startTime) /
                         (activeZoomAtCurrentTime.endTime - activeZoomAtCurrentTime.startTime)
 
                     displayZoom = (startProps.level || 1) + ((endProps.level || startProps.level || 1) - (startProps.level || 1)) * progress
@@ -456,12 +483,12 @@ export function VideoPreview() {
                 )
             })()}
             {(() => {
-                if (!currentProject) return null
+                if (!activeClip) return null
 
-                const textAnimations = currentProject.animations.filter(anim =>
+                const textAnimations = activeClip.animations.filter(anim =>
                     anim.type === 'text' &&
-                    currentTime >= anim.startTime &&
-                    currentTime <= anim.endTime
+                    clipTime >= anim.startTime &&
+                    clipTime <= anim.endTime
                 )
 
                 return textAnimations.map((textAnim, index) => (
@@ -490,10 +517,10 @@ export function VideoPreview() {
             })()}
 
             {/* Overlay per le animazioni logo */}
-            {currentProject?.animations
-                .filter(anim => anim.type === 'logo' && currentTime >= anim.startTime && currentTime <= anim.endTime)
+            {activeClip?.animations
+                .filter(anim => anim.type === 'logo' && clipTime >= anim.startTime && clipTime <= anim.endTime)
                 .map((logoAnim, index) => {
-                    const progress = (currentTime - logoAnim.startTime) / (logoAnim.endTime - logoAnim.startTime)
+                    const progress = (clipTime - logoAnim.startTime) / (logoAnim.endTime - logoAnim.startTime)
                     const getAnimationStyle = () => {
                         const baseStyle = {
                             left: `${logoAnim.properties.position?.x || 85}%`,
