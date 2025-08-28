@@ -136,12 +136,12 @@ export function Player() {
             const timelineDuration = currentProject?.duration || 10
 
             // Controlla se abbiamo raggiunto la fine della clip corrente
-            if (globalTime >= activeVideoClip.endTime - 0.1) {
+            if (globalTime >= activeVideoClip.endTime - 0.05) {
                 // Cerca la prossima clip
                 const nextClip = videoClips.find(clip => clip.startTime >= activeVideoClip.endTime)
                 if (nextClip) {
-                    // Passa alla prossima clip
-                    setCurrentTime(nextClip.startTime)
+                    // Passa alla prossima clip con una transizione più fluida
+                    setCurrentTime(nextClip.startTime + 0.01) // Piccolo offset per evitare loop
                 } else {
                     // Fine del progetto
                     setIsPlaying(false)
@@ -151,7 +151,7 @@ export function Player() {
                     }
                 }
             } else {
-                // Aggiorna currentTime normalmente
+                // Aggiorna currentTime con soglia più alta per ridurre lag
                 if (Math.abs(globalTime - currentTime) > 0.1) {
                     setCurrentTime(Math.max(0, Math.min(globalTime, timelineDuration)))
                 }
@@ -335,30 +335,22 @@ export function Player() {
                 })
             }
         } else {
-            // Clip video: aggiorna la clip specifica
-            const clipUpdates = {
-                startTime: updates.startTime,
-                endTime: updates.endTime,
-                duration: updates.endTime - updates.startTime,
-                trimStart: updates.properties?.trimStart || 0,
-                trimEnd: updates.properties?.trimEnd || 0
+            // Clip video: aggiorna la clip specifica SOLO con i campi che sono effettivamente cambiati
+            const clipUpdates: any = {}
+
+            // Aggiungi solo i campi che sono stati effettivamente modificati
+            if (updates.startTime !== undefined) clipUpdates.startTime = updates.startTime
+            if (updates.endTime !== undefined) clipUpdates.endTime = updates.endTime
+            if (updates.properties !== undefined) clipUpdates.properties = updates.properties
+
+            // Calcola la duration solo se startTime o endTime sono cambiati
+            if (updates.startTime !== undefined && updates.endTime !== undefined) {
+                clipUpdates.duration = updates.endTime - updates.startTime
             }
 
-            updateClip(clipId, clipUpdates)
-
-            // Aggiorna la durata totale del progetto se necessario
-            const newProjectDuration = Math.max(
-                currentProject?.duration || 0,
-                updates.endTime || 0
-            )
-
-            if (newProjectDuration > (currentProject?.duration || 0)) {
-                updateProject({ duration: newProjectDuration })
-            }
-
-            // Controlla se il currentTime è oltre la nuova durata
-            if (currentTime > newProjectDuration) {
-                setCurrentTime(newProjectDuration)
+            // Aggiorna solo se ci sono effettivamente dei cambiamenti
+            if (Object.keys(clipUpdates).length > 0) {
+                updateClip(clipId, clipUpdates)
             }
         }
     }

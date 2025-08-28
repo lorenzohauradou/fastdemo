@@ -174,6 +174,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
     }
     
+    // Verifica se il progetto è effettivamente cambiato prima di aggiornare
+    const currentState = get()
+    if (currentState.currentProject === project) return
+    
     set({ currentProject: project })
   },
   
@@ -182,10 +186,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   })),
   
   setCurrentTime: (time) => {
+    const state = get()
+    
+    // Aggiorna il tempo solo se è effettivamente cambiato
+    if (Math.abs(state.currentTime - time) < 0.01) return
+    
     set({ currentTime: time })
     
     // Auto-switch della clip attiva basato sul tempo globale
-    const state = get()
     if (state.currentProject?.clips) {
       const clipAtTime = state.currentProject.clips.find(clip => 
         time >= clip.startTime && time < clip.endTime
@@ -244,17 +252,34 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     
     if (clipIndex === -1) return state
     
-    // Aggiorna la clip specifica
-    clips[clipIndex] = { ...clips[clipIndex], ...updates }
+    const originalClip = clips[clipIndex]
     
-    // Se la durata è cambiata, ricalcola le posizioni di tutte le clip successive
-    if (updates.duration !== undefined) {
-      clips[clipIndex].endTime = clips[clipIndex].startTime + clips[clipIndex].duration
+    // Aggiorna la clip specifica
+    clips[clipIndex] = { ...originalClip, ...updates }
+    
+    // Ricalcola le posizioni SOLO se startTime, endTime o duration sono cambiati esplicitamente
+    const shouldRecalculatePositions = 
+      updates.startTime !== undefined || 
+      updates.endTime !== undefined || 
+      (updates.duration !== undefined && updates.duration !== originalClip.duration)
+    
+    if (shouldRecalculatePositions) {
+      // Se è stata fornita una nuova duration, aggiorna endTime
+      if (updates.duration !== undefined && updates.startTime === undefined && updates.endTime === undefined) {
+        clips[clipIndex].endTime = clips[clipIndex].startTime + clips[clipIndex].duration
+      }
       
-      // Ricalcola le posizioni per mantenere le clip attaccate
-      for (let i = clipIndex + 1; i < clips.length; i++) {
-        clips[i].startTime = clips[i - 1].endTime
-        clips[i].endTime = clips[i].startTime + clips[i].duration
+      // Ricalcola le posizioni per mantenere le clip attaccate SOLO se necessario
+      const needsRepositioning = clips.some((clip, index) => {
+        if (index === 0) return false
+        return Math.abs(clip.startTime - clips[index - 1].endTime) > 0.1
+      })
+      
+      if (needsRepositioning) {
+        for (let i = 1; i < clips.length; i++) {
+          clips[i].startTime = clips[i - 1].endTime
+          clips[i].endTime = clips[i].startTime + clips[i].duration
+        }
       }
     }
     

@@ -115,7 +115,24 @@ export function TimelineTrack({
                         type={type}
                         allClips={clips}
                         onMoveAdjacentClip={(clipId, newStartTime, newEndTime) => {
-                            onClipUpdate(clipId, { startTime: newStartTime, endTime: newEndTime })
+                            // Trova la clip corrente per confrontare i valori
+                            const currentClip = clips.find(c => c.id === clipId)
+                            if (currentClip) {
+                                const updates: any = {}
+
+                                // Aggiorna solo se i valori sono effettivamente cambiati
+                                if (Math.abs(currentClip.startTime - newStartTime) > 0.01) {
+                                    updates.startTime = newStartTime
+                                }
+                                if (Math.abs(currentClip.endTime - newEndTime) > 0.01) {
+                                    updates.endTime = newEndTime
+                                }
+
+                                // Aggiorna solo se ci sono cambiamenti significativi
+                                if (Object.keys(updates).length > 0) {
+                                    onClipUpdate(clipId, updates)
+                                }
+                            }
                         }}
                     />
                 ))}

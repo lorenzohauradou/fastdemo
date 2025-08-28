@@ -39,8 +39,8 @@ export function VideoPreview() {
         // Il tempo nel video originale = trimStart + tempo relativo alla clip
         const actualVideoTime = trimStart + clipTime
 
-        // Aggiorna sempre il tempo del video, sia in play che in pausa
-        if (Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.1) {
+        // Aggiorna il tempo del video con una soglia più alta per ridurre i lag
+        if (Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.5) {
             videoRef.current.currentTime = actualVideoTime
         }
     }, [clipTime, activeClip, videoSrc, isPlaying])
@@ -52,20 +52,24 @@ export function VideoPreview() {
             const newSrc = activeClip.videoUrl || (activeClip.videoFile ? URL.createObjectURL(activeClip.videoFile) : '')
 
             if (currentSrc !== newSrc && newSrc) {
+                // Preload del nuovo video per ridurre il lag
+                videoRef.current.preload = 'metadata'
                 videoRef.current.src = newSrc
-                videoRef.current.load()
 
-                // Imposta il tempo corretto dopo il caricamento
-                videoRef.current.onloadeddata = () => {
+                // Caricamento ottimizzato
+                videoRef.current.onloadedmetadata = () => {
                     const trimStart = activeClip.trimStart || 0
                     const actualVideoTime = trimStart + clipTime
                     if (videoRef.current) {
                         videoRef.current.currentTime = actualVideoTime
                     }
                 }
+
+                // Carica solo i metadati inizialmente
+                videoRef.current.load()
             }
         }
-    }, [activeClip?.id, videoSrc, clipTime])
+    }, [activeClip?.id])
 
     // Gestisce il cambio di video source
     useEffect(() => {
