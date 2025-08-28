@@ -113,7 +113,7 @@ export function Player() {
         if (!isPlaying && currentTime >= duration - 0.1) {
             setCurrentTime(0)
 
-            // Resetta anche il tempo del video e dell'audio
+            // Reset esplicito dei tempi
             if (videoRef.current) {
                 const trimStart = currentProject?.videoTrimming?.start || 0
                 videoRef.current.currentTime = trimStart
@@ -139,16 +139,15 @@ export function Player() {
             if (newTime >= timelineDuration - 0.1) {
                 setIsPlaying(false)
                 setCurrentTime(timelineDuration)
+                // Pausa anche l'audio
+                if (audioRef.current) {
+                    audioRef.current.pause()
+                }
             } else {
                 // Aggiorna currentTime normalmente
-                if (Math.abs(newTime - currentTime) > 0.05) {
+                if (Math.abs(newTime - currentTime) > 0.1) {
                     setCurrentTime(Math.max(0, Math.min(newTime, timelineDuration)))
                 }
-            }
-
-            // Assicurati che il video principale sia selezionato
-            if (selectedClip !== 'main-video') {
-                setSelectedClip('main-video')
             }
         }
     }
@@ -292,8 +291,7 @@ export function Player() {
     }
 
     return (
-        <div className="bg-zinc-900 h-32 flex border-t border-zinc-700">
-            {/* Video e Audio nascosti per controllo */}
+        <div className="bg-zinc-900 h-40 flex border-t border-zinc-700">
             {videoSrc && (
                 <video
                     ref={videoRef}
@@ -312,38 +310,42 @@ export function Player() {
                 onPlayPause={handlePlayPause}
             />
 
-            <div className="flex-1 flex flex-col px-4 py-3 space-y-3">
-                <TimelineTrack
-                    title="Video Track"
-                    type="video"
-                    clips={videoClips}
-                    currentTime={currentTime}
-                    duration={duration}
-                    pixelsPerSecond={pixelsPerSecond}
-                    selectedClip={selectedClip}
-                    onClipUpdate={handleClipUpdate}
-                    onClipSelect={handleClipSelect}
-                    onTimelineClick={handleTimelineClick}
-                    timelineWidth={timelineWidth}
-                />
+            <div className="flex-1 flex flex-col px-6 py-4 space-y-4 overflow-hidden">
+                <div className="overflow-x-auto overflow-y-hidden">
+                    <TimelineTrack
+                        title=""
+                        type="video"
+                        clips={videoClips}
+                        currentTime={currentTime}
+                        duration={duration}
+                        pixelsPerSecond={pixelsPerSecond}
+                        selectedClip={selectedClip}
+                        onClipUpdate={handleClipUpdate}
+                        onClipSelect={handleClipSelect}
+                        onTimelineClick={handleTimelineClick}
+                        timelineWidth={Math.max(timelineWidth, duration * pixelsPerSecond + 200)}
+                    />
+                </div>
 
-                <TimelineTrack
-                    title="Audio Track"
-                    type="audio"
-                    clips={audioClips}
-                    currentTime={currentTime}
-                    duration={duration}
-                    pixelsPerSecond={pixelsPerSecond}
-                    selectedClip={selectedClip}
-                    onClipUpdate={(clipId, updates) => handleClipUpdate(clipId, updates, true)}
-                    onClipSelect={handleClipSelect}
-                    onTimelineClick={handleTimelineClick}
-                    onAddClip={handleAudioImport}
-                    onOpenLibrary={handleOpenLibrary}
-                    showWaveform={!!audioSrc}
-                    audioSrc={audioSrc}
-                    timelineWidth={timelineWidth}
-                />
+                <div className="overflow-x-auto overflow-y-hidden">
+                    <TimelineTrack
+                        title=""
+                        type="audio"
+                        clips={audioClips}
+                        currentTime={currentTime}
+                        duration={duration}
+                        pixelsPerSecond={pixelsPerSecond}
+                        selectedClip={selectedClip}
+                        onClipUpdate={(clipId, updates) => handleClipUpdate(clipId, updates, true)}
+                        onClipSelect={handleClipSelect}
+                        onTimelineClick={handleTimelineClick}
+                        onAddClip={handleAudioImport}
+                        onOpenLibrary={handleOpenLibrary}
+                        showWaveform={!!audioSrc}
+                        audioSrc={audioSrc}
+                        timelineWidth={Math.max(timelineWidth, duration * pixelsPerSecond + 200)}
+                    />
+                </div>
             </div>
         </div>
     )

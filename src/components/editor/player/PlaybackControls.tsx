@@ -22,15 +22,15 @@ export function PlaybackControls({
     }
 
     return (
-        <div className="flex flex-col items-center justify-center px-4 space-y-2 border-r border-zinc-700">
+        <div className="flex flex-col items-center justify-center px-4 space-y-2 ">
             <button
                 onClick={onPlayPause}
-                className="w-12 h-12 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 flex items-center justify-center transition-all duration-200 shadow-lg"
+                className="w-18 h-18 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 flex items-center justify-center transition-all duration-200 shadow-lg"
             >
                 {isPlaying ? (
-                    <Pause className="w-5 h-5 text-white" />
+                    <Pause className="w-10 h-10 text-white" />
                 ) : (
-                    <Play className="w-5 h-5 text-white ml-0.5" />
+                    <Play className="w-10 h-10 text-white ml-0.5" />
                 )}
             </button>
             <div className="text-xs text-zinc-300 font-mono font-medium">

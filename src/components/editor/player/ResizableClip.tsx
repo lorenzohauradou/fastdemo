@@ -119,47 +119,44 @@ export function ResizableClip({
 
     return (
         <div
-            className={`resizable-clip absolute h-full rounded-lg cursor-grab flex items-center justify-center group border-2 ${isDragging ? '' : 'transition-all duration-200'} ${isSelected ? 'border-white shadow-xl z-10' : type === 'video' ? 'border-blue-400' : 'border-green-400'
-                } ${type === 'video' ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'transparent'} overflow-hidden shadow-lg`}
+            className={`resizable-clip absolute h-full rounded-lg cursor-grab flex items-center justify-center group border-2 ${isDragging ? '' : 'transition-all duration-200'} ${isSelected ? 'border-white shadow-xl z-10' : type === 'video' ? 'border-blue-400/80' : 'border-zinc-400/80'
+                } ${type === 'video' ? 'bg-gradient-to-r from-zinc-500/90 to-zinc-600/90' : 'bg-transparent'} overflow-hidden shadow-lg backdrop-blur-sm`}
             style={clipStyle}
             onClick={(e) => {
                 e.stopPropagation()
                 onSelect()
             }}
         >
-            {/* Handle sinistro per resize */}
             <div
-                className="absolute -left-0.5 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors"
+                className="absolute -left-1 top-0 h-full w-3 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
             >
-                <div className={`h-1/2 w-0.5 rounded-full transition-all ${isSelected ? 'bg-transparent shadow-md' : 'bg-white/50 group-hover:bg-white/80'}`}></div>
+                <div className={`h-3/4 w-1 rounded-full transition-all ${isSelected ? 'bg-white shadow-md' : 'bg-white/60 group-hover:bg-white/90'}`}></div>
             </div>
-
-            {/* Contenuto della clip */}
-            <div className="flex-1 h-full flex items-center justify-center px-3 relative">
+            <div className="flex-1 h-full flex items-center justify-center px-4 relative">
                 {type === 'video' && clip.thumbnail ? (
-                    <div className="relative w-full h-full">
+                    <div className="relative w-full h-full flex items-center justify-center">
                         <img
                             src={clip.thumbnail}
                             alt="Video thumbnail"
-                            className="w-full h-full object-cover rounded"
+                            className="w-full h-full object-cover rounded-md border border-white/20"
                         />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
                     </div>
                 ) : (
                     <div className="flex items-center justify-center text-center">
-                        <span className="text-white text-[10px] font-semibold truncate max-w-full">
-                            {clip.properties?.name || (type === 'video' ? 'Video' : 'Audio')}
+                        <span className="text-white text-sm font-semibold truncate max-w-full drop-shadow-sm">
+                            {clip.properties?.name || (type === 'video' ? 'Clip' : 'Audio')}
                         </span>
                     </div>
                 )}
             </div>
 
-            {/* Handle destro per resize */}
             <div
-                className="absolute -right-0.5 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors"
+                className="absolute -right-1 top-0 h-full w-3 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
             >
-                <div className={`h-1/2 w-0.5 rounded-full transition-all ${isSelected ? 'bg-white shadow-md' : 'bg-white/50 group-hover:bg-white/80'}`}></div>
+                <div className={`h-3/4 w-1 rounded-full transition-all ${isSelected ? 'bg-white shadow-md' : 'bg-white/60 group-hover:bg-white/90'}`}></div>
             </div>
         </div>
     )

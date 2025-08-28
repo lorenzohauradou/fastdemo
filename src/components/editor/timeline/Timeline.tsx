@@ -94,26 +94,26 @@ function AnimationBlock({
     return (
         <div
             ref={blockRef}
-            className={`absolute h-3 top-1/2 -translate-y-1/2 rounded cursor-grab flex items-center justify-center group border ${isSelected ? 'border-2 shadow-lg z-10' : 'border'}`}
+            className={`absolute h-6 top-1/2 -translate-y-1/2 rounded-md cursor-grab flex items-center justify-center group border-2 ${isSelected ? 'border-white shadow-lg z-10' : 'border-transparent'}`}
             style={blockStyle}
             onMouseDown={(e) => handleMouseDown(e, 'move')}
         >
             <div
-                className="absolute -left-0.5 top-0 h-full w-1.5 cursor-ew-resize flex items-center justify-center"
+                className="absolute -left-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
             >
-                <div className={`h-2/3 w-0.5 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
+                <div className={`h-3/4 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
             </div>
 
-            <span className="text-white text-[8px] font-bold truncate px-1 pointer-events-none">
-                {animation.type === 'zoom' ? `${Number(animation.properties.end?.level || animation.properties.level || '1').toFixed(3)}x` : animation.properties.content}
+            <span className="text-white text-[10px] font-semibold truncate px-2 pointer-events-none">
+                {animation.type === 'zoom' ? `${Number(animation.properties.end?.level || animation.properties.level || '1').toFixed(1)}x` : animation.properties.content}
             </span>
 
             <div
-                className="absolute -right-0.5 top-0 h-full w-1.5 cursor-ew-resize flex items-center justify-center"
+                className="absolute -right-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
             >
-                <div className={`h-2/3 w-0.5 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
+                <div className={`h-3/4 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
             </div>
         </div>
     )
@@ -136,9 +136,9 @@ export function Timeline() {
     } = useEditorStore()
 
     const tracks = [
-        { id: 'text', label: 'TEXT', type: 'text' as const, color: '#10b981' }, // Verde
-        { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f59e0b' }, // Arancione
-        { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#8b5cf6' }, // Viola
+        { id: 'text', label: 'TEXT', type: 'text' as const, color: '#22c55e' }, // Verde
+        { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f97316' }, // Arancione
+        { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#a855f7' }, // Viola
     ]
 
     // Funzione per generare thumbnails dal video
@@ -265,19 +265,19 @@ export function Timeline() {
     }
 
     return (
-        <div className="h-full bg-background text-foreground select-none flex flex-col">
-            <div className="h-32 border-t border-border">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
-                    <div className="flex items-center space-x-4">
-                        <span className="text-xs text-muted-foreground font-mono">
+        <div className="h-full bg-gray-900 text-white select-none flex flex-col">
+            <div className="h-36 border-t border-gray-700">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/50">
+                    <div className="flex items-center space-x-6">
+                        <span className="text-sm text-gray-300 font-mono">
                             {new Date(currentTime * 1000).toISOString().substr(14, 5)} / {new Date(duration * 1000).toISOString().substr(14, 5)}
                         </span>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center space-x-2">
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleAddAnimation('text')}
-                                className="text-xs px-2 py-1 h-6"
+                                className="text-xs px-3 py-1.5 h-7 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
                             >
                                 + Text
                             </Button>
@@ -285,7 +285,7 @@ export function Timeline() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleAddAnimation('zoom')}
-                                className="text-xs px-2 py-1 h-6"
+                                className="text-xs px-3 py-1.5 h-7 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
                             >
                                 + Zoom
                             </Button>
@@ -298,19 +298,19 @@ export function Timeline() {
                     className="flex-1 overflow-x-auto relative cursor-pointer"
                     onMouseDown={handleTimelineScrub}
                 >
-                    <div className="relative h-full px-4 py-2" style={{ width: `${Math.max(timelineWidth, timelineWidth * timelineZoom)}px` }}>
-                        <div className="absolute top-0 h-full w-0.5 bg-red-500 z-20 pointer-events-none" style={playheadStyle}>
-                            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="relative h-full px-4 py-3" style={{ width: `${Math.max(timelineWidth, timelineWidth * timelineZoom)}px` }}>
+                        <div className="absolute top-0 h-full w-0.5 bg-blue-500 z-20 pointer-events-none" style={playheadStyle}>
+                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-blue-500 clip-path-triangle"></div>
                         </div>
 
-                        <div className="flex flex-col h-full justify-center space-y-0.5">
+                        <div className="flex flex-col h-full justify-center space-y-1">
                             {tracks.map(track => {
                                 const trackAnimations = currentProject.animations.filter(a => a.type === track.type)
 
                                 return (
-                                    <div key={track.id} className="h-6 flex items-center relative">
-                                        <div className="w-20 text-[9px] text-muted-foreground font-semibold shrink-0 pr-2 text-right uppercase tracking-wide">{track.label}</div>
-                                        <div className="flex-1 h-4 relative bg-muted/10 rounded border border-border/30">
+                                    <div key={track.id} className="h-8 flex items-center relative mb-1">
+                                        <div className="w-20 text-[10px] text-muted-foreground font-bold shrink-0 pr-3 text-right uppercase tracking-wider">{track.label}</div>
+                                        <div className="flex-1 h-6 relative bg-gray-800/50 rounded-md border border-gray-700/50">
                                             {trackAnimations.map(anim => (
                                                 <AnimationBlock
                                                     key={anim.id}

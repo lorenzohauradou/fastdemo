@@ -7,7 +7,6 @@ import { Search } from 'lucide-react'
 
 export function VideoPreview() {
     const videoRef = useRef<HTMLVideoElement>(null)
-    const audioRef = useRef<HTMLAudioElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
     // Stato per il zoom interattivo
@@ -36,18 +35,10 @@ export function VideoPreview() {
         // Il tempo nel video originale = trimStart + tempo della timeline
         const actualVideoTime = trimStart + currentTime
 
-        if (Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.2) {
+        if (!isPlaying && Math.abs(videoRef.current.currentTime - actualVideoTime) > 0.2) {
             videoRef.current.currentTime = actualVideoTime
         }
-
-        // Sincronizza anche il video del riflesso
-
-
-        // Sincronizza anche l'audio se presente
-        if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 0.2) {
-            audioRef.current.currentTime = currentTime
-        }
-    }, [currentTime, currentProject, videoSrc])
+    }, [currentTime, currentProject, videoSrc, isPlaying])
 
     // Gestisce il cambio di video source
     useEffect(() => {
@@ -63,35 +54,16 @@ export function VideoPreview() {
 
     }, [videoSrc])
 
-    // Gestisce play/pause
+    // Gestisce play/pause - SOLO VIDEO, l'audio è gestito dal Player
     useEffect(() => {
         if (!videoRef.current) return
 
         if (isPlaying) {
-            videoRef.current.play()
-            // Riproduci anche il video del riflesso
-
-            // Riproduci anche l'audio se presente
-            if (audioRef.current) {
-                console.log('Tentativo di riproduzione audio...')
-                console.log('Audio readyState:', audioRef.current.readyState)
-                console.log('Audio src:', audioRef.current.src)
-                audioRef.current.play().catch(error => {
-                    console.error('Errore nella riproduzione audio:', error)
-                    if (audioRef.current) {
-                        console.error('Audio error code:', audioRef.current.error?.code)
-                        console.error('Audio error message:', audioRef.current.error?.message)
-                    }
-                })
-            }
+            videoRef.current.play().catch(error => {
+                console.error('Errore durante play video:', error)
+            })
         } else {
             videoRef.current.pause()
-            // Pausa anche il video del riflesso
-
-            // Pausa anche l'audio se presente
-            if (audioRef.current) {
-                audioRef.current.pause()
-            }
         }
     }, [isPlaying])
 
@@ -114,6 +86,9 @@ export function VideoPreview() {
     }
 
     const activeZoomAnimation = getActiveZoomAnimation()
+
+    // Controlla se c'è uno zoom attivo (per nascondere il riflesso)
+    const hasActiveZoom = activeZoomAnimation !== null
 
     // Applica le trasformazioni CSS in tempo reale per il preview
     const getVideoTransform = () => {
@@ -392,8 +367,8 @@ export function VideoPreview() {
                     maxHeight: '80%',
                     borderRadius: currentProject?.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
                     boxShadow: hasBackground() ? '0 20px 40px rgba(0,0,0,0.3)' : 'none',
-                    // Aggiungi il riflesso solo se c'è un background
-                    ...(hasBackground() && {
+                    // Aggiungi il riflesso solo se c'è un background e NON c'è zoom attivo
+                    ...(hasBackground() && !hasActiveZoom && {
                         WebkitBoxReflect: 'below 10px linear-gradient(to bottom, transparent 60%, rgba(255, 255, 255, 0.12))',
                     }),
                 }}
@@ -426,19 +401,7 @@ export function VideoPreview() {
                 draggable={false}
             />
 
-            {/* Audio separato per la traccia musicale */}
-            {currentProject?.musicSettings?.track && (
-                <audio
-                    ref={audioRef}
-                    src={currentProject.musicSettings.track}
-                    preload="metadata"
-                    onLoadedMetadata={() => {
-                        if (audioRef.current && currentProject) {
-                            audioRef.current.volume = currentProject.musicSettings?.volume || 0.5
-                        }
-                    }}
-                />
-            )}
+
 
             {/* Indicatore quando zona zoom è attiva */}
             {(() => {

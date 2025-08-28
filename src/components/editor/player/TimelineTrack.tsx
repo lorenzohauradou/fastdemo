@@ -62,25 +62,28 @@ export function TimelineTrack({
     }
 
     return (
-        <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-                <div className="text-xs text-zinc-400 font-medium uppercase tracking-wider">
-                    {title}
+        <div className="flex-1 min-w-0">
+            {title && (
+                <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        {title}
+                    </div>
+                    {onAddClip && type === 'audio' && (
+                        <button
+                            onClick={onAddClip}
+                            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                        >
+                            + Add Audio
+                        </button>
+                    )}
                 </div>
-                {onAddClip && type === 'audio' && (
-                    <button
-                        onClick={onAddClip}
-                        className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                    >
-                        + Add Audio
-                    </button>
-                )}
-            </div>
+            )}
 
             <div
                 ref={timelineRef}
-                className="h-10 bg-zinc-800 rounded border border-zinc-700 relative cursor-pointer overflow-hidden"
+                className={`${type === 'video' ? 'h-10' : 'h-10'} bg-zinc-800/50 rounded-lg border border-zinc-700/50 relative cursor-pointer overflow-x-auto overflow-y-hidden`}
                 onClick={handleTimelineClick}
+                style={{ minWidth: `${timelineWidth}px` }}
             >
                 <div className="absolute inset-0 opacity-5">
                     {Array.from({ length: Math.floor(timelineWidth / 40) }, (_, i) => (
@@ -93,11 +96,11 @@ export function TimelineTrack({
                 </div>
 
                 <div
-                    className="absolute top-0 h-full w-0.5 bg-red-500 z-20 pointer-events-none"
+                    className="absolute top-0 h-full w-0.5 bg-blue-500 z-20 pointer-events-none"
                     style={{ left: `${currentTime * pixelsPerSecond}px` }}
                 >
                     {type === 'video' && (
-                        <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-500 rounded-full"></div>
+                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-blue-500 clip-path-triangle"></div>
                     )}
                 </div>
 
@@ -129,16 +132,16 @@ export function TimelineTrack({
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={onAddClip}
-                                    className="flex items-center scale-[0.8] gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
                                 >
-                                    <Upload className="h-4 w-4" />
+                                    <Upload className="h-3 w-3" />
                                     Import Audio
                                 </button>
                                 <button
                                     onClick={onOpenLibrary}
-                                    className="flex items-center scale-[0.8] gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-sm text-zinc-300 hover:text-white"
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
                                 >
-                                    <Music className="h-4 w-4" />
+                                    <Music className="h-3 w-3" />
                                     Library
                                 </button>
                             </div>
