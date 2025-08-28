@@ -47,14 +47,23 @@ export function Player() {
         videoThumbnails
     ])
 
+    // Calcola la durata dinamica basata sulle clip video effettive
+    const dynamicDuration = useMemo(() => {
+        if (videoClips.length === 0) {
+            console.log('Nessuna clip video, usando durata progetto:', currentProject?.duration || 10)
+            return currentProject?.duration || 10
+        }
+        // La durata totale è il punto finale della clip che finisce più tardi
+        const calculatedDuration = Math.max(...videoClips.map(clip => clip.endTime))
+        console.log('Durata dinamica calcolata:', calculatedDuration, 'da', videoClips.length, 'clip')
+        console.log('Clip endTimes:', videoClips.map(clip => ({ id: clip.id, endTime: clip.endTime })))
+        return calculatedDuration
+    }, [videoClips, currentProject?.duration])
+
     // Audio clip - si adatta alla durata totale dei video
     const audioClips: AudioClip[] = useMemo(() => {
-        const totalVideoDuration = videoClips.length > 0
-            ? Math.max(...videoClips.map(clip => clip.endTime))
-            : (currentProject?.duration || 10)
-
-        return createAudioClips(currentProject, audioSrc, totalVideoDuration)
-    }, [currentProject, audioSrc, videoClips])
+        return createAudioClips(currentProject, audioSrc, dynamicDuration)
+    }, [currentProject, audioSrc, dynamicDuration])
 
     // Trova la clip video attiva al tempo corrente
     const activeVideoClip = videoClips.find(clip =>
@@ -111,7 +120,7 @@ export function Player() {
     // ===== GESTIONE PLAYBACK =====
     const handlePlayPause = () => {
         // Se siamo alla fine del video e premiamo play, ripartiamo dall'inizio
-        if (!isPlaying && currentTime >= duration - 0.1) {
+        if (!isPlaying && currentTime >= dynamicDuration - 0.1) {
             setCurrentTime(0)
 
             // Reset esplicito dei tempi
@@ -133,27 +142,36 @@ export function Player() {
             const trimStart = activeVideoClip.properties.trimStart || 0
             const clipRelativeTime = videoTime - trimStart
             const globalTime = activeVideoClip.startTime + clipRelativeTime
-            const timelineDuration = currentProject?.duration || 10
 
             // Controlla se abbiamo raggiunto la fine della clip corrente
             if (globalTime >= activeVideoClip.endTime - 0.05) {
-                // Cerca la prossima clip
-                const nextClip = videoClips.find(clip => clip.startTime >= activeVideoClip.endTime)
+                // Ordina le clip per startTime e trova la prossima
+                const sortedClips = [...videoClips].sort((a, b) => a.startTime - b.startTime)
+                const currentClipIndex = sortedClips.findIndex(clip => clip.id === activeVideoClip.id)
+                const nextClip = sortedClips[currentClipIndex + 1]
+
                 if (nextClip) {
-                    // Passa alla prossima clip con una transizione più fluida
+                    // Passa alla prossima clip
+                    console.log('Passando alla prossima clip:', nextClip.id, 'startTime:', nextClip.startTime)
                     setCurrentTime(nextClip.startTime + 0.01) // Piccolo offset per evitare loop
                 } else {
-                    // Fine del progetto
-                    setIsPlaying(false)
-                    setCurrentTime(timelineDuration)
-                    if (audioRef.current) {
-                        audioRef.current.pause()
+                    // Fine del progetto - controlla se siamo effettivamente alla fine
+                    if (globalTime >= dynamicDuration - 0.1) {
+                        console.log('Fine del progetto raggiunta')
+                        setIsPlaying(false)
+                        setCurrentTime(dynamicDuration)
+                        if (audioRef.current) {
+                            audioRef.current.pause()
+                        }
+                    } else {
+                        // Continua normalmente se non siamo alla fine
+                        setCurrentTime(Math.max(0, Math.min(globalTime, dynamicDuration)))
                     }
                 }
             } else {
                 // Aggiorna currentTime con soglia più alta per ridurre lag
                 if (Math.abs(globalTime - currentTime) > 0.1) {
-                    setCurrentTime(Math.max(0, Math.min(globalTime, timelineDuration)))
+                    setCurrentTime(Math.max(0, Math.min(globalTime, dynamicDuration)))
                 }
             }
         }
@@ -272,7 +290,8 @@ export function Player() {
     }, [selectedClip, setSelectedClip])
 
     // ===== CALCOLI TIMELINE =====
-    const duration = currentProject?.duration || 10
+    // Usa la durata dinamica calcolata dalle clip video
+    const duration = dynamicDuration
     const timelineWidth = timelineRef.current ? timelineRef.current.offsetWidth : 800
 
     // Calcolo dinamico di pixelsPerSecond basato sulla durata
@@ -322,7 +341,7 @@ export function Player() {
     const handleClipUpdate = (clipId: string, updates: any, isAudio = false) => {
         if (isAudio && clipId === 'main-audio') {
             // Audio principale: aggiorna solo se necessario
-            if (updates.endTime && updates.endTime !== duration) {
+            if (updates.endTime && updates.endTime !== dynamicDuration) {
                 updateProject({
                     musicSettings: {
                         type: currentProject?.musicSettings?.type || 'custom',

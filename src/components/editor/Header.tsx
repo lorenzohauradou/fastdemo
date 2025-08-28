@@ -18,10 +18,21 @@ export function Header() {
         if (!currentProject) return
 
         try {
+            // Raccogli tutte le animazioni dalle clip
+            const allAnimations = currentProject.clips?.flatMap(clip =>
+                clip.animations?.map(anim => ({
+                    ...anim,
+                    // Converti i tempi relativi alla clip in tempi globali
+                    startTime: anim.startTime + clip.startTime,
+                    endTime: anim.endTime + clip.startTime
+                })) || []
+            ) || []
+
             const renderData = {
                 name: currentProject.name,
                 duration: currentProject.duration,
-                animations: currentProject.animations,
+                animations: allAnimations,
+                clips: currentProject.clips,
                 backgroundSettings: currentProject.backgroundSettings,
                 deviceSettings: currentProject.deviceSettings,
                 musicSettings: currentProject.musicSettings,
