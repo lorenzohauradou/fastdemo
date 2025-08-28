@@ -31,6 +31,7 @@ export function Player() {
     const audioRef = useRef<HTMLAudioElement>(null)
     const timelineRef = useRef<HTMLDivElement>(null)
     const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
+    const [isChangingClip, setIsChangingClip] = useState(false)
 
     const audioSrc = currentProject?.musicSettings?.track || ''
 
@@ -137,7 +138,7 @@ export function Player() {
     }
 
     const handleTimeUpdate = () => {
-        if (videoRef.current && isPlaying && activeVideoClip) {
+        if (videoRef.current && isPlaying && activeVideoClip && !isChangingClip) {
             const videoTime = videoRef.current.currentTime
             const trimStart = activeVideoClip.properties.trimStart || 0
             const clipRelativeTime = videoTime - trimStart
@@ -153,7 +154,10 @@ export function Player() {
                 if (nextClip) {
                     // Passa alla prossima clip
                     console.log('Passando alla prossima clip:', nextClip.id, 'startTime:', nextClip.startTime)
+                    setIsChangingClip(true)
                     setCurrentTime(nextClip.startTime + 0.01) // Piccolo offset per evitare loop
+                    // Riabilita handleTimeUpdate dopo un breve delay
+                    setTimeout(() => setIsChangingClip(false), 100)
                 } else {
                     // Fine del progetto - controlla se siamo effettivamente alla fine
                     if (globalTime >= dynamicDuration - 0.1) {

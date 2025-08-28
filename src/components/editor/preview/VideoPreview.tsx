@@ -52,8 +52,8 @@ export function VideoPreview() {
             const newSrc = activeClip.videoUrl || (activeClip.videoFile ? URL.createObjectURL(activeClip.videoFile) : '')
 
             if (currentSrc !== newSrc && newSrc) {
-                // Preload del nuovo video per ridurre il lag
-                videoRef.current.preload = 'metadata'
+                // Preload più aggressivo per ridurre il lag al cambio clip
+                videoRef.current.preload = 'auto'
                 videoRef.current.src = newSrc
 
                 // Caricamento ottimizzato
@@ -65,25 +65,14 @@ export function VideoPreview() {
                     }
                 }
 
-                // Carica solo i metadati inizialmente
+                // Carica il video completamente per evitare lag
                 videoRef.current.load()
             }
         }
     }, [activeClip?.id])
 
-    // Gestisce il cambio di video source
-    useEffect(() => {
-        if (videoRef.current && videoSrc) {
-            const currentSrc = videoRef.current.src
-            if (currentSrc !== videoSrc) {
-                videoRef.current.src = videoSrc
-                videoRef.current.load()
-            }
-        }
-
-        // Aggiorna anche il video del riflesso
-
-    }, [videoSrc])
+    // Gestisce il cambio di video source - RIMOSSO per evitare doppio caricamento
+    // La gestione del cambio video è già ottimizzata nell'useEffect sopra
 
     // Gestisce play/pause - SOLO VIDEO, l'audio è gestito dal Player
     useEffect(() => {
