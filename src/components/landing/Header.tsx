@@ -1,34 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Menu, User, LogOut, ChevronDown } from "lucide-react"
+import { Menu } from "lucide-react"
 import { useState } from "react"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
 import Link from "next/link"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-    const getUserInitials = (name?: string | null, email?: string | null) => {
-        if (name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-        }
-        if (email) {
-            return email.slice(0, 2).toUpperCase()
-        }
-        return "U"
-    }
-
+    const isMobile = useIsMobile()
     return (
         <header className="fixed bg-transparent backdrop-blur-sm top-0 w-full z-50">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -74,11 +55,11 @@ export function Header() {
                 <div className="flex items-center space-x-4">
                     <>
                         <Button
-                            className="bg-white text-black hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full transition-all"
+                            className={`bg-white text-black hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full transition-all ${isMobile ? 'w-full' : ''}`}
                             asChild
                         >
                             <Link href="/login">
-                                Get Free Demo
+                                {isMobile ? 'Free Demo' : 'Get Free Demo'}
                             </Link>
                         </Button>
                     </>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Link2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEditorStore } from "@/lib/store"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function StickyCTA() {
     const [isVisible, setIsVisible] = useState(false)
@@ -13,7 +14,7 @@ export function StickyCTA() {
     const router = useRouter()
     const { setCurrentProject } = useEditorStore()
     const fileInputRef = useRef<HTMLInputElement>(null)
-
+    const isMobile = useIsMobile()
     // Funzione per processare il video e navigare all'editor
     const processVideoAndNavigate = useCallback(async (file: File) => {
         // Validazione del file
@@ -133,9 +134,9 @@ export function StickyCTA() {
                             <Button
                                 onClick={handleUploadClick}
                                 disabled={isProcessing}
-                                className="ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50"
+                                className={`ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50 `}
                             >
-                                {isProcessing ? 'Processing...' : 'Upload Video'}
+                                {isProcessing ? 'Processing...' : isMobile ? 'Get Demo' : 'Upload Video'}
                             </Button>
                         </div>
                     </div>
