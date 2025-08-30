@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useEditorStore } from '@/lib/store'
 import { VideoUpload } from '@/components/editor/upload/VideoUpload'
 import { BackgroundRenderer } from './BackgroundRenderer'
 import { VideoPlayer } from './VideoPlayer'
 import { ZoomController } from './ZoomController'
 import { ZoomIndicator } from './ZoomIndicator'
-import { TextOverlay } from './TextOverlay'
 import { LogoOverlay } from './LogoOverlay'
 
 export function VideoPreview() {
@@ -28,6 +28,49 @@ export function VideoPreview() {
     const activeClip = getActiveClip()
     const clipTime = getCurrentClipTime()
     const videoSrc = activeClip?.videoUrl || (activeClip?.videoFile ? URL.createObjectURL(activeClip.videoFile) : '')
+
+    // Trova se c'è un'animazione di testo attiva nella clip corrente
+    const activeTextAnimation = activeClip?.animations.find(anim =>
+        anim.type === 'text' &&
+        clipTime >= anim.startTime &&
+        clipTime <= anim.endTime
+    )
+
+    // Definisci le varianti di animazione per il VIDEO
+    const videoVariants = {
+        full: {
+            scale: 1,
+            x: 0,
+            y: 0,
+            rotateY: 0,
+            rotateX: 0,
+            z: 0
+        },
+        withText: {
+            scale: 0.8,
+            x: '-10%',
+            y: '5%',
+            rotateY: 15,
+            rotateX: -3,
+            z: 50
+        },
+    }
+
+    // Definisci le varianti per il TESTO
+    const textVariants = {
+        hidden: {
+            opacity: 0,
+            x: 100
+        },
+        visible: {
+            opacity: 1,
+            x: 0
+        },
+    }
+
+    // Transizioni separate
+    const videoTransition = { type: 'spring' as const, stiffness: 200, damping: 25 }
+    const textTransition = { delay: 0.1, type: 'spring' as const, stiffness: 300, damping: 30 }
 
     // Gestisce l'evento wheel con passive: false per evitare errori console
     useEffect(() => {
@@ -88,36 +131,88 @@ export function VideoPreview() {
                     <div
                         ref={containerRef}
                         className="relative w-full h-full flex items-center justify-center overflow-hidden"
+                        style={{
+                            perspective: '1500px',
+                            perspectiveOrigin: '40% center'
+                        }}
                         onMouseDown={onMouseDown}
                         onMouseMove={onMouseMove}
                         onMouseUp={onMouseUp}
                         onMouseLeave={onMouseUp}
                         onWheel={onWheel}
                     >
-                        <VideoPlayer
-                            activeClip={activeClip}
-                            clipTime={clipTime}
-                            isPlaying={isPlaying}
-                            currentProject={currentProject}
-                            zoom={zoom}
-                            selectedAnimation={selectedAnimation}
-                            interactiveZoom={interactiveZoom}
-                            zoomPosition={zoomPosition}
-                            isDragging={isDragging}
-                            hasBackground={hasBackground()}
-                            onLoadedMetadata={handleVideoLoadedMetadata}
-                        />
-                        <ZoomIndicator
-                            activeClip={activeClip}
-                            clipTime={clipTime}
-                            selectedAnimation={selectedAnimation}
-                            interactiveZoom={interactiveZoom}
-                            zoomPosition={zoomPosition}
-                        />
-                        <TextOverlay
-                            activeClip={activeClip}
-                            clipTime={clipTime}
-                        />
+                        {/* Contenitore del Video animato con Framer Motion */}
+                        <motion.div
+                            className="w-full h-full flex items-center justify-center"
+                            variants={videoVariants}
+                            animate={activeTextAnimation ? "withText" : "full"}
+                            transition={videoTransition}
+                            style={{
+                                transformStyle: 'preserve-3d',
+                                transformOrigin: 'center center'
+                            }}
+                        >
+                            <VideoPlayer
+                                activeClip={activeClip}
+                                clipTime={clipTime}
+                                isPlaying={isPlaying}
+                                currentProject={currentProject}
+                                zoom={zoom}
+                                selectedAnimation={selectedAnimation}
+                                interactiveZoom={interactiveZoom}
+                                zoomPosition={zoomPosition}
+                                isDragging={isDragging}
+                                hasBackground={hasBackground()}
+                                onLoadedMetadata={handleVideoLoadedMetadata}
+                            />
+                            <ZoomIndicator
+                                activeClip={activeClip}
+                                clipTime={clipTime}
+                                selectedAnimation={selectedAnimation}
+                                interactiveZoom={interactiveZoom}
+                                zoomPosition={zoomPosition}
+                            />
+                        </motion.div>
+
+                        {/* Contenitore del Testo animato con Framer Motion */}
+                        <AnimatePresence>
+                            {activeTextAnimation && (
+                                <motion.div
+                                    className="absolute w-1/2 h-full flex items-center justify-center pointer-events-none"
+                                    style={{ right: 0 }}
+                                    variants={textVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="hidden"
+                                    transition={textTransition}
+                                >
+                                    <div className="text-center">
+                                        <h1
+                                            className="text-white font-bold leading-tight"
+                                            style={{
+                                                fontSize: `${activeTextAnimation.properties.fontSize || 48}px`,
+                                                fontWeight: activeTextAnimation.properties.fontWeight || 'bold',
+                                                color: activeTextAnimation.properties.color || '#ffffff',
+                                                textShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                            }}
+                                        >
+                                            {activeTextAnimation.properties.content}
+                                        </h1>
+                                        {activeTextAnimation.properties.subtitle && (
+                                            <p
+                                                className="text-white/80 mt-2"
+                                                style={{
+                                                    fontSize: `${(activeTextAnimation.properties.fontSize || 48) * 0.6}px`,
+                                                }}
+                                            >
+                                                {activeTextAnimation.properties.subtitle}
+                                            </p>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <LogoOverlay
                             activeClip={activeClip}
                             clipTime={clipTime}

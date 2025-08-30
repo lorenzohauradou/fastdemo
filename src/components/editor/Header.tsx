@@ -18,26 +18,55 @@ export function Header() {
         if (!currentProject) return
 
         try {
-            // Raccogli tutte le animazioni dalle clip
+            // Prepara i dati delle clip per il multi-clip rendering
+            const clipsData = currentProject.clips?.map(clip => ({
+                id: clip.id,
+                name: clip.name,
+                startTime: clip.startTime,
+                endTime: clip.endTime,
+                duration: clip.duration,
+                videoUrl: clip.videoUrl,
+                videoFile: clip.videoFile,
+                originalDuration: clip.originalDuration,
+                trimStart: clip.properties?.trimStart || clip.trimStart || 0,
+                trimEnd: clip.properties?.trimEnd || clip.trimEnd || 0,
+                // Animazioni con tempi relativi alla clip (non globali)
+                animations: clip.animations?.map(anim => ({
+                    ...anim,
+                    // Mantieni i tempi relativi alla clip per Remotion
+                    startTime: anim.startTime,
+                    endTime: anim.endTime
+                })) || []
+            })) || []
+
+            // Raccogli tutte le animazioni con tempi globali per compatibilità legacy
             const allAnimations = currentProject.clips?.flatMap(clip =>
                 clip.animations?.map(anim => ({
                     ...anim,
                     // Converti i tempi relativi alla clip in tempi globali
                     startTime: anim.startTime + clip.startTime,
-                    endTime: anim.endTime + clip.startTime
+                    endTime: anim.endTime + clip.startTime,
+                    clipId: clip.id // Aggiungi riferimento alla clip
                 })) || []
             ) || []
+
+            console.log(`🎬 Preparando rendering multi-clip: ${clipsData.length} clip(s)`)
+            clipsData.forEach((clip, index) => {
+                console.log(`📹 Clip ${index + 1}: ${clip.name} (${clip.startTime}s-${clip.endTime}s, trim: ${clip.trimStart}s-${clip.trimEnd}s)`)
+            })
 
             const renderData = {
                 name: currentProject.name,
                 duration: currentProject.duration,
-                animations: allAnimations,
-                clips: currentProject.clips,
+                videoFilename: currentProject.videoFilename, // Filename del video caricato
+                animations: allAnimations, // Per compatibilità legacy
+                clips: clipsData, // Nuovi dati strutturati per multi-clip
                 backgroundSettings: currentProject.backgroundSettings,
                 deviceSettings: currentProject.deviceSettings,
                 musicSettings: currentProject.musicSettings,
                 cameraSettings: currentProject.cameraSettings,
-                videoTrimming: currentProject.videoTrimming
+                // videoTrimming rimosso - ora ogni clip ha il suo trimming
+                isMultiClip: clipsData.length > 1 // Flag per indicare se è multi-clip
             }
 
             const result = await api.startRender(renderData)

@@ -7,13 +7,179 @@ import { Link2, Brain } from "lucide-react"
 import Link from "next/link"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Video } from "./Video"
+import { ScreenRecorder } from "./ScreenRecorder"
+import { useRouter } from "next/navigation"
+import { useRef, useState, useCallback } from "react"
+import { useEditorStore } from "@/lib/store"
 
 export function Hero() {
     // const { data: session } = useSession()
     const isMobile = useIsMobile()
+    const router = useRouter()
+    const { setCurrentProject } = useEditorStore()
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isDragging, setIsDragging] = useState(false)
+    const [isProcessing, setIsProcessing] = useState(false)
+
+    // Funzione per processare il video e navigare all'editor
+    const processVideoAndNavigate = useCallback(async (file: File) => {
+        // Validazione del file
+        const maxSize = 500 * 1024 * 1024 // 500MB
+        if (file.size > maxSize) {
+            alert('Il file è troppo grande. Dimensione massima: 500MB')
+            return
+        }
+
+        const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
+        const isWebM = file.type.startsWith('video/webm')
+        const isAllowedType = allowedTypes.includes(file.type) || isWebM
+
+        if (!isAllowedType) {
+            alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
+            return
+        }
+
+        setIsProcessing(true)
+
+        try {
+            // Upload prima di creare il progetto
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+
+            if (!uploadResponse.ok) {
+                const errorData = await uploadResponse.json()
+                alert(`Errore upload: ${errorData.error}`)
+                setIsProcessing(false)
+                return
+            }
+
+            const uploadResult = await uploadResponse.json()
+            console.log('Upload completato:', uploadResult)
+
+            // Crea URL locale per il preview
+            const videoUrl = URL.createObjectURL(file)
+            const videoName = file.name.replace(/\.[^/.]+$/, '')
+
+            // Ottieni la durata del video
+            const tempVideo = document.createElement('video')
+            tempVideo.src = videoUrl
+
+            tempVideo.onloadedmetadata = () => {
+                const videoDuration = tempVideo.duration
+
+                // Crea il progetto con la nuova struttura multi-clip
+                const newProject = {
+                    name: videoName,
+                    videoFilename: file.name, // Salva il filename originale per il backend
+                    clips: [{
+                        id: 'main-video',
+                        name: videoName,
+                        startTime: 0,
+                        endTime: videoDuration,
+                        duration: videoDuration,
+                        videoFile: file,
+                        videoUrl: videoUrl,
+                        videoFilename: file.name, // Salva anche nella clip
+                        originalDuration: videoDuration,
+                        animations: [],
+                        trimStart: 0,
+                        trimEnd: 0
+                    }],
+                    activeClipId: 'main-video',
+                    duration: videoDuration,
+                    musicSettings: {
+                        type: 'preset' as const,
+                        volume: 0.5
+                    }
+                }
+
+                // Imposta il progetto nello store
+                setCurrentProject(newProject)
+
+                // Naviga all'editor
+                router.push('/editor')
+            }
+
+            tempVideo.onerror = () => {
+                alert('Errore nel caricamento del video')
+                setIsProcessing(false)
+            }
+        } catch (error) {
+            console.error('Errore durante il processamento del video:', error)
+            alert('Errore durante il caricamento del video')
+            setIsProcessing(false)
+        }
+    }, [router, setCurrentProject])
+
+    // Gestione click su Upload
+    const handleUploadClick = useCallback(() => {
+        fileInputRef.current?.click()
+    }, [])
+
+    // Gestione selezione file
+    const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (file) {
+            processVideoAndNavigate(file)
+        }
+    }, [processVideoAndNavigate])
+
+    // Gestione drag & drop
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(true)
+    }, [])
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        // Solo se stiamo uscendo dal container principale
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsDragging(false)
+        }
+    }, [])
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(false)
+
+        const files = Array.from(e.dataTransfer.files)
+        const videoFile = files.find(file => file.type.startsWith('video/'))
+
+        if (videoFile) {
+            processVideoAndNavigate(videoFile)
+        } else {
+            alert('Per favore carica un file video (MP4, MOV, AVI, WebM)')
+        }
+    }, [processVideoAndNavigate])
+
     return (
-        <section className="relative min-h-screen bg-black overflow-hidden">
+        <section
+            className={`relative min-h-screen bg-black overflow-hidden transition-all duration-300 ${isDragging ? 'bg-zinc-900/50' : ''
+                }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
             <div className="absolute inset-0 bg-black"></div>
+            {isDragging && (
+                <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                    <div className="text-center text-white">
+                        <div className="w-16 h-16 mx-auto mb-4 border-2 border-dashed border-white/50 rounded-lg flex items-center justify-center">
+                            <Link2 className="w-8 h-8" />
+                        </div>
+                        <p className="text-lg font-medium">Drop your video here</p>
+                        <p className="text-sm text-gray-400 mt-1">MP4, MOV, AVI, WebM supported</p>
+                    </div>
+                </div>
+            )}
             <div className="relative z-10 container mx-auto px-4 pt-36 pb-16">
                 <div className="text-center md:mb-12">
                     <Badge
@@ -38,26 +204,29 @@ export function Hero() {
                             <Link2 className="w-4 h-4 text-[#9ca3af] mr-2 flex-shrink-0" />
                             <span className="text-[#bbbcbe] text-sm flex-1">{isMobile ? "Add your screen recording" : "Add your screen recording"}</span>
                             <Button
-                                className="ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all"
+                                onClick={handleUploadClick}
+                                disabled={isProcessing}
+                                className="ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50"
                             >
-                                Upload
+                                {isProcessing ? 'Processing...' : 'Upload'}
                             </Button>
                         </div>
 
                         <span className="text-[#9ca3af] font-medium text-sm hidden md:block">or</span>
 
-                        <Button
-                            className="w-full h-[60px] md:w-auto bg-transparent text-white hover:bg-white/10 px-4 py-2.5 rounded-full text-sm font-medium transition-all border border-[#404040]"
-                            asChild
-                        >
-                            <Link href={"/login"}>
-                                Record your screen
-                            </Link>
-                        </Button>
+                        <ScreenRecorder />
                     </div>
                 </div>
                 <Video />
             </div>
+
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleFileSelect}
+                className="hidden"
+            />
         </section>
     )
 }

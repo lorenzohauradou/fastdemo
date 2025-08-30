@@ -10,19 +10,22 @@ interface TextOverlayProps {
 export function TextOverlay({ activeClip, clipTime }: TextOverlayProps) {
     if (!activeClip) return null
 
-    const textAnimations = activeClip.animations.filter(anim =>
+    // Filtra solo le animazioni di testo che NON sono nella transizione principale
+    // (quelle con posizioni specifiche x,y invece della coreografia automatica)
+    const overlayTextAnimations = activeClip.animations.filter(anim =>
         anim.type === 'text' &&
         clipTime >= anim.startTime &&
-        clipTime <= anim.endTime
+        clipTime <= anim.endTime &&
+        (anim.properties.x !== undefined || anim.properties.y !== undefined) // Solo testi con posizione specifica
     )
 
-    if (textAnimations.length === 0) return null
+    if (overlayTextAnimations.length === 0) return null
 
     return (
         <>
-            {textAnimations.map((textAnim, index) => (
+            {overlayTextAnimations.map((textAnim, index) => (
                 <div
-                    key={`text-${textAnim.id}-${index}`}
+                    key={`text-overlay-${textAnim.id}-${index}`}
                     className="absolute pointer-events-none"
                     style={{
                         left: `${textAnim.properties.x || 100}px`,
@@ -33,6 +36,7 @@ export function TextOverlay({ activeClip, clipTime }: TextOverlayProps) {
                         backgroundColor: textAnim.properties.backgroundColor || 'transparent',
                         padding: textAnim.properties.padding || '0',
                         borderRadius: textAnim.properties.borderRadius || '0',
+                        textShadow: '0 2px 10px rgba(0,0,0,0.5)',
                     }}
                 >
                     {textAnim.properties.content}

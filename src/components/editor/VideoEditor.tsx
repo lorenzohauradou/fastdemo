@@ -80,7 +80,16 @@ export function VideoEditor() {
 
                 <div className="flex-1 flex flex-col p-4 bg-background min-h-0">
                     <div className="w-full flex justify-center mb-4">
-                        <div className="w-full max-w-3xl aspect-video bg-card rounded-lg overflow-hidden border border-border shadow-lg">
+                        <div
+                            className="rounded-lg overflow-hidden border border-border shadow-lg"
+                            style={{
+                                width: '700px',  // 1500 / 2 = dimensioni fisse basate su Remotion
+                                height: '469px', // 938 / 2 = mantiene il rapporto esatto
+                                maxWidth: '90vw', // Responsive per schermi piccoli
+                                maxHeight: '50vh',
+                                backgroundColor: 'transparent' // Nessun background del container
+                            }}
+                        >
                             <VideoPreview />
                         </div>
                     </div>

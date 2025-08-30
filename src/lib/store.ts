@@ -23,6 +23,7 @@ export interface VideoClip {
   duration: number       // Durata della clip
   videoFile?: File
   videoUrl?: string
+  videoFilename?: string  // Nome del file video per il backend
   originalDuration: number
   animations: Animation[] // Animazioni specifiche per questa clip
   trimStart: number
@@ -61,6 +62,7 @@ export interface Project {
   // Proprietà legacy per compatibilità
   videoFile?: File
   videoUrl?: string
+  videoFilename?: string  // Nome del file video per il backend
   // Nuova struttura multi-clip
   clips: VideoClip[]     // Array di clip video
   activeClipId: string | null  // Clip attualmente attiva per editing

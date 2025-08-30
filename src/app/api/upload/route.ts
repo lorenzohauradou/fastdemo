@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
         }
 
         const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
-        if (!allowedTypes.includes(file.type)) {
+        const isWebM = file.type.startsWith('video/webm')
+        const isAllowedType = allowedTypes.includes(file.type) || isWebM
+        
+        if (!isAllowedType) {
             return NextResponse.json(
                 { error: 'Formato non supportato. Usa MP4, MOV, AVI o WebM' },
                 { status: 400 }

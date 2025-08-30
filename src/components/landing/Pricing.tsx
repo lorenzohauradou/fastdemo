@@ -2,161 +2,135 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 export function Pricing() {
-    const [isYearly, setIsYearly] = useState(false)
+    const [isYearly, setIsYearly] = useState(true)
 
     const plans = [
         {
-            name: "Starter",
+            name: "Free",
+            label: "Free",
             price: "Free",
+            subtitle: "all videos are watermarked",
             features: [
                 "All features available",
                 "Unlimited exports",
                 "1k sample AI voiceover characters"
             ],
-            warning: "First project free, then watermarked",
-            buttonText: "Get Started",
-            buttonVariant: "outline" as const,
-            popular: false
+            buttonText: "Get Started"
         },
         {
             name: "Pro",
+            label: "Pro",
             price: isYearly ? "$9" : "$19",
-            priceSubtext: isYearly ? "per month, billed yearly" : "per month, billed monthly",
-            description: "/mo",
+            subtitle: isYearly ? "per month, billed yearly" : "per month, billed monthly",
             features: [
                 "No watermarks",
                 "Unlimited exports",
                 "One authorized user",
                 "10k AI voiceover characters / mo"
             ],
-            buttonText: "Get Started",
-            buttonVariant: "default" as const,
-            popular: true
+            buttonText: "Get Started"
         },
         {
             name: "Enterprise",
+            label: "Enterprise",
             price: "Contact us",
-            description: "for teams & agencies",
+            subtitle: "for teams & agencies",
             features: [
                 "Multi-user licenses",
-                "Cloud collaboration",
+                "API access",
                 "Custom integrations"
             ],
-            buttonText: "Contact us",
-            buttonVariant: "outline" as const,
-            popular: false
+            buttonText: "Contact us"
         }
     ]
 
     return (
-        <section className="py-24 bg-black text-white">
-            <div className="container mx-auto px-4">
-                <div className="text-center mb-16">
-                    <h2 className="text-5xl font-bold mb-6">Pricing</h2>
-                    <p className="text-xl text-gray-400 mb-12">
-                        Start using ShowcaseReady for free—no sign up required.
+        <section className="relative min-h-screen text-white overflow-hidden">
+            <div className="absolute inset-0">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-full blur-3xl"></div>
+            </div>
+            <div className="relative z-10 container mx-auto px-6 py-24">
+                <div className="text-center mb-12">
+                    <h2 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text ">
+                        Pricing
+                    </h2>
+                    <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+                        Start using ShowcaseReady for free—no credit card required.
                     </p>
-
-                    <div className="flex items-center justify-center gap-4 mb-12">
-                        <span className={`text-lg ${!isYearly ? 'text-white' : 'text-gray-400'}`}>
+                    <div className="flex items-center justify-center gap-6 mb-16">
+                        <span className={`text-lg font-medium transition-colors ${!isYearly ? 'text-white' : 'text-gray-500'}`}>
                             Monthly
                         </span>
                         <button
                             onClick={() => setIsYearly(!isYearly)}
-                            className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                            className="relative inline-flex h-7 w-12 items-center rounded-full bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-transparent hover:bg-gray-700/50"
                         >
                             <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'
+                                className={`inline-block h-5 w-5 transform rounded-full bg-gradient-to-r from-purple-500 to-purple-600 shadow-lg transition-transform duration-300 ${isYearly ? 'translate-x-6' : 'translate-x-1'
                                     }`}
                             />
                         </button>
-                        <span className={`text-lg ${isYearly ? 'text-white' : 'text-gray-400'}`}>
+                        <span className={`text-lg font-medium transition-colors ${isYearly ? 'text-white' : 'text-gray-500'}`}>
                             Yearly{' '}
-                            <Badge variant="secondary" className="ml-2 bg-purple-600 text-white">
-                                Save 33%
+                            <Badge className="ml-2 bg-purple-600/20 hover:bg-purple-600/30 text-gray-300 border-purple-500/50 hover:border-purple-500/70 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:shadow-[0_0_20px_rgba(168,85,247,0.25)] backdrop-blur-sm">
+                                Save 50%
                             </Badge>
                         </span>
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                     {plans.map((plan, index) => (
-                        <Card
+                        <div
                             key={plan.name}
-                            className={`relative p-8 bg-transparent backdrop-blur-sm border-purple-300'
-                                }`}
+                            className="relative group"
                         >
-                            {plan.popular && (
-                                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                    <Badge className="bg-purple-600 text-white px-4 py-1">
-                                        Most Popular
-                                    </Badge>
-                                </div>
-                            )}
+                            <div className="absolute inset-0 rounded-2xl transition-all duration-500 bg-white/5 blur-xl group-hover:blur-2xl"></div>
 
-                            <div className="mb-6">
-                                <h3 className="text-lg font-medium text-gray-400 mb-2">{plan.name}</h3>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-bold text-white">{plan.price}</span>
-                                    {plan.description && (
-                                        <span className="text-gray-400">{plan.description}</span>
-                                    )}
+                            <div className="relative backdrop-blur-xl bg-white/[0.02] border border-white/10 hover:border-white/20 rounded-2xl p-8 transition-all duration-500 group-hover:bg-white/[0.04]">
+
+                                <div className="mb-8">
+                                    <h3 className="text-lg font-medium text-gray-400 mb-4">{plan.label}</h3>
+                                    <div className="mb-2">
+                                        <span className="text-5xl font-bold text-white">{plan.price}</span>
+                                    </div>
+                                    <p className="text-gray-400 text-sm">{plan.subtitle}</p>
                                 </div>
-                                {plan.priceSubtext && (
-                                    <p className="text-sm text-gray-400 mt-2">{plan.priceSubtext}</p>
-                                )}
+                                <ul className="space-y-4 mb-8">
+                                    {plan.features.map((feature, featureIndex) => (
+                                        <li key={featureIndex} className="flex items-start gap-3">
+                                            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-600/20 hover:bg-purple-600/30 text-gray-300 border-purple-500/50 hover:border-purple-500/70 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:shadow-[0_0_20px_rgba(168,85,247,0.25)] backdrop-blur-sm flex items-center justify-center mt-0.5">
+                                                <svg
+                                                    className="w-3 h-3 text-white"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 20 20"
+                                                >
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                        clipRule="evenodd"
+                                                    />
+                                                </svg>
+                                            </div>
+                                            <span className="text-gray-300 text-sm leading-relaxed">{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <Button
+                                    className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-300 ${plan.name === "Pro"
+                                        ? "bg-purple-600/20 hover:bg-purple-600/30 text-white border-purple-500/50 hover:border-purple-500/70 shadow-[0_0_15px_rgba(168,85,247,0.15)] hover:shadow-[0_0_20px_rgba(168,85,247,0.25)] backdrop-blur-sm"
+                                        : "bg-white/5 hover:bg-white/10 text-white border border-white/20 hover:border-white/30 backdrop-blur-sm"
+                                        }`}
+                                >
+                                    {plan.buttonText}
+                                </Button>
                             </div>
-
-                            <ul className="space-y-4 mb-8">
-                                {plan.features.map((feature, featureIndex) => (
-                                    <li key={featureIndex} className="flex items-start gap-3">
-                                        <svg
-                                            className="w-5 h-5 text-white mt-0.5 flex-shrink-0"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                        <span className="text-gray-300">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            {plan.warning && (
-                                <div className="flex items-start gap-2 mb-6 p-3 bg-orange-900/20 border border-orange-800 rounded">
-                                    <svg
-                                        className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                    <span className="text-sm text-orange-300">{plan.warning}</span>
-                                </div>
-                            )}
-
-                            <Button
-                                variant={plan.buttonVariant}
-                                className={`w-full ${plan.popular
-                                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                                    : 'bg-gray-800 hover:bg-gray-700 text-white border-gray-600'
-                                    }`}
-                            >
-                                {plan.buttonText}
-                            </Button>
-                        </Card>
+                        </div>
                     ))}
                 </div>
             </div>

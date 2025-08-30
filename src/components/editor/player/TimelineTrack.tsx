@@ -86,7 +86,7 @@ export function TimelineTrack({
                 style={{ minWidth: `${timelineWidth}px` }}
             >
                 <div className="absolute inset-0 opacity-5">
-                    {Array.from({ length: Math.floor(timelineWidth / 40) }, (_, i) => (
+                    {Array.from({ length: Math.max(0, Math.min(1000, Math.floor((timelineWidth || 0) / 40))) }, (_, i) => (
                         <div
                             key={i}
                             className="absolute top-0 h-full w-px bg-zinc-600"
@@ -180,7 +180,7 @@ export function TimelineTrack({
 
                 {/* Pulsante per aggiungere clip anche quando ci sono già clip */}
                 {type === 'video' && clips.length > 0 && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden">
                         <button
                             onClick={onAddClip}
                             className="flex items-center gap-1 px-2 py-1 bg-zinc-700/80 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded text-xs text-zinc-300 hover:text-white transition-all duration-200"

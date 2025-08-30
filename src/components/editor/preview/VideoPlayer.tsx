@@ -194,14 +194,17 @@ export function VideoPlayer({
         <video
             ref={videoRef}
             src={videoSrc}
-            className="max-w-full max-h-full object-contain transition-transform duration-100 ease-out select-none"
+            className="object-contain transition-transform duration-100 ease-out select-none"
             style={{
                 ...getVideoTransform(),
-                maxWidth: '80%',
-                maxHeight: '80%',
+                width: '100%',    // Lascia margini per mostrare il background
+                height: '100%',   // Lascia margini per mostrare il background
                 borderRadius: currentProject?.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
                 boxShadow: hasBackground ? '0 20px 40px rgba(0,0,0,0.3)' : 'none',
                 // Aggiungi il riflesso solo se c'è un background e NON c'è zoom attivo
+                ...(hasBackground && {
+                    transform: `${getVideoTransform().transform || ''} scale(0.8)`,
+                }),
                 ...(hasBackground && !hasActiveZoom && {
                     WebkitBoxReflect: 'below 10px linear-gradient(to bottom, transparent 60%, rgba(255, 255, 255, 0.12))',
                 }),

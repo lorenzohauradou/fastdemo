@@ -144,8 +144,17 @@ export function Player() {
             const clipRelativeTime = videoTime - trimStart
             const globalTime = activeVideoClip.startTime + clipRelativeTime
 
-            // Controlla se abbiamo raggiunto la fine della clip corrente
-            if (globalTime >= activeVideoClip.endTime - 0.05) {
+            // Usa la durata effettiva del video invece della durata teorica della clip
+            const actualVideoDuration = videoRef.current.duration
+            const effectiveEndTime = isFinite(actualVideoDuration) && actualVideoDuration > 0
+                ? Math.min(activeVideoClip.endTime, activeVideoClip.startTime + actualVideoDuration)
+                : activeVideoClip.endTime
+
+            // Debug: rimuovi questi log dopo il test
+            // console.log('handleTimeUpdate:', { videoTime, globalTime, clipEndTime: activeVideoClip.endTime, actualVideoDuration, effectiveEndTime })
+
+            // Controlla se abbiamo raggiunto la fine effettiva della clip
+            if (globalTime >= effectiveEndTime - 0.05) {
                 // Ordina le clip per startTime e trova la prossima
                 const sortedClips = [...videoClips].sort((a, b) => a.startTime - b.startTime)
                 const currentClipIndex = sortedClips.findIndex(clip => clip.id === activeVideoClip.id)

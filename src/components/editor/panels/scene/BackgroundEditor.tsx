@@ -5,6 +5,8 @@ import { Slider } from '@/components/ui/slider'
 import { ArrowLeft, Upload, Shuffle } from 'lucide-react'
 import { BackgroundSettings, Project } from '@/lib/store'
 import { generateRandomMeshGradient } from '@/lib/meshGradientUtils'
+import { ColorPickerModal } from './ColorPickerModal'
+import { useState, useEffect } from 'react'
 
 interface BackgroundEditorProps {
     currentProject: Project | null
@@ -13,134 +15,49 @@ interface BackgroundEditorProps {
 }
 
 export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: BackgroundEditorProps) {
+    const [showColorPicker, setShowColorPicker] = useState(false)
+    const [selectedColorMode, setSelectedColorMode] = useState<string>('')
     const COLOR_PRESETS = [
         { name: 'White', color: '#ffffff' },
         { name: 'Light', color: '#f8fafc' },
-        { name: 'Primary', color: currentProject?.primaryColor || '#6366f1' },
+        { name: 'Primary', color: currentProject?.primaryColor || '#3B82F6' },
         { name: 'Dark', color: '#1e293b' },
         { name: 'Black', color: '#000000' },
-        { name: 'Custom', color: '#667eea' }
+        { name: 'Custom', color: '#3B82F6' }
     ]
 
     const BACKGROUND_TYPES = [
         { id: 'solid', name: 'Solid' },
         { id: 'linear-gradient', name: 'Linear\ngradient' },
-        { id: 'mesh-gradient', name: 'Mesh\ngradient' },
-        { id: 'image', name: 'Image' }
-    ]
-
-    const IMAGE_PRESETS = [
-        {
-            id: 'gradient-1',
-            name: 'Gradient 1',
-            url: 'data:image/svg+xml;base64,' + btoa(`
-                <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-                        </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grad1)" />
-                </svg>
-            `)
-        },
-        {
-            id: 'gradient-2',
-            name: 'Gradient 2',
-            url: 'data:image/svg+xml;base64,' + btoa(`
-                <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#f5576c;stop-opacity:1" />
-                        </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grad2)" />
-                </svg>
-            `)
-        },
-        {
-            id: 'gradient-3',
-            name: 'Gradient 3',
-            url: 'data:image/svg+xml;base64=' + btoa(`
-                <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
-                        </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grad3)" />
-                </svg>
-            `)
-        },
-        {
-            id: 'gradient-4',
-            name: 'Gradient 4',
-            url: 'data:image/svg+xml;base64=' + btoa(`
-                <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#43e97b;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#38f9d7;stop-opacity:1" />
-                        </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grad4)" />
-                </svg>
-            `)
-        },
-        {
-            id: 'gradient-5',
-            name: 'Gradient 5',
-            url: 'data:image/svg+xml;base64=' + btoa(`
-                <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="grad5" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#fee140;stop-opacity:1" />
-                        </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grad5)" />
-                </svg>
-            `)
-        },
-        {
-            id: 'gradient-6',
-            name: 'Gradient 6',
-            url: 'data:image/svg+xml;base64=' + btoa(`
-                <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="grad6" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#a8edea;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#fed6e3;stop-opacity:1" />
-                        </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grad6)" />
-                </svg>
-            `)
-        }
+        { id: 'mesh-gradient', name: 'Mesh\ngradient' }
     ]
 
     const currentType = currentProject?.backgroundSettings?.type || 'solid'
 
     const getCurrentSelectedColor = () => {
         const bg = currentProject?.backgroundSettings
-        if (!bg) return currentProject?.primaryColor || '#6366f1'
+        if (!bg) return currentProject?.primaryColor || '#3B82F6'
 
         switch (bg.type) {
             case 'solid':
-                return bg.color || currentProject?.primaryColor || '#6366f1'
+                return bg.color || currentProject?.primaryColor || '#3B82F6'
             case 'linear-gradient':
-                return bg.gradientColors?.[0] || currentProject?.primaryColor || '#6366f1'
+                return bg.gradientColors?.[0] || currentProject?.primaryColor || '#3B82F6'
             case 'mesh-gradient':
-                return bg.meshColors?.[0] || currentProject?.primaryColor || '#6366f1'
+                return bg.meshColors?.[0] || currentProject?.primaryColor || '#3B82F6'
             default:
-                return currentProject?.primaryColor || '#6366f1'
+                return currentProject?.primaryColor || '#3B82F6'
         }
     }
 
-    const currentColor = getCurrentSelectedColor()
+    // Inizializza selectedColorMode con il colore corrente
+    useEffect(() => {
+        if (!selectedColorMode) {
+            setSelectedColorMode(getCurrentSelectedColor())
+        }
+    }, [currentProject])
+
+    const currentColor = selectedColorMode || getCurrentSelectedColor()
 
     const adjustColorBrightness = (color: string, amount: number): string => {
         const num = parseInt(color.replace('#', ''), 16)
@@ -154,6 +71,9 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
     }
 
     const handleColorSelect = (color: string) => {
+        // Aggiorna il colore selezionato in Color mode
+        setSelectedColorMode(color)
+
         const currentType = currentProject?.backgroundSettings?.type || 'solid'
 
         let settings: BackgroundSettings = {
@@ -174,16 +94,13 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
                 settings.meshColors = meshConfig.colors
                 settings.meshSeed = meshConfig.seed
                 break
-            case 'image':
-                settings.imageUrl = currentProject?.backgroundSettings?.imageUrl || ''
-                break
         }
 
         onUpdateProject({ backgroundSettings: settings })
     }
 
-    const handleTypeSelect = (type: 'solid' | 'linear-gradient' | 'mesh-gradient' | 'image') => {
-        const primaryColor = currentProject?.primaryColor || '#6366f1'
+    const handleTypeSelect = (type: 'solid' | 'linear-gradient' | 'mesh-gradient') => {
+        const selectedColor = selectedColorMode || getCurrentSelectedColor()
 
         let settings: BackgroundSettings = {
             type: type,
@@ -192,19 +109,16 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
 
         switch (type) {
             case 'solid':
-                settings.color = primaryColor
+                settings.color = selectedColor
                 break
             case 'linear-gradient':
-                settings.gradientColors = [primaryColor, adjustColorBrightness(primaryColor, -20)]
+                settings.gradientColors = [selectedColor, adjustColorBrightness(selectedColor, -20)]
                 settings.gradientAngle = 180
                 break
             case 'mesh-gradient':
-                const meshConfig = generateRandomMeshGradient(primaryColor)
+                const meshConfig = generateRandomMeshGradient(selectedColor)
                 settings.meshColors = meshConfig.colors
                 settings.meshSeed = meshConfig.seed
-                break
-            case 'image':
-                settings.imageUrl = ''
                 break
         }
 
@@ -212,7 +126,7 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
     }
 
     const randomizeMesh = () => {
-        const selectedColor = getCurrentSelectedColor()
+        const selectedColor = selectedColorMode || getCurrentSelectedColor()
 
         const meshConfig = generateRandomMeshGradient(selectedColor)
         onUpdateProject({
@@ -225,28 +139,20 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
         })
     }
 
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0]
-        if (!file) return
 
-        const url = URL.createObjectURL(file)
+    const handleImagePresetSelect = (presetUrl: string) => {
         onUpdateProject({
             backgroundSettings: {
-                type: 'image',
-                imageUrl: url,
+                type: 'solid',
+                color: presetUrl,
                 opacity: 1
             }
         })
     }
 
-    const handleImagePresetSelect = (presetUrl: string) => {
-        onUpdateProject({
-            backgroundSettings: {
-                type: 'image',
-                imageUrl: presetUrl,
-                opacity: 1
-            }
-        })
+    const handleColorPickerSelect = (color: string) => {
+        setSelectedColorMode(color)
+        handleColorSelect(color)
     }
 
     return (
@@ -267,26 +173,31 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 <div>
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-3">
                         <h3 className="text-sm font-medium text-foreground">Color mode</h3>
-                        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
-                            Edit theme
-                        </Button>
                     </div>
-                    <div className="grid grid-cols-6 gap-2">
-                        {COLOR_PRESETS.map((preset) => (
-                            <div key={preset.name} className="text-center">
+                    <div className="flex space-x-2 overflow-x-auto pb-2">
+                        {COLOR_PRESETS.filter(preset => preset.name !== 'Custom').map((preset) => (
+                            <div key={preset.name} className="flex-shrink-0">
                                 <div
-                                    className={`w-full h-12 rounded-lg mb-1 border-2 cursor-pointer hover:scale-105 transition-transform ${currentColor === preset.color
+                                    className={`w-12 h-12 rounded-lg cursor-pointer border-2 transition-all hover:scale-105 ${currentColor === preset.color
                                         ? 'border-primary ring-2 ring-primary/20'
                                         : 'border-border'
                                         }`}
                                     style={{ backgroundColor: preset.color }}
                                     onClick={() => handleColorSelect(preset.color)}
                                 />
-                                <p className="text-xs font-medium text-foreground">{preset.name}</p>
                             </div>
                         ))}
+                        <div className="flex-shrink-0">
+                            <div
+                                className="w-12 h-12 rounded-lg cursor-pointer border-2 transition-all hover:scale-105 border-border flex items-center justify-center"
+                                style={{ backgroundColor: currentColor }}
+                                onClick={() => setShowColorPicker(true)}
+                            >
+                                <span className="text-xs font-bold text-white drop-shadow">+</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -348,67 +259,13 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
                         </Button>
                     </div>
                 )}
-
-                {currentType === 'image' && (
-                    <div className="space-y-4">
-                        <label className="block w-full">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
-                            />
-                            <Button
-                                variant="outline"
-                                className="w-full border-border hover:bg-muted"
-                            >
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload Background Image
-                            </Button>
-                        </label>
-
-                        <div>
-                            <h4 className="text-sm font-medium text-foreground mb-3">Presets</h4>
-                            <div className="grid grid-cols-3 gap-2">
-                                {IMAGE_PRESETS.map((preset) => (
-                                    <div key={preset.id} className="text-center">
-                                        <div
-                                            className={`w-full h-16 rounded-lg mb-1 border-2 cursor-pointer hover:scale-105 transition-transform overflow-hidden ${currentProject?.backgroundSettings?.imageUrl === preset.url
-                                                ? 'border-primary ring-2 ring-primary/20'
-                                                : 'border-border'
-                                                }`}
-                                            onClick={() => handleImagePresetSelect(preset.url)}
-                                        >
-                                            <img
-                                                src={preset.url}
-                                                alt={preset.name}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        <p className="text-xs font-medium text-foreground">{preset.name}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {currentProject?.backgroundSettings?.imageUrl && (
-                            <div className="p-3 bg-muted rounded-lg border border-border">
-                                <div className="flex items-center space-x-3">
-                                    <img
-                                        src={currentProject.backgroundSettings.imageUrl}
-                                        alt="Background preview"
-                                        className="w-16 h-12 object-cover bg-muted rounded"
-                                    />
-                                    <div className="flex-1">
-                                        <p className="text-sm text-foreground">Background image</p>
-                                        <p className="text-xs text-muted-foreground">Image loaded</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
+
+            <ColorPickerModal
+                isOpen={showColorPicker}
+                onClose={() => setShowColorPicker(false)}
+                onColorSelect={handleColorPickerSelect}
+            />
         </div>
     )
 }

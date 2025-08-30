@@ -6,7 +6,7 @@ import { useEditorStore } from '@/lib/store'
 import { useApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Upload, X, Play, FileVideo } from 'lucide-react'
+import { Upload } from 'lucide-react'
 
 interface VideoUploadProps {
     onVideoUploaded?: (videoData: any) => void
@@ -20,11 +20,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
     const [uploadProgress, setUploadProgress] = useState(0)
-    const [uploadedVideo, setUploadedVideo] = useState<{
-        file: File
-        url: string
-        name: string
-    } | null>(null)
+
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -70,7 +66,10 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         }
 
         const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
-        if (!allowedTypes.includes(file.type)) {
+        const isWebM = file.type.startsWith('video/webm')
+        const isAllowedType = allowedTypes.includes(file.type) || isWebM
+
+        if (!isAllowedType) {
             alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
             return
         }
@@ -79,218 +78,154 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         setUploadProgress(0)
 
         try {
-            // Crea URL locale per il preview
-            const videoUrl = URL.createObjectURL(file)
+            // Upload del file al backend prima di creare il progetto
+            const formData = new FormData()
+            formData.append('file', file)
 
-            // Salva localmente per ora
-            const videoData = {
-                file,
-                url: videoUrl,
-                name: file.name.replace(/\.[^/.]+$/, ''),
-                size: file.size,
-                type: file.type
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+
+            if (!uploadResponse.ok) {
+                const errorData = await uploadResponse.json()
+                alert(`Errore upload: ${errorData.error}`)
+                setIsUploading(false)
+                return
             }
 
-            setUploadedVideo(videoData)
+            const uploadResult = await uploadResponse.json()
+            console.log('Upload completato:', uploadResult)
 
-            // Simula progress upload
+            // Crea URL locale per il preview
+            const videoUrl = URL.createObjectURL(file)
+            const videoName = file.name.replace(/\.[^/.]+$/, '')
+
+            // Simula progress upload veloce
             const progressInterval = setInterval(() => {
                 setUploadProgress(prev => {
                     if (prev >= 90) {
                         clearInterval(progressInterval)
                         return 90
                     }
-                    return prev + 10
+                    return prev + 20
                 })
-            }, 100)
+            }, 50)
 
-            // Upload usando l'API client
-            try {
-                const result = await api.uploadVideo(file)
-                setUploadProgress(100)
+            setUploadProgress(100)
 
-                if (result.note) {
+            // Crea un video temporaneo per ottenere la durata
+            const tempVideo = document.createElement('video')
+            tempVideo.src = videoUrl
+
+            tempVideo.onloadedmetadata = () => {
+                const videoDuration = tempVideo.duration
+
+                // Crea un nuovo progetto con il sistema multi-clip
+                const newProject = {
+                    name: videoName,
+                    videoFilename: file.name,
+                    videoUrl: videoUrl,
+                    videoFile: file,
+                    duration: videoDuration,
+                    originalDuration: videoDuration,
+                    clips: [{
+                        id: 'main-video',
+                        name: videoName,
+                        startTime: 0,
+                        endTime: videoDuration,
+                        duration: videoDuration,
+                        videoFile: file,
+                        videoUrl: videoUrl,
+                        videoFilename: file.name, // Salva anche nella clip
+                        originalDuration: videoDuration,
+                        animations: [],
+                        trimStart: 0,
+                        trimEnd: 0
+                    }],
+                    activeClipId: 'main-video',
+                    musicSettings: {
+                        type: 'preset' as const,
+                        volume: 0.5
+                    }
                 }
-            } catch (error) {
-                setUploadProgress(100)
+
+                // Salva nel localStorage
+                localStorage.setItem('currentVideo', JSON.stringify({
+                    name: videoName,
+                    url: videoUrl,
+                    file: file.name,
+                    size: file.size,
+                    type: file.type
+                }))
+
+                setCurrentProject(newProject)
+                router.push('/editor')
             }
 
-            // Salva nel localStorage
-            localStorage.setItem('currentVideo', JSON.stringify({
-                name: videoData.name,
-                url: videoData.url,
-                file: file.name,
-                size: file.size,
-                type: file.type
-            }))
+            // Fallback se non riusciamo a ottenere la durata
+            tempVideo.onerror = () => {
+                const newProject = {
+                    name: videoName,
+                    videoFilename: file.name, // Salva il filename originale per il backend
+                    videoUrl: videoUrl,
+                    videoFile: file,
+                    duration: 30, // Durata di default
+                    originalDuration: 30,
+                    clips: [{
+                        id: 'main-video',
+                        name: videoName,
+                        startTime: 0,
+                        endTime: 30,
+                        duration: 30,
+                        videoFile: file,
+                        videoUrl: videoUrl,
+                        videoFilename: file.name, // Salva anche nella clip
+                        originalDuration: 30,
+                        animations: [],
+                        trimStart: 0,
+                        trimEnd: 0
+                    }],
+                    activeClipId: 'main-video',
+                    musicSettings: {
+                        type: 'preset' as const,
+                        volume: 0.5
+                    }
+                }
 
-            // Callback
-            if (onVideoUploaded) {
-                onVideoUploaded(videoData)
+                // Salva nel localStorage
+                localStorage.setItem('currentVideo', JSON.stringify({
+                    name: videoName,
+                    url: videoUrl,
+                    file: file.name,
+                    size: file.size,
+                    type: file.type
+                }))
+
+                setCurrentProject(newProject)
+                router.push('/editor')
             }
 
         } catch (error) {
             alert('Error during video upload')
-        } finally {
             setIsUploading(false)
         }
     }
 
-    const handleStartEditing = () => {
-        if (!uploadedVideo) return
 
-        // Crea un video temporaneo per ottenere la durata
-        const tempVideo = document.createElement('video')
-        tempVideo.src = uploadedVideo.url
-        tempVideo.onloadedmetadata = () => {
-            const videoDuration = tempVideo.duration
-
-            // Crea un nuovo progetto con il sistema multi-clip
-            const newProject = {
-                name: uploadedVideo.name,
-                videoUrl: uploadedVideo.url, // Manteniamo per compatibilità
-                videoFile: uploadedVideo.file, // Manteniamo per compatibilità
-                duration: videoDuration,
-                originalDuration: videoDuration,
-                clips: [{
-                    id: 'main-video',
-                    name: uploadedVideo.name,
-                    startTime: 0,
-                    endTime: videoDuration,
-                    duration: videoDuration,
-                    videoFile: uploadedVideo.file,
-                    videoUrl: uploadedVideo.url,
-                    originalDuration: videoDuration,
-                    animations: [], // Ogni clip ha le sue animazioni
-                    trimStart: 0,
-                    trimEnd: 0
-                }],
-                activeClipId: 'main-video',
-                musicSettings: {
-                    type: 'preset' as const,
-                    volume: 0.5
-                }
-            }
-
-            setCurrentProject(newProject)
-            router.push('/editor')
-        }
-
-        // Fallback se non riusciamo a ottenere la durata
-        tempVideo.onerror = () => {
-            const newProject = {
-                name: uploadedVideo.name,
-                videoUrl: uploadedVideo.url,
-                videoFile: uploadedVideo.file,
-                duration: 30, // Durata di default
-                originalDuration: 30,
-                clips: [{
-                    id: 'main-video',
-                    name: uploadedVideo.name,
-                    startTime: 0,
-                    endTime: 30,
-                    duration: 30,
-                    videoFile: uploadedVideo.file,
-                    videoUrl: uploadedVideo.url,
-                    originalDuration: 30,
-                    animations: [],
-                    trimStart: 0,
-                    trimEnd: 0
-                }],
-                activeClipId: 'main-video',
-                musicSettings: {
-                    type: 'preset' as const,
-                    volume: 0.5
-                }
-            }
-
-            setCurrentProject(newProject)
-            router.push('/editor')
-        }
-    }
-
-    const handleRemoveVideo = () => {
-        if (uploadedVideo?.url) {
-            URL.revokeObjectURL(uploadedVideo.url)
-        }
-        setUploadedVideo(null)
-        setUploadProgress(0)
-        localStorage.removeItem('currentVideo')
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-        }
-    }
-
-    if (uploadedVideo) {
-        return (
-            <div className={`bg-card border border-border rounded-lg p-6 ${className}`}>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-foreground">Video Uploaded</h3>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRemoveVideo}
-                        className="text-muted-foreground hover:text-foreground"
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-
-                <div className="space-y-4">
-                    <div className="aspect-video bg-background rounded-lg overflow-hidden">
-                        <video
-                            src={uploadedVideo.url}
-                            className="w-full h-full object-contain"
-                            controls
-                            preload="metadata"
-                        />
-                    </div>
-
-                    <div className="bg-muted rounded-lg p-4">
-                        <div className="flex items-center space-x-3 mb-3">
-                            <FileVideo className="h-5 w-5 text-primary" />
-                            <div>
-                                <h4 className="text-foreground font-medium">{uploadedVideo.name}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    {(uploadedVideo.file.size / (1024 * 1024)).toFixed(1)} MB • {uploadedVideo.file.type}
-                                </p>
-                            </div>
-                        </div>
-
-                        {isUploading && (
-                            <div className="mb-3">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-muted-foreground">Uploading...</span>
-                                    <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
-                                </div>
-                                <Progress value={uploadProgress} className="h-2" />
-                            </div>
-                        )}
-
-                        <Button
-                            onClick={handleStartEditing}
-                            disabled={isUploading}
-                            className="w-full bg-primary hover:bg-primary/90"
-                        >
-                            <Play className="mr-2 h-4 w-4" />
-                            Start Editing
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
 
     return (
         <div className={className}>
             <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${isDragging
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:border-muted-foreground'
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${isUploading
+                    ? 'border-border bg-muted/50 cursor-not-allowed'
+                    : isDragging
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-muted-foreground'
                     }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
+                onDragOver={!isUploading ? handleDragOver : undefined}
+                onDragLeave={!isUploading ? handleDragLeave : undefined}
+                onDrop={!isUploading ? handleDrop : undefined}
             >
                 <div className="space-y-4">
                     <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
@@ -299,14 +234,16 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
 
                     <div>
                         <h3 className="text-lg font-semibold text-foreground mb-2">
-                            {isDragging ? 'Drop the video here' : 'Upload your video'}
+                            {isUploading ? 'Processing video...' : isDragging ? 'Drop the video here' : 'Upload your video'}
                         </h3>
                         <p className="text-muted-foreground mb-4">
-                            Drag and drop a video file or click to select
+                            {isUploading ? 'Please wait while we prepare your video' : 'Drag and drop a video file or click to select'}
                         </p>
-                        <p className="text-sm text-muted-foreground/80">
-                            Supports MP4, MOV, AVI, WebM • Max 500MB
-                        </p>
+                        {!isUploading && (
+                            <p className="text-sm text-muted-foreground/80">
+                                Supports MP4, MOV, AVI, WebM • Max 500MB
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -321,8 +258,9 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                             onClick={() => fileInputRef.current?.click()}
                             variant="outline"
                             className="border-border hover:bg-muted"
+                            disabled={isUploading}
                         >
-                            Select File
+                            {isUploading ? 'Processing...' : 'Select File'}
                         </Button>
                     </div>
                 </div>

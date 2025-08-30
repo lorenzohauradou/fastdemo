@@ -137,6 +137,17 @@ export function Timeline() {
         getCurrentClipTime,
     } = useEditorStore()
 
+    // Funzione helper per formattare il tempo in modo sicuro
+    const formatTime = (seconds: number): string => {
+        try {
+            const validSeconds = Math.max(0, isNaN(seconds) ? 0 : seconds)
+            return new Date(validSeconds * 1000).toISOString().substr(14, 5)
+        } catch (error) {
+            console.warn('Errore nel formattare il tempo:', seconds, error)
+            return '00:00'
+        }
+    }
+
     const tracks = [
         { id: 'text', label: 'TEXT', type: 'text' as const, color: '#22c55e' }, // Verde
         { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f97316' }, // Arancione
@@ -145,7 +156,7 @@ export function Timeline() {
 
     // Funzione per generare thumbnails dal video
     const generateVideoThumbnails = async (videoUrl: string, numThumbs: number) => {
-        return new Promise<string[]>((resolve) => {
+        return new Promise<string[]>((resolve, reject) => {
             const video = document.createElement('video')
             video.crossOrigin = 'anonymous'
             video.src = videoUrl
@@ -154,20 +165,36 @@ export function Timeline() {
             const ctx = canvas.getContext('2d')
             const thumbnails: string[] = []
 
+            // Timeout di sicurezza
+            const timeoutId = setTimeout(() => {
+                console.warn('Timeout nella generazione thumbnails')
+                resolve([]) // Risolvi con array vuoto invece di rigettare
+            }, 10000) // 10 secondi timeout
+
             video.addEventListener('loadedmetadata', () => {
                 canvas.width = 32
                 canvas.height = 18
 
                 let currentThumb = 0
-                const interval = video.duration / numThumbs
+                const videoDuration = isFinite(video.duration) && video.duration > 0 ? video.duration : 10
+                const interval = videoDuration / numThumbs
 
                 const captureFrame = () => {
                     if (currentThumb >= numThumbs) {
+                        clearTimeout(timeoutId)
                         resolve(thumbnails)
                         return
                     }
 
-                    video.currentTime = currentThumb * interval
+                    const targetTime = currentThumb * interval
+                    if (isFinite(targetTime) && targetTime >= 0 && targetTime <= videoDuration) {
+                        video.currentTime = targetTime
+                    } else {
+                        console.warn('Invalid targetTime for thumbnail:', targetTime)
+                        // Salta questo frame e vai al prossimo
+                        currentThumb++
+                        captureFrame()
+                    }
                 }
 
                 video.addEventListener('seeked', () => {
@@ -187,7 +214,12 @@ export function Timeline() {
     // Genera thumbnails quando il progetto cambia
     useEffect(() => {
         if (currentProject?.videoUrl) {
-            generateVideoThumbnails(currentProject.videoUrl, 20).then(setVideoThumbnails)
+            generateVideoThumbnails(currentProject.videoUrl, 20)
+                .then(setVideoThumbnails)
+                .catch(error => {
+                    console.warn('Errore nella generazione thumbnails:', error)
+                    setVideoThumbnails([]) // Fallback a array vuoto
+                })
         }
     }, [currentProject?.videoUrl])
 
@@ -219,12 +251,10 @@ export function Timeline() {
     const clipTime = getCurrentClipTime() // Tempo relativo alla clip attiva
     const clipDuration = activeClip?.duration || 10 // Durata della clip attiva
 
+
+
     if (!activeClip) {
-        return (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-                Nessuna clip attiva - sposta la linea blu su una clip
-            </div>
-        )
+
     }
 
     const timelineWidth = timelineContainerRef.current ? timelineContainerRef.current.offsetWidth : 1000
@@ -289,7 +319,7 @@ export function Timeline() {
                     <div className="flex items-center space-x-6">
                         <div className="flex items-center space-x-4">
                             <span className="text-sm text-gray-300 font-mono">
-                                Clip: {new Date(clipTime * 1000).toISOString().substr(14, 5)} / {new Date(clipDuration * 1000).toISOString().substr(14, 5)}
+                                Clip: {formatTime(clipTime)} / {formatTime(clipDuration)}
                             </span>
                             <span className="text-xs text-gray-500">
                                 {activeClip?.name || 'No Clip'}

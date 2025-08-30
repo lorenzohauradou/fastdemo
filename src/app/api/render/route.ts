@@ -15,21 +15,32 @@ export async function POST(request: NextRequest) {
         const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
         
         try {
-            // Inoltra la richiesta al backend
-            const backendResponse = await fetch(`${backendUrl}/api/render`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(renderData)
-            })
+            // Inoltra la richiesta al backend con timeout esteso
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minuti timeout
+            
+            try {
+                const backendResponse = await fetch(`${backendUrl}/api/render`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(renderData),
+                    signal: controller.signal
+                })
+                
+                clearTimeout(timeoutId)
 
-            if (backendResponse.ok) {
-                const result = await backendResponse.json()
-                return NextResponse.json(result)
-            } else {
-                const errorText = await backendResponse.text()
-                throw new Error(`Backend error: ${errorText}`)
+                if (backendResponse.ok) {
+                    const result = await backendResponse.json()
+                    return NextResponse.json(result)
+                } else {
+                    const errorText = await backendResponse.text()
+                    throw new Error(`Backend error: ${errorText}`)
+                }
+            } catch (fetchError) {
+                clearTimeout(timeoutId)
+                throw fetchError
             }
         } catch (backendError) {
             console.warn('Backend not available for rendering:', backendError)
