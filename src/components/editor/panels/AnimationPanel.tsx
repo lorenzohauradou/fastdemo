@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import Image from 'next/image'
 
 const cameraAnimations = [
@@ -45,6 +46,29 @@ export function AnimationPanel() {
 
     const [selectedCamera, setSelectedCamera] = useState('none')
 
+    // Sincronizza lo stato locale con il progetto corrente per mantenere la selezione
+    useEffect(() => {
+        if (currentProject?.cameraSettings?.type) {
+            // Mappa il tipo interno al ID del pannello
+            const typeToId = {
+                'continuous_glide': 'continuous-glide',
+                'skewed_glide': 'skewed',
+                'up_down': 'up-down'
+            }
+            const mappedId = typeToId[currentProject.cameraSettings.type as keyof typeof typeToId] || 'none'
+            setSelectedCamera(mappedId)
+        } else {
+            setSelectedCamera('none')
+        }
+    }, [currentProject?.cameraSettings?.type])
+
+    // Verifica se c'è un background attivo
+    const hasActiveBackground = () => {
+        if (!currentProject?.backgroundSettings) return false
+        const bg = currentProject.backgroundSettings
+        return bg.type !== 'none' && bg.type !== undefined
+    }
+
     const handleCameraSelect = (cameraId: string) => {
         setSelectedCamera(cameraId)
 
@@ -59,7 +83,6 @@ export function AnimationPanel() {
                         type: 'continuous_glide',
                     }
                 })
-                console.log('Impostato Continuous Glide come animazione camera globale')
                 break
             case 'skewed':
                 updateProject({
@@ -70,7 +93,6 @@ export function AnimationPanel() {
                         angle: 0
                     }
                 })
-                console.log('Impostato Skewed Glide come animazione camera globale')
                 break
             case 'up-down':
                 updateProject({
@@ -79,14 +101,12 @@ export function AnimationPanel() {
                         intensity: 1
                     }
                 })
-                console.log('Impostato Up & Down come animazione camera globale')
                 break
             case 'none':
             default:
                 updateProject({
                     cameraSettings: undefined
                 })
-                console.log('🎬 Nessuna animazione camera selezionata')
                 break
         }
     }
@@ -162,87 +182,111 @@ export function AnimationPanel() {
     }
 
     return (
-        <div className="p-4 space-y-6 h-full overflow-y-auto">
-            <div>
-                <h2 className="text-xl font-semibold text-white">Animation</h2>
-            </div>
-            <div>
-                <h3 className="text-lg font-medium text-white mb-4">Camera animation style</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    {cameraAnimations.map((camera) => (
-                        <div
-                            key={camera.id}
-                            onClick={() => handleCameraSelect(camera.id)}
-                            className={`cursor-pointer rounded-lg overflow-hidden transition-all ${selectedCamera === camera.id
-                                ? 'ring-2 ring-primary-foreground'
-                                : 'hover:ring-1 hover:ring-gray-500'
-                                }`}
-                        >
-                            <AnimationPreview animationId={camera.id} className="aspect-video" />
-                            <div className="p-3 bg-card">
-                                <h4 className="text-sm font-medium text-white text-center">{camera.name}</h4>
-                            </div>
-                        </div>
-                    ))}
+        <TooltipProvider>
+            <div className="p-4 space-y-6 h-full overflow-y-auto">
+                <div>
+                    <h2 className="text-xl font-semibold text-white">Animation</h2>
                 </div>
-            </div>
+                <div>
+                    <h3 className="text-lg font-medium text-white mb-4">Camera animation style</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {cameraAnimations.map((camera) => {
+                            // tooltip solo per animazioni non-none e se non c'è background
+                            const shouldShowTooltip = camera.id !== 'none' && !hasActiveBackground()
 
-            {currentProject?.cameraSettings && (
-                <div className="space-y-4">
-                    {currentProject.cameraSettings.type === 'skewed_glide' && (
-                        <>
-                            <div>
-                                <h4 className="text-sm font-medium text-white mb-3">Movement direction</h4>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {(['up', 'down', 'left', 'right', 'diagonal'] as const).map((dir) => (
-                                        <Button
-                                            key={dir}
-                                            variant={currentProject.cameraSettings?.direction === dir ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={() => handleDirectionChange(dir)}
-                                            className="text-xs capitalize"
-                                        >
-                                            {dir === 'diagonal' ? '↗' : dir === 'up' ? '↑' : dir === 'down' ? '↓' : dir === 'left' ? '←' : '→'}
-                                        </Button>
-                                    ))}
+                            const animationCard = (
+                                <div
+                                    key={camera.id}
+                                    onClick={() => handleCameraSelect(camera.id)}
+                                    className={`cursor-pointer rounded-lg overflow-hidden transition-all ${selectedCamera === camera.id
+                                        ? 'ring-2 ring-primary-foreground'
+                                        : 'hover:ring-1 hover:ring-gray-500'
+                                        }`}
+                                >
+                                    <AnimationPreview animationId={camera.id} className="aspect-video" />
+                                    <div className="p-3 bg-card">
+                                        <h4 className="text-sm font-medium text-white text-center">{camera.name}</h4>
+                                    </div>
                                 </div>
-                            </div>
+                            )
 
+                            if (shouldShowTooltip) {
+                                return (
+                                    <Tooltip key={camera.id}>
+                                        <TooltipTrigger asChild>
+                                            {animationCard}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-sm">
+                                            <p className="text-sm">
+                                                Combine with a background for stunning 3D effects
+                                            </p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                )
+                            }
+
+                            return animationCard
+                        })}
+                    </div>
+                </div>
+
+                {currentProject?.cameraSettings && (
+                    <div className="space-y-4">
+                        {currentProject.cameraSettings.type === 'skewed_glide' && (
+                            <>
+                                <div>
+                                    <h4 className="text-sm font-medium text-white mb-3">Movement direction</h4>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(['up', 'down', 'left', 'right', 'diagonal'] as const).map((dir) => (
+                                            <Button
+                                                key={dir}
+                                                variant={currentProject.cameraSettings?.direction === dir ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => handleDirectionChange(dir)}
+                                                className="text-xs capitalize"
+                                            >
+                                                {dir === 'diagonal' ? '↗' : dir === 'up' ? '↑' : dir === 'down' ? '↓' : dir === 'left' ? '←' : '→'}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="text-sm font-medium text-white">Skew angle</h4>
+                                        <span className="text-xs text-gray-400">{currentProject.cameraSettings.angle || 0}°</span>
+                                    </div>
+                                    <Slider
+                                        value={[currentProject.cameraSettings.angle || 0]}
+                                        onValueChange={handleAngleChange}
+                                        min={-90}
+                                        max={90}
+                                        step={1}
+                                        className="w-full"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {currentProject.cameraSettings.type === 'up_down' && (
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <h4 className="text-sm font-medium text-white">Skew angle</h4>
-                                    <span className="text-xs text-gray-400">{currentProject.cameraSettings.angle || 0}°</span>
+                                    <h4 className="text-sm font-medium text-white">Intensity</h4>
+                                    <span className="text-xs text-gray-400">{((currentProject.cameraSettings.intensity || 1) * 10).toFixed(0)}</span>
                                 </div>
                                 <Slider
-                                    value={[currentProject.cameraSettings.angle || 0]}
-                                    onValueChange={handleAngleChange}
-                                    min={-90}
-                                    max={90}
-                                    step={1}
+                                    value={[currentProject.cameraSettings.intensity || 1]}
+                                    onValueChange={handleIntensityChange}
+                                    min={0.1}
+                                    max={2}
+                                    step={0.1}
                                     className="w-full"
                                 />
                             </div>
-                        </>
-                    )}
-
-                    {currentProject.cameraSettings.type === 'up_down' && (
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <h4 className="text-sm font-medium text-white">Intensity</h4>
-                                <span className="text-xs text-gray-400">{((currentProject.cameraSettings.intensity || 1) * 10).toFixed(0)}</span>
-                            </div>
-                            <Slider
-                                value={[currentProject.cameraSettings.intensity || 1]}
-                                onValueChange={handleIntensityChange}
-                                min={0.1}
-                                max={2}
-                                step={0.1}
-                                className="w-full"
-                            />
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </TooltipProvider >
     )
 }
