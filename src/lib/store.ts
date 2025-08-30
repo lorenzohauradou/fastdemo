@@ -90,7 +90,7 @@ export interface Project {
     duration: number
   }
   cameraSettings?: {
-    type?: 'none' | 'continuous_glide' | 'skewed_glide' | 'orbit_glide'
+    type?: 'none' | 'continuous_glide' | 'skewed_glide' | 'up_down'
     intensity?: number
     zoom_range?: number
     direction?: 'up' | 'down' | 'left' | 'right' | 'diagonal'

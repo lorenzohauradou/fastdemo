@@ -9,6 +9,7 @@ import { VideoPlayer } from './VideoPlayer'
 import { ZoomController } from './ZoomController'
 import { ZoomIndicator } from './ZoomIndicator'
 import { LogoOverlay } from './LogoOverlay'
+import { useCameraAnimations } from '@/hooks/useCameraAnimations'
 
 export function VideoPreview() {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -24,6 +25,9 @@ export function VideoPreview() {
         updateProject
     } = useEditorStore()
 
+    // Hook per gestire le animazioni camera
+    const { getCurrentVariant, getTransition } = useCameraAnimations(currentProject)
+
     // Ottieni la clip attiva e il suo video
     const activeClip = getActiveClip()
     const clipTime = getCurrentClipTime()
@@ -35,26 +39,6 @@ export function VideoPreview() {
         clipTime >= anim.startTime &&
         clipTime <= anim.endTime
     )
-
-    // Definisci le varianti di animazione per il VIDEO
-    const videoVariants = {
-        full: {
-            scale: 1,
-            x: 0,
-            y: 0,
-            rotateY: 0,
-            rotateX: 0,
-            z: 0
-        },
-        withText: {
-            scale: 0.8,
-            x: '-10%',
-            y: '5%',
-            rotateY: 15,
-            rotateX: -3,
-            z: 50
-        },
-    }
 
     // Definisci le varianti per il TESTO
     const textVariants = {
@@ -68,8 +52,6 @@ export function VideoPreview() {
         },
     }
 
-    // Transizioni separate
-    const videoTransition = { type: 'spring' as const, stiffness: 200, damping: 25 }
     const textTransition = { delay: 0.1, type: 'spring' as const, stiffness: 300, damping: 30 }
 
     // Gestisce l'evento wheel con passive: false per evitare errori console
@@ -144,9 +126,8 @@ export function VideoPreview() {
                         {/* Contenitore del Video animato con Framer Motion */}
                         <motion.div
                             className="w-full h-full flex items-center justify-center"
-                            variants={videoVariants}
-                            animate={activeTextAnimation ? "withText" : "full"}
-                            transition={videoTransition}
+                            animate={getCurrentVariant(activeTextAnimation)}
+                            transition={getTransition()}
                             style={{
                                 transformStyle: 'preserve-3d',
                                 transformOrigin: 'center center'

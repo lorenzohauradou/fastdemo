@@ -29,9 +29,9 @@ const cameraAnimations = [
         selected: false
     },
     {
-        id: 'orbit-glide',
-        name: 'Orbit Glide',
-        preview: '/videos/animations/orbit-glide.mp4',
+        id: 'up-down',
+        name: 'Up & Down',
+        preview: '/videos/animations/up-down.mp4',
         type: 'pan' as const,
         selected: false
     }
@@ -72,14 +72,14 @@ export function AnimationPanel() {
                 })
                 console.log('Impostato Skewed Glide come animazione camera globale')
                 break
-            case 'orbit-glide':
+            case 'up-down':
                 updateProject({
                     cameraSettings: {
-                        type: 'orbit_glide',
+                        type: 'up_down',
                         intensity: 1
                     }
                 })
-                console.log('Impostato Orbit Glide come animazione camera globale')
+                console.log('Impostato Up & Down come animazione camera globale')
                 break
             case 'none':
             default:
@@ -225,7 +225,7 @@ export function AnimationPanel() {
                         </>
                     )}
 
-                    {currentProject.cameraSettings.type === 'orbit_glide' && (
+                    {currentProject.cameraSettings.type === 'up_down' && (
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <h4 className="text-sm font-medium text-white">Intensity</h4>
