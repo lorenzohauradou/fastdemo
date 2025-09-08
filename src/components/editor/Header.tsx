@@ -128,11 +128,6 @@ export function Header() {
                 })) || []
             ) || []
 
-            console.log(`🎬 Preparando rendering multi-clip: ${clipsData.length} clip(s)`)
-            clipsData.forEach((clip, index) => {
-                console.log(`📹 Clip ${index + 1}: ${clip.name} (${clip.startTime}s-${clip.endTime}s, trim: ${clip.trimStart}s-${clip.trimEnd}s)`)
-            })
-
             const qualitySettings = getQualitySettings(selectedQuality)
 
             const renderData = {
@@ -145,6 +140,9 @@ export function Header() {
                 deviceSettings: currentProject.deviceSettings,
                 musicSettings: currentProject.musicSettings,
                 cameraSettings: currentProject.cameraSettings,
+                // Aggiungi dati webcam esplicitamente
+                hasWebcam: currentProject.hasWebcam || false,
+                webcamFilename: currentProject.webcamFilename,
                 // videoTrimming rimosso - ora ogni clip ha il suo trimming
                 isMultiClip: clipsData.length > 1, // Flag per indicare se è multi-clip
                 // Aggiungi impostazioni di qualità

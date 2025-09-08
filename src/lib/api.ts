@@ -82,7 +82,7 @@ class ApiClient {
     private baseUrl: string
 
     constructor() {
-        this.baseUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+        this.baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:8000'
     }
 
     /**
@@ -112,7 +112,7 @@ class ApiClient {
         const formData = new FormData()
         formData.append('file', file)
 
-        const response = await fetch('/api/upload/audio', {
+        const response = await fetch(`${this.baseUrl}/api/upload/audio`, {
             method: 'POST',
             body: formData
         })
@@ -122,7 +122,17 @@ class ApiClient {
             throw new Error(errorData.error || 'Errore durante l\'upload dell\'audio')
         }
 
-        return response.json()
+        const result = await response.json()
+        
+        // Adatta la risposta del backend FastAPI al formato atteso dal frontend
+        return {
+            message: result.message,
+            filename: result.filename,
+            originalName: file.name,
+            size: file.size,
+            contentType: file.type,
+            audioUrl: URL.createObjectURL(file) // Crea blob URL per preview locale
+        }
     }
 
     /**

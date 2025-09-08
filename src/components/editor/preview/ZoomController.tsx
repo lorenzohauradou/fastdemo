@@ -56,7 +56,6 @@ export function ZoomController({
                 y: zoomPosition.y
             }
         }
-        console.log('🔍 Aggiornamento zoom:', { level: newZoom, x: zoomPosition.x, y: zoomPosition.y })
         updateAnimation(selectedAnimation.id, {
             properties: updatedProps
         })
@@ -101,7 +100,6 @@ export function ZoomController({
                 y: newPosition.y
             }
         }
-        console.log('🔍 Aggiornamento posizione:', { level: interactiveZoom, x: newPosition.x, y: newPosition.y })
         updateAnimation(selectedAnimation.id, {
             properties: updatedProps
         })

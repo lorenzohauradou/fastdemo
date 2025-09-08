@@ -92,6 +92,11 @@ export function ResizableClip({
         initialValuesRef.current = { startTime: clip.startTime, endTime: clip.endTime }
     }
 
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onSelect()
+    }
+
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging) return
@@ -161,7 +166,14 @@ export function ResizableClip({
                 // Controlla se c'è una clip attaccata a sinistra che deve essere spostata
                 const leftAdjacentClip = findAdjacentClip(clip, 'left')
 
-                if (leftAdjacentClip) {
+                // Caso speciale: se questa è la prima clip (startTime = 0), gestisci diversamente
+                const isFirstClip = startTime === 0
+
+                if (isFirstClip) {
+                    // Per la prima clip, mantieni startTime a 0 e modifica solo la durata
+                    // Il trimStart verrà calcolato nel handleMouseUp
+                    setVisualPreview({ startTime: 0, endTime: newDuration })
+                } else if (leftAdjacentClip) {
                     // Se c'è una clip attaccata a sinistra, non limitare l'espansione
                     // La clip adiacente si sposterà automaticamente
                     setVisualPreview({ startTime: Math.max(0, newStartTime), endTime: endTime })
@@ -217,7 +229,12 @@ export function ResizableClip({
 
                 // Calcola trimming solo per i resize
                 if (dragMode === 'resize-right') {
-                    updates.properties.trimEnd = Math.max(0, originalDuration - newDuration - currentTrimStart)
+                    const newTrimEnd = Math.max(0, originalDuration - newDuration - currentTrimStart)
+                    updates.properties.trimEnd = newTrimEnd
+
+                    // Aggiorna anche le proprietà dirette della clip per lo store
+                    updates.trimEnd = newTrimEnd
+                    updates.trimStart = currentTrimStart // Preserva trimStart esistente
 
                     // Gestisci movimento della clip adiacente a destra
                     const rightMovement = calculateAdjacentClipMovement(clip, visualPreview.startTime, visualPreview.endTime, 'right')
@@ -226,8 +243,50 @@ export function ResizableClip({
                     }
 
                 } else if (dragMode === 'resize-left') {
-                    const durationChange = newDuration - originalClipDuration
-                    updates.properties.trimStart = Math.max(0, currentTrimStart - durationChange)
+                    const isFirstClip = initialValuesRef.current.startTime === 0
+                    const currentTrimEnd = clip.properties?.trimEnd || 0
+
+                    if (isFirstClip) {
+                        // Per la prima clip, quando si riduce da sinistra:
+                        // - La clip deve tornare a startTime = 0
+                        // - Il trimStart aumenta per tagliare l'inizio del video
+                        // - Il trimEnd rimane invariato
+                        const originalClipDuration = initialValuesRef.current.endTime - initialValuesRef.current.startTime
+                        const durationReduction = originalClipDuration - newDuration
+                        const newTrimStart = Math.max(0, currentTrimStart + durationReduction)
+
+
+                        updates.properties.trimStart = newTrimStart
+                        updates.properties.trimEnd = currentTrimEnd // Preserva trimEnd esistente
+
+                        // Aggiorna anche le proprietà dirette della clip per lo store
+                        updates.trimStart = newTrimStart
+                        updates.trimEnd = currentTrimEnd
+
+                        // Forza la clip a tornare al bordo sinistro
+                        updates.startTime = 0
+                        updates.endTime = newDuration
+                    } else {
+                        // Per altre clip, quando si riduce da sinistra:
+                        // - Il trimStart aumenta per tagliare l'inizio del video
+                        // - La clip si sposta per mantenere la parte destra ferma
+                        // - Il trimEnd rimane invariato
+                        const originalStartTime = initialValuesRef.current.startTime
+                        const originalEndTime = initialValuesRef.current.endTime
+                        const originalClipDuration = originalEndTime - originalStartTime
+
+                        // Calcola quanto stiamo tagliando dall'inizio
+                        const startTimeChange = visualPreview.startTime - originalStartTime
+
+                        // Il trimStart aumenta della quantità che stiamo tagliando
+                        const newTrimStart = Math.max(0, currentTrimStart + startTimeChange)
+                        updates.properties.trimStart = newTrimStart
+                        updates.properties.trimEnd = currentTrimEnd // Preserva trimEnd esistente
+
+                        // Aggiorna anche le proprietà dirette della clip per lo store
+                        updates.trimStart = newTrimStart
+                        updates.trimEnd = currentTrimEnd
+                    }
 
                     // Gestisci movimento della clip adiacente a sinistra
                     const leftMovement = calculateAdjacentClipMovement(clip, visualPreview.startTime, visualPreview.endTime, 'left')
@@ -286,21 +345,19 @@ export function ResizableClip({
     return (
         <div
             className={`resizable-clip absolute h-full cursor-grab flex items-center justify-center group border-2 ${isDragging ? '' : 'transition-all duration-200'} ${isSelected ? 'border-white shadow-xl z-10' : type === 'video' ? 'border-blue-400/80' : 'border-zinc-400/80'
-                } ${type === 'video' ? 'bg-gradient-to-r from-zinc-500/90 to-zinc-600/90' : 'bg-transparent'} overflow-hidden shadow-lg backdrop-blur-sm ${
+                } ${type === 'video' ? 'bg-gradient-to-r from-zinc-500/90 to-zinc-600/90' : 'bg-transparent'} overflow-visible shadow-lg backdrop-blur-sm ${
                 // Bordi arrotondati condizionali per mostrare le connessioni
                 isAttachedLeft && isAttachedRight ? '' :
                     isAttachedLeft ? 'rounded-r-lg' :
                         isAttachedRight ? 'rounded-l-lg' : 'rounded-lg'
                 }`}
             style={clipStyle}
-            onClick={(e) => {
-                e.stopPropagation()
-                onSelect()
-            }}
+            onClick={handleClick}
         >
             <div
-                className="absolute -left-1 top-0 h-full w-3 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors"
+                className="absolute -left-2 top-0 h-full w-4 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors z-20"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
+                style={{ cursor: 'ew-resize' }}
             >
                 <div className={`h-3/4 w-1 rounded-full transition-all ${isSelected ? 'bg-white shadow-md' : 'bg-white/60 group-hover:bg-white/90'}`}></div>
             </div>
@@ -324,8 +381,9 @@ export function ResizableClip({
             </div>
 
             <div
-                className="absolute -right-1 top-0 h-full w-3 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors"
+                className="absolute -right-2 top-0 h-full w-4 cursor-ew-resize flex items-center justify-center hover:bg-black/20 transition-colors z-20"
                 onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
+                style={{ cursor: 'ew-resize' }}
             >
                 <div className={`h-3/4 w-1 rounded-full transition-all ${isSelected ? 'bg-white shadow-md' : 'bg-white/60 group-hover:bg-white/90'}`}></div>
             </div>

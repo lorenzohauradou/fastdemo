@@ -128,8 +128,8 @@ export function Features() {
                             <div className="relative h-full backdrop-blur-xl bg-white/[0.02] border border-white/10 rounded-2xl p-8 transition-all duration-500 group-hover:bg-white/[0.04] group-hover:border-white/20">
                                 <div className="flex flex-col justify-between h-full">
                                     <div>
-                                        <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                                            Export videos and images up to 4K resolution. Includes export presets for common platforms.
+                                        <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                                            Export videos up to 4K resolution
                                         </p>
                                     </div>
 

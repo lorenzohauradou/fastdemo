@@ -29,6 +29,11 @@ export interface VideoClip {
   trimStart: number
   trimEnd: number
   thumbnail?: string
+  // Webcam properties
+  hasWebcam?: boolean
+  webcamFile?: File
+  webcamUrl?: string
+  webcamFilename?: string
   properties?: {
     name?: string
     originalDuration?: number
@@ -59,10 +64,15 @@ export interface Project {
   id?: string
   name: string
   description?: string
-  // Proprietà legacy per compatibilità
+  // Proprietà legacy single clip
   videoFile?: File
   videoUrl?: string
   videoFilename?: string  // Nome del file video per il backend
+  // Webcam properties (legacy single clip) 
+  hasWebcam?: boolean
+  webcamFile?: File
+  webcamUrl?: string
+  webcamFilename?: string
   // Nuova struttura multi-clip
   clips: VideoClip[]     // Array di clip video
   activeClipId: string | null  // Clip attualmente attiva per editing
@@ -90,7 +100,7 @@ export interface Project {
     duration: number
   }
   cameraSettings?: {
-    type?: 'none' | 'continuous_glide' | 'skewed_glide' | 'up_down'
+    type?: 'none' | 'continuous_glide' | 'up_down'
     intensity?: number
     zoom_range?: number
     direction?: 'up' | 'down' | 'left' | 'right' | 'diagonal'

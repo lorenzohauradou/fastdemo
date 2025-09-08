@@ -178,11 +178,6 @@ export function VideoPlayer({
                 // Qui dovremmo usare updateProject dal store, ma per ora lo gestiamo nel componente padre
                 onLoadedMetadata?.()
             }
-
-            // Disabilita l'audio del video se c'è una traccia audio separata
-            if (currentProject.musicSettings?.track) {
-                videoRef.current.muted = true
-            }
         }
     }
 
@@ -211,6 +206,8 @@ export function VideoPlayer({
             }}
             onLoadedMetadata={handleLoadedMetadata}
             draggable={false}
+            data-main-video
+            muted={true}
         />
     )
 }

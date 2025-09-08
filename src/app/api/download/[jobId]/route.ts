@@ -22,7 +22,7 @@ export async function GET(
                     return new NextResponse(videoBuffer, {
                         headers: {
                             'Content-Type': 'video/mp4',
-                            'Content-Disposition': `attachment; filename="democraft_video_${jobId}.mp4"`,
+                            'Content-Disposition': `attachment; filename="showcaseready-output.mp4"`,
                             'Content-Length': videoBuffer.byteLength.toString()
                         }
                     })

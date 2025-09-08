@@ -11,6 +11,7 @@ import {
     type VideoClip,
     type AudioClip
 } from './playerUtils'
+import { useApi } from '@/lib/api'
 
 export function Player() {
     const {
@@ -51,13 +52,10 @@ export function Player() {
     // Calcola la durata dinamica basata sulle clip video effettive
     const dynamicDuration = useMemo(() => {
         if (videoClips.length === 0) {
-            console.log('Nessuna clip video, usando durata progetto:', currentProject?.duration || 10)
             return currentProject?.duration || 10
         }
         // La durata totale è il punto finale della clip che finisce più tardi
         const calculatedDuration = Math.max(...videoClips.map(clip => clip.endTime))
-        console.log('Durata dinamica calcolata:', calculatedDuration, 'da', videoClips.length, 'clip')
-        console.log('Clip endTimes:', videoClips.map(clip => ({ id: clip.id, endTime: clip.endTime })))
         return calculatedDuration
     }, [videoClips, currentProject?.duration])
 
@@ -99,7 +97,7 @@ export function Player() {
                 // Solo se il video è pronto per la riproduzione
                 if (videoRef.current.readyState >= 3) { // HAVE_FUTURE_DATA
                     videoRef.current.play().catch(error => {
-                        console.error('Errore durante play:', error)
+                        console.error('Error during play:', error)
                     })
                 }
             } else {
@@ -144,14 +142,13 @@ export function Player() {
             const clipRelativeTime = videoTime - trimStart
             const globalTime = activeVideoClip.startTime + clipRelativeTime
 
+
             // Usa la durata effettiva del video invece della durata teorica della clip
             const actualVideoDuration = videoRef.current.duration
             const effectiveEndTime = isFinite(actualVideoDuration) && actualVideoDuration > 0
                 ? Math.min(activeVideoClip.endTime, activeVideoClip.startTime + actualVideoDuration)
                 : activeVideoClip.endTime
 
-            // Debug: rimuovi questi log dopo il test
-            // console.log('handleTimeUpdate:', { videoTime, globalTime, clipEndTime: activeVideoClip.endTime, actualVideoDuration, effectiveEndTime })
 
             // Controlla se abbiamo raggiunto la fine effettiva della clip
             if (globalTime >= effectiveEndTime - 0.05) {
@@ -162,7 +159,6 @@ export function Player() {
 
                 if (nextClip) {
                     // Passa alla prossima clip
-                    console.log('Passando alla prossima clip:', nextClip.id, 'startTime:', nextClip.startTime)
                     setIsChangingClip(true)
                     setCurrentTime(nextClip.startTime + 0.01) // Piccolo offset per evitare loop
                     // Riabilita handleTimeUpdate dopo un breve delay
@@ -170,7 +166,6 @@ export function Player() {
                 } else {
                     // Fine del progetto - controlla se siamo effettivamente alla fine
                     if (globalTime >= dynamicDuration - 0.1) {
-                        console.log('Fine del progetto raggiunta')
                         setIsPlaying(false)
                         setCurrentTime(dynamicDuration)
                         if (audioRef.current) {
@@ -199,15 +194,21 @@ export function Player() {
         input.onchange = async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0]
             if (file) {
-                const audioUrl = URL.createObjectURL(file)
-                updateProject({
-                    musicSettings: {
-                        type: 'custom',
-                        track: audioUrl,
-                        volume: 0.5,
-                        fileName: file.name // Salva il nome del file
-                    }
-                })
+                try {
+                    const response = await useApi().uploadAudio(file)
+
+                    updateProject({
+                        musicSettings: {
+                            type: 'custom',
+                            track: response.audioUrl, // URL per preview locale
+                            volume: 0.5,
+                            fileName: response.filename // Nome file per backend
+                        }
+                    })
+                } catch (error) {
+                    console.error('Errore upload audio:', error)
+                    alert('Errore durante l\'upload dell\'audio')
+                }
             }
         }
         input.click()
@@ -352,6 +353,7 @@ export function Player() {
 
     // ===== GESTIONE AGGIORNAMENTI CLIP =====
     const handleClipUpdate = (clipId: string, updates: any, isAudio = false) => {
+
         if (isAudio && clipId === 'main-audio') {
             // Audio principale: aggiorna solo se necessario
             if (updates.endTime && updates.endTime !== dynamicDuration) {
@@ -374,6 +376,8 @@ export function Player() {
             if (updates.startTime !== undefined) clipUpdates.startTime = updates.startTime
             if (updates.endTime !== undefined) clipUpdates.endTime = updates.endTime
             if (updates.properties !== undefined) clipUpdates.properties = updates.properties
+            if (updates.trimStart !== undefined) clipUpdates.trimStart = updates.trimStart
+            if (updates.trimEnd !== undefined) clipUpdates.trimEnd = updates.trimEnd
 
             // Calcola la duration solo se startTime o endTime sono cambiati
             if (updates.startTime !== undefined && updates.endTime !== undefined) {
@@ -395,7 +399,7 @@ export function Player() {
                     src={activeVideoClip.properties.url}
                     className="hidden"
                     onTimeUpdate={handleTimeUpdate}
-                    muted={!!audioSrc}
+                    muted={true}
                 />
             )}
             {audioSrc && <audio ref={audioRef} src={audioSrc} />}

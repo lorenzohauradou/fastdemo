@@ -96,6 +96,21 @@ export function VideoPreview() {
         }
     }
 
+    // Sincronizza la webcam quando cambia lo stato di riproduzione
+    useEffect(() => {
+        const webcamVideo = document.querySelector('video[data-webcam]') as HTMLVideoElement
+        const mainVideo = document.querySelector('video[data-main-video]') as HTMLVideoElement
+
+        if (webcamVideo && mainVideo) {
+            if (isPlaying) {
+                webcamVideo.currentTime = mainVideo.currentTime
+                webcamVideo.play().catch(console.warn)
+            } else {
+                webcamVideo.pause()
+            }
+        }
+    }, [isPlaying, clipTime])
+
     if (!videoSrc) {
         return (
             <div className="flex items-center justify-center w-full h-full p-8">
@@ -158,6 +173,50 @@ export function VideoPreview() {
                                 hasBackground={hasBackground()}
                                 onLoadedMetadata={handleVideoLoadedMetadata}
                             />
+
+                            {/* Webcam overlay */}
+                            {activeClip?.hasWebcam && activeClip?.webcamUrl && (
+                                <div className="absolute bottom-8 right-8 w-32 h-32 rounded-full overflow-hidden shadow-lg">
+                                    <video
+                                        ref={(video) => {
+                                            if (video) {
+                                                // Sincronizza automaticamente con il video principale
+                                                const mainVideo = document.querySelector('video[data-main-video]') as HTMLVideoElement
+                                                if (mainVideo) {
+                                                    video.currentTime = mainVideo.currentTime
+                                                    if (isPlaying && mainVideo.paused === false) {
+                                                        video.play().catch(console.warn)
+                                                    } else {
+                                                        video.pause()
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        src={activeClip.webcamUrl}
+                                        className="w-full h-full object-cover"
+                                        muted
+                                        playsInline
+                                        autoPlay={isPlaying}
+                                        style={{
+                                            transform: 'scaleX(-1)' // Mirror effect per webcam
+                                        }}
+                                        onLoadedData={(e) => {
+                                            const video = e.target as HTMLVideoElement
+                                            const mainVideo = document.querySelector('video[data-main-video]') as HTMLVideoElement
+                                            if (mainVideo) { video.currentTime = mainVideo.currentTime }
+                                        }}
+                                        onTimeUpdate={(e) => {
+                                            // Sincronizza con il video principale solo se necessario
+                                            const video = e.target as HTMLVideoElement
+                                            const mainVideo = document.querySelector('video[data-main-video]') as HTMLVideoElement
+                                            if (mainVideo && Math.abs(video.currentTime - mainVideo.currentTime) > 0.2) {
+                                                video.currentTime = mainVideo.currentTime
+                                            }
+                                        }}
+                                        data-webcam
+                                    />
+                                </div>
+                            )}
                             <ZoomIndicator
                                 activeClip={activeClip}
                                 clipTime={clipTime}

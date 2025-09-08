@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Video } from 'lucide-react'
+import { Video, Camera } from 'lucide-react'
 import fixWebmDuration from 'fix-webm-duration'
 
 interface ScreenRecorderProps {
@@ -17,14 +17,19 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
     const router = useRouter()
     const { setCurrentProject } = useEditorStore()
     const [isRecording, setIsRecording] = useState(false)
+    const [showWebcamDialog, setShowWebcamDialog] = useState(false)
+    const [includeWebcam, setIncludeWebcam] = useState(false)
 
     const [recordingTime, setRecordingTime] = useState(0)
     const [isProcessing, setIsProcessing] = useState(false)
     const [processingProgress, setProcessingProgress] = useState(0)
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+    const webcamRecorderRef = useRef<MediaRecorder | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
+    const webcamStreamRef = useRef<MediaStream | null>(null)
     const chunksRef = useRef<Blob[]>([])
+    const webcamChunksRef = useRef<Blob[]>([])
     const timerRef = useRef<NodeJS.Timeout | null>(null)
     const startTimeRef = useRef<number>(0) // Per calcolare la durata effettiva
 
@@ -47,9 +52,31 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }, [])
 
-    const startRecording = useCallback(async () => {
+    const startRecording = useCallback(async (withWebcam: boolean = false) => {
         try {
-            // Richiedi accesso allo schermo
+            // Se richiesta webcam, ottieni prima quello stream (così l'utente rimane sulla pagina)
+            let webcamStream = null
+            if (withWebcam) {
+                try {
+                    webcamStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 640 },
+                            height: { ideal: 480 },
+                            frameRate: { ideal: 30 }
+                        },
+                        audio: false // Audio sarà catturato dallo screen recording
+                    })
+                    webcamStreamRef.current = webcamStream
+                    webcamChunksRef.current = []
+                    console.log('✅ Webcam permission granted')
+                } catch (webcamError) {
+                    console.warn('Webcam not available:', webcamError)
+                    alert('Webcam not available. Recording screen only.')
+                    // Continua senza webcam
+                }
+            }
+
+            // Ora richiedi accesso allo schermo
             const stream = await navigator.mediaDevices.getDisplayMedia({
                 video: {
                     width: { ideal: 1920 },
@@ -63,6 +90,10 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
             const videoTrack = stream.getVideoTracks()[0]
             if (!videoTrack || videoTrack.readyState === 'ended') {
                 alert('Error: unable to access screen video')
+                // Se la webcam era stata attivata, fermala
+                if (webcamStream) {
+                    webcamStream.getTracks().forEach(track => track.stop())
+                }
                 return
             }
 
@@ -99,6 +130,21 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                 }
             }
 
+            // Crea MediaRecorder per webcam se disponibile
+            let webcamRecorder = null
+            if (webcamStream) {
+                webcamRecorder = new MediaRecorder(webcamStream, {
+                    mimeType: selectedMimeType
+                })
+                webcamRecorderRef.current = webcamRecorder
+
+                webcamRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        webcamChunksRef.current.push(event.data)
+                    }
+                }
+            }
+
             // Gestisci la fine della registrazione
             mediaRecorder.onstop = async () => {
                 await handleRecordingComplete()
@@ -129,7 +175,12 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
 
             // Inizia la registrazione
             mediaRecorder.start(1000) // Salva chunk ogni secondo
+            if (webcamRecorder) {
+                webcamRecorder.start(1000)
+            }
+
             setIsRecording(true)
+            setIncludeWebcam(withWebcam)
             setRecordingTime(0)
             startTimeRef.current = Date.now() // Salva il tempo di inizio
             startTimer()
@@ -146,11 +197,24 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
             // Ferma il timer
             stopTimer()
             mediaRecorderRef.current.stop()
+
+            // Ferma anche la webcam se attiva
+            if (webcamRecorderRef.current) {
+                webcamRecorderRef.current.stop()
+            }
+
             setIsRecording(false)
-            // Ferma lo stream
+
+            // Ferma lo stream dello schermo
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop())
                 streamRef.current = null
+            }
+
+            // Ferma lo stream della webcam
+            if (webcamStreamRef.current) {
+                webcamStreamRef.current.getTracks().forEach(track => track.stop())
+                webcamStreamRef.current = null
             }
         }
     }, [isRecording, recordingTime, stopTimer])
@@ -223,13 +287,48 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                     }
 
                     const uploadResult = await uploadResponse.json()
-                    console.log('Upload screen recording completato:', uploadResult)
                 } catch (uploadError) {
-                    console.warn('Errore upload screen recording:', uploadError)
+                    console.warn('Error upload screen recording:', uploadError)
                     // Continua comunque per permettere il preview locale
                 }
 
+                // Upload webcam se disponibile
+                let webcamFile = null
+                // Se ci sono chunks webcam, significa che l'utente ha scelto di includerla
+                const hasWebcamData = webcamChunksRef.current.length > 0
+
+                if (hasWebcamData) {
+                    try {
+                        const webcamBlob = new Blob(webcamChunksRef.current, { type: mimeType })
+                        const fixedWebcamBlob = await fixWebmDuration(webcamBlob, actualDuration * 1000)
+                        webcamFile = new File([fixedWebcamBlob], `webcam-recording-${Date.now()}.${extension}`, {
+                            type: mimeType
+                        })
+
+
+                        const webcamFormData = new FormData()
+                        webcamFormData.append('file', webcamFile)
+
+                        const webcamUploadResponse = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: webcamFormData
+                        })
+
+                        if (webcamUploadResponse.ok) {
+                            const webcamUploadResult = await webcamUploadResponse.json()
+                        }
+                    } catch (webcamUploadError) {
+                        console.warn('Error upload webcam:', webcamUploadError)
+                    }
+                } else if (includeWebcam) {
+                    console.warn('Error')
+                }
+
                 // crea un nuovo progetto con il sistema multi-clip (stesso formato di VideoUpload)
+                const webcamUrl = webcamFile ? URL.createObjectURL(webcamFile) : undefined
+                const hasWebcam = hasWebcamData && webcamFile !== null
+
+
                 const newProject = {
                     name: videoName,
                     videoFilename: videoFile.name, // Salva il filename originale per il backend
@@ -237,6 +336,11 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                     videoFile: videoFile,
                     duration: videoDuration,
                     originalDuration: videoDuration,
+                    // Aggiungi dati webcam se disponibili
+                    webcamFilename: webcamFile?.name,
+                    webcamUrl: webcamUrl,
+                    webcamFile: webcamFile || undefined,
+                    hasWebcam: hasWebcam,
                     clips: [{
                         id: 'main-video',
                         name: videoName,
@@ -249,7 +353,12 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
-                        trimEnd: 0
+                        trimEnd: 0,
+                        // Aggiungi dati webcam anche nella clip
+                        webcamFilename: webcamFile?.name,
+                        webcamUrl: webcamUrl,
+                        webcamFile: webcamFile || undefined,
+                        hasWebcam: hasWebcam
                     }],
                     activeClipId: 'main-video',
                     musicSettings: {
@@ -297,8 +406,14 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop())
             }
+            if (webcamStreamRef.current) {
+                webcamStreamRef.current.getTracks().forEach(track => track.stop())
+            }
             if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
                 mediaRecorderRef.current.stop()
+            }
+            if (webcamRecorderRef.current && webcamRecorderRef.current.state !== 'inactive') {
+                webcamRecorderRef.current.stop()
             }
         }
     }, []) // Array vuoto - esegue solo al mount/unmount
@@ -343,13 +458,56 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
     return (
         <div className={className}>
             <Button
-                onClick={startRecording}
+                onClick={() => setShowWebcamDialog(true)}
                 className="w-full h-[60px] md:w-auto bg-transparent text-white hover:bg-white/10 px-4 py-2.5 rounded-full text-sm font-medium transition-all border border-[#404040]"
                 disabled={isRecording || isProcessing}
             >
                 <Video className="h-4 w-4" />
                 Record your screen
             </Button>
+
+            {showWebcamDialog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 max-w-md mx-4">
+                        <h3 className="text-lg font-semibold text-white mb-4">
+                            Recording Options
+                        </h3>
+                        <p className="text-gray-300 mb-6">
+                            Do you want to include your webcam in the recording?
+                        </p>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => {
+                                    setShowWebcamDialog(false)
+                                    startRecording(false)
+                                }}
+                                variant="outline"
+                                className="flex-1 border-zinc-600 text-white hover:bg-zinc-800"
+                            >
+                                <Video className="h-4 w-4 mr-2" />
+                                Screen Only
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setShowWebcamDialog(false)
+                                    startRecording(true)
+                                }}
+                                className="flex-1 bg-white text-black hover:bg-gray-100"
+                            >
+                                <Camera className="h-4 w-4 mr-2" />
+                                Screen + Webcam
+                            </Button>
+                        </div>
+                        <Button
+                            onClick={() => setShowWebcamDialog(false)}
+                            variant="ghost"
+                            className="w-full mt-3 text-gray-400 hover:text-white"
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
