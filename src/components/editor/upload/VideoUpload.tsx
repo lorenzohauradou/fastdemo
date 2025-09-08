@@ -61,7 +61,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         // Validazione del file
         const maxSize = 500 * 1024 * 1024 // 500MB
         if (file.size > maxSize) {
-            alert('Il file è troppo grande. Dimensione massima: 500MB')
+            alert('The file is too large. Maximum size: 500MB')
             return
         }
 
@@ -70,7 +70,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         const isAllowedType = allowedTypes.includes(file.type) || isWebM
 
         if (!isAllowedType) {
-            alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
+            alert('Unsupported format. Use MP4, MOV, AVI or WebM')
             return
         }
 
@@ -78,24 +78,8 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         setUploadProgress(0)
 
         try {
-            // Upload del file al backend prima di creare il progetto
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            })
-
-            if (!uploadResponse.ok) {
-                const errorData = await uploadResponse.json()
-                alert(`Errore upload: ${errorData.error}`)
-                setIsUploading(false)
-                return
-            }
-
-            const uploadResult = await uploadResponse.json()
-            console.log('Upload completato:', uploadResult)
+            // Upload del file 
+            await api.uploadVideo(file)
 
             // Crea URL locale per il preview
             const videoUrl = URL.createObjectURL(file)
@@ -207,7 +191,8 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
             }
 
         } catch (error) {
-            alert('Error during video upload')
+            console.error('Upload error:', error)
+            alert(`Upload error: ${error instanceof Error ? error.message : 'Unknown error'}`)
             setIsUploading(false)
         }
     }

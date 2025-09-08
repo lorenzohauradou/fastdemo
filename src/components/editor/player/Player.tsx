@@ -388,7 +388,7 @@ export function Player() {
     }
 
     return (
-        <div className="bg-zinc-900 h-40 flex border-t border-zinc-700">
+        <div className="bg-background h-40 flex ">
             {activeVideoClip && (
                 <video
                     ref={videoRef}

@@ -31,8 +31,11 @@ export interface RenderRequest {
 }
 
 export interface RenderResponse {
+    task_id: string
+    status: string
     message: string
-    render_job: {
+    // Mantieni compatibilità con il vecchio formato per ora
+    render_job?: {
         id: string
         project_name: string
         status: string
@@ -51,11 +54,16 @@ export interface RenderResponse {
 }
 
 export interface RenderStatusResponse {
-    job_id: string
+    task_id: string
     status: string
-    progress: number
     message: string
-    estimated_remaining: number
+    progress?: number
+    output_filename?: string
+    download_url?: string
+    error?: string
+    // Compatibilità con il vecchio formato
+    job_id?: string
+    estimated_remaining?: number
     output_url?: string
     note?: string
 }

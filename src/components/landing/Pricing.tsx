@@ -60,7 +60,7 @@ export function Pricing() {
                         Pricing
                     </h2>
                     <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
-                        Start using ShowcaseReady for free—no credit card required.
+                        Start using ShowcaseReady for free—no credit card required
                     </p>
                     <div className="flex items-center justify-center gap-6 mb-16">
                         <span className={`text-lg font-medium transition-colors ${!isYearly ? 'text-white' : 'text-gray-500'}`}>

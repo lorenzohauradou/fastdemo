@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAnimationFrame } from 'framer-motion'
 import { Project } from '@/lib/store'
-import { getCameraAnimationTransform } from '../lib/cameraAnimationUtils'
+import { getCameraAnimationTransform, getCameraVariantForTextPosition } from '../lib/cameraAnimationUtils'
 
 interface CameraTransform {
     x: number | string | number[]
@@ -34,7 +34,12 @@ export function useCameraAnimations(currentProject: Project | null) {
     const getCameraAnimationKey = (activeTextAnimation?: any) => {
         const cameraSettings = currentProject?.cameraSettings
         if (!cameraSettings || cameraSettings.type === 'none') {
-            return activeTextAnimation ? "withText" : "full"
+            if (activeTextAnimation) {
+                // Se c'è un testo attivo, determina la variante basata sulla sua posizione
+                const textPosition = activeTextAnimation.properties?.position
+                return getCameraVariantForTextPosition(textPosition)
+            }
+            return "full"
         }
         return cameraSettings.type
     }

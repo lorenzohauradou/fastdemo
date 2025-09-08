@@ -113,9 +113,13 @@ interface EditorState {
   selectedPanel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background'
   selectedAnimation: Animation | null
   selectedClip: string | null
+  isEditingText: boolean
   
+  // Rendering State
+  isRendering: boolean
+  renderProgress: number
   // Actions
-  setCurrentProject: (project: Project) => void
+  setCurrentProject: (project: Project | null) => void
   updateProject: (updates: Partial<Project>) => void
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
@@ -135,6 +139,11 @@ interface EditorState {
   removeAnimation: (id: string) => void
   setSelectedAnimation: (animation: Animation | null) => void
   setSelectedClip: (clipId: string | null) => void
+  setIsEditingText: (isEditing: boolean) => void
+  
+  // Rendering Actions
+  setRenderingState: (isRendering: boolean) => void
+  setRenderProgress: (progress: number) => void
   
   // Utilità
   getCurrentClipTime: () => number  // Tempo relativo alla clip attiva
@@ -150,6 +159,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedPanel: 'scene',
   selectedAnimation: null,
   selectedClip: null,
+  isEditingText: false,
+  isRendering: false,
+  renderProgress: 0,
   
   // Actions
   setCurrentProject: (project) => {
@@ -427,6 +439,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   
   setSelectedAnimation: (animation) => set({ selectedAnimation: animation }),
   setSelectedClip: (clipId) => set({ selectedClip: clipId }),
+  setIsEditingText: (isEditing) => set({ isEditingText: isEditing }),
+  
+  // Rendering Actions
+  setRenderingState: (isRendering) => set({ isRendering }),
+  setRenderProgress: (progress) => set({ renderProgress: progress }),
   
   // Utilità
   getCurrentClipTime: () => {

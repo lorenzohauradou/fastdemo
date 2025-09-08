@@ -26,7 +26,7 @@ export function Hero() {
         // Validazione del file
         const maxSize = 500 * 1024 * 1024 // 500MB
         if (file.size > maxSize) {
-            alert('Il file è troppo grande. Dimensione massima: 500MB')
+            alert('file is too large. Maximum size: 500MB')
             return
         }
 
@@ -35,7 +35,7 @@ export function Hero() {
         const isAllowedType = allowedTypes.includes(file.type) || isWebM
 
         if (!isAllowedType) {
-            alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
+            alert('Unsupported format. Use MP4, MOV, AVI or WebM')
             return
         }
 
@@ -53,13 +53,13 @@ export function Hero() {
 
             if (!uploadResponse.ok) {
                 const errorData = await uploadResponse.json()
-                alert(`Errore upload: ${errorData.error}`)
+                alert(`Upload error: ${errorData.error}`)
                 setIsProcessing(false)
                 return
             }
 
             const uploadResult = await uploadResponse.json()
-            console.log('Upload completato:', uploadResult)
+            console.log('Upload completed:', uploadResult)
 
             // Crea URL locale per il preview
             const videoUrl = URL.createObjectURL(file)
@@ -72,7 +72,7 @@ export function Hero() {
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
 
-                // Crea il progetto con la nuova struttura multi-clip
+                // Crea il progetto con struttura multi-clip
                 const newProject = {
                     name: videoName,
                     videoFilename: file.name, // Salva il filename originale per il backend
@@ -106,12 +106,11 @@ export function Hero() {
             }
 
             tempVideo.onerror = () => {
-                alert('Errore nel caricamento del video')
+                alert('Error uploading video')
                 setIsProcessing(false)
             }
         } catch (error) {
-            console.error('Errore durante il processamento del video:', error)
-            alert('Errore durante il caricamento del video')
+            alert('Error uploading video')
             setIsProcessing(false)
         }
     }, [router, setCurrentProject])
@@ -156,7 +155,7 @@ export function Hero() {
         if (videoFile) {
             processVideoAndNavigate(videoFile)
         } else {
-            alert('Per favore carica un file video (MP4, MOV, AVI, WebM)')
+            alert('Please upload a video file (MP4, MOV, AVI, WebM)')
         }
     }, [processVideoAndNavigate])
 
@@ -186,7 +185,7 @@ export function Hero() {
                         variant="secondary"
                         className="mb-4 md:mb-6 bg-zinc-800/60 text-white border-gray-700/50 backdrop-blur-sm hover:bg-zinc-700/60 transition-colors px-3 md:px-4 py-1.5 md:py-2 rounded-full"
                     >
-                        <span className="text-xs md:text-sm">#1 SaaS Demo Generator</span>
+                        <span className="text-xs md:text-sm">SaaS Demo Generator</span>
                     </Badge>
 
                     <h1 className="text-3xl md:text-3xl lg:text-5xl font-bold mb-4 md:mb-6 leading-[1.05] text-white max-w-6xl mx-auto">

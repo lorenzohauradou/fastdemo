@@ -9,6 +9,7 @@ import { VideoPlayer } from './VideoPlayer'
 import { ZoomController } from './ZoomController'
 import { ZoomIndicator } from './ZoomIndicator'
 import { LogoOverlay } from './LogoOverlay'
+import { RenderProgressOverlay } from './RenderProgressOverlay'
 import { useCameraAnimations } from '@/hooks/useCameraAnimations'
 
 export function VideoPreview() {
@@ -40,16 +41,36 @@ export function VideoPreview() {
         clipTime <= anim.endTime
     )
 
-    // Definisci le varianti per il TESTO
-    const textVariants = {
-        hidden: {
-            opacity: 0,
-            x: 100
-        },
-        visible: {
-            opacity: 1,
-            x: 0
-        },
+    // Definisci le varianti per il TESTO basate sulla posizione
+    const getTextVariants = (position: string) => {
+        switch (position) {
+            case 'top':
+                return {
+                    hidden: { opacity: 0, y: -50 },
+                    visible: { opacity: 1, y: 0 }
+                };
+            case 'bottom':
+                return {
+                    hidden: { opacity: 0, y: 50 },
+                    visible: { opacity: 1, y: 0 }
+                };
+            case 'left':
+                return {
+                    hidden: { opacity: 0, x: -100 },
+                    visible: { opacity: 1, x: 0 }
+                };
+            case 'right':
+                return {
+                    hidden: { opacity: 0, x: 100 },
+                    visible: { opacity: 1, x: 0 }
+                };
+            default:
+                // top fallback
+                return {
+                    hidden: { opacity: 0, y: -50 },
+                    visible: { opacity: 1, y: 0 }
+                };
+        }
     }
 
     const textTransition = { delay: 0.1, type: 'spring' as const, stiffness: 300, damping: 30 }
@@ -60,13 +81,6 @@ export function VideoPreview() {
         if (!container) return
 
         const wheelHandler = (e: WheelEvent) => {
-            // Converti l'evento nativo in React.WheelEvent-like
-            const reactEvent = {
-                preventDefault: () => e.preventDefault(),
-                stopPropagation: () => e.stopPropagation(),
-                deltaY: e.deltaY
-            } as React.WheelEvent
-
             // Il wheel handler sarà gestito dal ZoomController
         }
 
@@ -91,8 +105,6 @@ export function VideoPreview() {
             </div>
         )
     }
-
-    // Verifica se c'è un background applicato
     const hasBackground = () => {
         if (!currentProject?.backgroundSettings) return false
         const bg = currentProject.backgroundSettings
@@ -114,7 +126,7 @@ export function VideoPreview() {
                         ref={containerRef}
                         className="relative w-full h-full flex items-center justify-center overflow-hidden"
                         style={{
-                            perspective: '1500px',
+                            perspective: '3000px',
                             perspectiveOrigin: '40% center'
                         }}
                         onMouseDown={onMouseDown}
@@ -159,20 +171,27 @@ export function VideoPreview() {
                         <AnimatePresence>
                             {activeTextAnimation && (
                                 <motion.div
-                                    className="absolute w-1/2 h-full flex items-center justify-center pointer-events-none"
-                                    style={{ right: 0 }}
-                                    variants={textVariants}
+                                    className={`absolute flex items-center justify-center pointer-events-none ${
+                                        // Posizionamento basato sulla proprietà position - usa 'top' come default
+                                        activeTextAnimation.properties.position === 'top' ? 'top-8 left-0 right-0 h-auto' :
+                                            activeTextAnimation.properties.position === 'bottom' ? 'bottom-18 left-0 right-0 h-auto' :
+                                                activeTextAnimation.properties.position === 'left' ? 'left-8 top-0 bottom-0 w-auto flex-col' :
+                                                    activeTextAnimation.properties.position === 'right' ? 'right-8 top-0 bottom-0 w-auto flex-col' :
+                                                        'top-8 left-0 right-0 h-auto' // Default: top center come fallback
+                                        }`}
+                                    variants={getTextVariants(activeTextAnimation.properties.position || 'top')}
                                     initial="hidden"
                                     animate="visible"
                                     exit="hidden"
                                     transition={textTransition}
                                 >
-                                    <div className="text-center">
+                                    <div className="text-center px-4">
                                         <h1
                                             className="text-white font-bold leading-tight"
                                             style={{
                                                 fontSize: `${activeTextAnimation.properties.fontSize || 48}px`,
                                                 fontWeight: activeTextAnimation.properties.fontWeight || 'bold',
+                                                fontFamily: activeTextAnimation.properties.fontFamily || 'Inter',
                                                 color: activeTextAnimation.properties.color || '#ffffff',
                                                 textShadow: '0 4px 20px rgba(0,0,0,0.5)',
                                             }}
@@ -194,10 +213,73 @@ export function VideoPreview() {
                             )}
                         </AnimatePresence>
 
+                        {selectedAnimation?.type === 'text' && activeTextAnimation?.id === selectedAnimation.id && (
+                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 bg-black rounded-lg p-3">
+                                <button
+                                    className="w-10 h-10 bg-transparent rounded-lg flex items-center justify-center text-white hover:bg-gray-600 transition-colors"
+                                    onClick={() => {
+                                        updateAnimation(selectedAnimation.id, {
+                                            properties: {
+                                                ...selectedAnimation.properties,
+                                                position: 'top'
+                                            }
+                                        })
+                                    }}
+                                    title="Top Center"
+                                >
+                                    ↑
+                                </button>
+                                <button
+                                    className="w-10 h-10 bg-transparent rounded-lg flex items-center justify-center text-white hover:bg-gray-600 transition-colors"
+                                    onClick={() => {
+                                        updateAnimation(selectedAnimation.id, {
+                                            properties: {
+                                                ...selectedAnimation.properties,
+                                                position: 'bottom'
+                                            }
+                                        })
+                                    }}
+                                    title="Bottom Center"
+                                >
+                                    ↓
+                                </button>
+                                <button
+                                    className="w-10 h-10 bg-transparent rounded-lg flex items-center justify-center text-white hover:bg-gray-600 transition-colors"
+                                    onClick={() => {
+                                        updateAnimation(selectedAnimation.id, {
+                                            properties: {
+                                                ...selectedAnimation.properties,
+                                                position: 'left'
+                                            }
+                                        })
+                                    }}
+                                    title="Left Center"
+                                >
+                                    ←
+                                </button>
+                                <button
+                                    className="w-10 h-10 bg-transparent rounded-lg flex items-center justify-center text-white hover:bg-gray-600 transition-colors"
+                                    onClick={() => {
+                                        updateAnimation(selectedAnimation.id, {
+                                            properties: {
+                                                ...selectedAnimation.properties,
+                                                position: 'right'
+                                            }
+                                        })
+                                    }}
+                                    title="Right Center"
+                                >
+                                    →
+                                </button>
+                            </div>
+                        )}
+
                         <LogoOverlay
                             activeClip={activeClip}
                             clipTime={clipTime}
                         />
+
+                        <RenderProgressOverlay />
                     </div>
                 </BackgroundRenderer>
             )}

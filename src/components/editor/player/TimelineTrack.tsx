@@ -153,14 +153,14 @@ export function TimelineTrack({
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={onAddClip}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-transparent hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
                                 >
                                     <Upload className="h-3 w-3" />
                                     Import Audio
                                 </button>
                                 <button
                                     onClick={onOpenLibrary}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-transparent hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
                                 >
                                     <Music className="h-3 w-3" />
                                     Library
@@ -169,7 +169,7 @@ export function TimelineTrack({
                         ) : (
                             <button
                                 onClick={onAddClip}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
+                                className="flex items-center gap-2 px-3 py-1.5 bg-transparent hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
                             >
                                 <Upload className="h-3 w-3" />
                                 Add Video Clip
@@ -178,9 +178,8 @@ export function TimelineTrack({
                     </div>
                 )}
 
-                {/* Pulsante per aggiungere clip anche quando ci sono già clip */}
-                {type === 'video' && clips.length > 0 && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden">
+                {/* {type === 'video' && clips.length > 0 && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
                         <button
                             onClick={onAddClip}
                             className="flex items-center gap-1 px-2 py-1 bg-zinc-700/80 hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded text-xs text-zinc-300 hover:text-white transition-all duration-200"
@@ -190,7 +189,7 @@ export function TimelineTrack({
                             +
                         </button>
                     </div>
-                )}
+                )} */}
             </div>
         </div>
     )

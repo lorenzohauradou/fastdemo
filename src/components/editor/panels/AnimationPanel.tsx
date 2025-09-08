@@ -23,13 +23,6 @@ const cameraAnimations = [
         selected: false
     },
     {
-        id: 'skewed',
-        name: 'Skewed',
-        preview: '/videos/animations/skewed.mp4',
-        type: 'pan' as const,
-        selected: false
-    },
-    {
         id: 'up-down',
         name: 'Up & Down',
         preview: '/videos/animations/up-down.mp4',
@@ -52,7 +45,6 @@ export function AnimationPanel() {
             // Mappa il tipo interno al ID del pannello
             const typeToId = {
                 'continuous_glide': 'continuous-glide',
-                'skewed_glide': 'skewed',
                 'up_down': 'up-down'
             }
             const mappedId = typeToId[currentProject.cameraSettings.type as keyof typeof typeToId] || 'none'
@@ -84,16 +76,7 @@ export function AnimationPanel() {
                     }
                 })
                 break
-            case 'skewed':
-                updateProject({
-                    cameraSettings: {
-                        type: 'skewed_glide',
-                        intensity: 1,
-                        direction: 'diagonal',
-                        angle: 0
-                    }
-                })
-                break
+
             case 'up-down':
                 updateProject({
                     cameraSettings: {

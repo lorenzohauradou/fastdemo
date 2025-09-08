@@ -62,7 +62,7 @@ export function Sidebar() {
                     )
                 })}
             </div>
-            <div className="flex-1 overflow-y-auto bg-card">
+            <div className="flex-1 overflow-x-auto bg-card">
                 {renderPanelContent()}
             </div>
         </div>

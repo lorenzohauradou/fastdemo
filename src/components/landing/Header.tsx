@@ -83,9 +83,6 @@ export function Header() {
                         <a href="#pricing" className="block text-gray-300 hover:text-white transition-colors text-sm">
                             Pricing
                         </a>
-                        <Link href="/dashboard/ai-image-studio" className="block text-gray-300 hover:text-white transition-colors text-sm">
-                            FastAdsSearch
-                        </Link>
 
                         {/* {session ? ( */}
                         <>

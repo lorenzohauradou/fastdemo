@@ -31,6 +31,39 @@ export const baseCameraVariants = {
         rotateY: 15,
         rotateX: -3,
         z: 50
+    },
+    // Nuove varianti per posizioni centrate del testo
+    withTextTop: {
+        scale: 0.8,
+        x: 0,
+        y: '25%',
+        rotateY: 0,
+        rotateX: -5,
+        z: 20
+    },
+    withTextBottom: {
+        scale: 0.8,
+        x: 0,
+        y: '-25%',
+        rotateY: 0,
+        rotateX: 5,
+        z: 20
+    },
+    withTextLeft: {
+        scale: 0.8,
+        x: '25%',
+        y: 0,
+        rotateY: -8,
+        rotateX: 0,
+        z: 20
+    },
+    withTextRight: {
+        scale: 0.8,
+        x: '-25%',
+        y: 0,
+        rotateY: 8,
+        rotateX: 0,
+        z: 20
     }
 }
 
@@ -102,10 +135,30 @@ export function calculateUpDown(cameraSettings: CameraSettings): CameraTransform
     return {
         scale: 1,
         x: 0, // Nessun movimento orizzontale
-        y: [0, -20 * intensity, 20 * intensity, 0] as any, // Solo movimento verticale
-        rotateY: 0, // Nessuna rotazione
-        rotateX: 0, // Nessuna rotazione per mantenere in primo piano
+        y: [0, -20 * intensity, 20 * intensity, 0] as any,
+        rotateY: 0,
+        rotateX: 0,
         z: 0
+    }
+}
+
+// Funzione per determinare la variante camera basata sulla posizione del testo
+export function getCameraVariantForTextPosition(textPosition?: 'top' | 'bottom' | 'left' | 'right'): string {
+    if (!textPosition) {
+        return 'withText' // Default se non c'è posizione specifica
+    }
+    
+    switch (textPosition) {
+        case 'top':
+            return 'withTextTop'
+        case 'bottom':
+            return 'withTextBottom'
+        case 'left':
+            return 'withTextLeft'
+        case 'right':
+            return 'withTextRight'
+        default:
+            return 'withText'
     }
 }
 
@@ -124,6 +177,14 @@ export function getCameraAnimationTransform(
             return calculateUpDown(cameraSettings || {})
         case 'withText':
             return baseCameraVariants.withText as CameraTransform
+        case 'withTextTop':
+            return baseCameraVariants.withTextTop as CameraTransform
+        case 'withTextBottom':
+            return baseCameraVariants.withTextBottom as CameraTransform
+        case 'withTextLeft':
+            return baseCameraVariants.withTextLeft as CameraTransform
+        case 'withTextRight':
+            return baseCameraVariants.withTextRight as CameraTransform
         case 'full':
         default:
             return baseCameraVariants.full as CameraTransform

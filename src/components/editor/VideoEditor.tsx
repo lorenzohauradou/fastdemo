@@ -70,36 +70,36 @@ export function VideoEditor() {
     }
 
     return (
-        <div className="flex h-screen bg-background text-foreground">
-            <div className="w-96 flex-shrink-0 bg-card border-r border-border">
+        <div className="flex h-full bg-background text-foreground">
+            <div className="w-96 min-w-80 max-w-96 flex-shrink bg-card border-r border-border overflow-hidden">
                 <Sidebar />
             </div>
 
             <div className="flex-1 flex flex-col min-w-0">
                 <Header />
 
-                <div className="flex-1 flex flex-col p-4 bg-background min-h-0">
-                    <div className="w-full flex justify-center mb-4">
+                <div className="flex-1 flex flex-col bg-background min-h-0">
+                    <div className="flex-1 flex justify-center items-center mb-4 min-h-0">
                         <div
                             className="rounded-lg overflow-hidden border border-border shadow-lg"
                             style={{
-                                width: '700px',  // 1500 / 2 = dimensioni fisse basate su Remotion
-                                height: '469px', // 938 / 2 = mantiene il rapporto esatto
-                                maxWidth: '90vw', // Responsive per schermi piccoli
-                                maxHeight: '50vh',
-                                backgroundColor: 'transparent' // Nessun background del container
+                                width: '100%',
+                                maxWidth: '750px',
+                                backgroundColor: 'transparent'
                             }}
                         >
                             <VideoPreview />
                         </div>
                     </div>
 
-                    <div className="w-full rounded-lg border border-border shadow-sm mb-4" style={{ height: '250px', backgroundColor: '#0f0f0f' }}>
-                        <Timeline />
-                    </div>
+                    <div className="flex flex-col flex-shrink-0">
+                        <div className="w-full rounded-lg border border-border shadow-sm" style={{ height: '200px', backgroundColor: '#0f0f0f' }}>
+                            <Timeline />
+                        </div>
 
-                    <div className="w-full">
-                        <Player />
+                        <div className="w-full mt-2" style={{ height: '50px' }}>
+                            <Player />
+                        </div>
                     </div>
                 </div>
             </div>

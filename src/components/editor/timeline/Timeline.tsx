@@ -135,6 +135,7 @@ export function Timeline() {
         setSelectedAnimation,
         getActiveClip,
         getCurrentClipTime,
+        isEditingText,
     } = useEditorStore()
 
     // Funzione helper per formattare il tempo in modo sicuro
@@ -226,7 +227,8 @@ export function Timeline() {
     // Gestione tasti per eliminare animazioni
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (selectedAnimation && (e.key === 'Escape' || e.key === 'Delete' || e.key === 'Backspace')) {
+            // Non cancellare se siamo nel pannello di editing del testo
+            if (selectedAnimation && !isEditingText && (e.key === 'Escape' || e.key === 'Delete' || e.key === 'Backspace')) {
                 e.preventDefault()
                 removeAnimation(selectedAnimation.id)
                 setSelectedAnimation(null) // Reset della selezione dopo l'eliminazione
@@ -234,7 +236,7 @@ export function Timeline() {
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedAnimation, removeAnimation, setSelectedAnimation])
+    }, [selectedAnimation, removeAnimation, setSelectedAnimation, isEditingText])
 
 
 
@@ -249,7 +251,7 @@ export function Timeline() {
     // Ottieni la clip attiva e i suoi dati
     const activeClip = getActiveClip()
     const clipTime = getCurrentClipTime() // Tempo relativo alla clip attiva
-    const clipDuration = activeClip?.duration || 10 // Durata della clip attiva
+    const clipDuration = activeClip?.duration || 0 // Durata della clip attiva
 
 
 
@@ -295,7 +297,16 @@ export function Timeline() {
     const handleAddAnimation = (trackType: 'text' | 'zoom') => {
         if (!activeClip) return
 
-        const properties = trackType === 'zoom' ? { level: 1.5 } : { content: 'New Text' }
+        const properties = trackType === 'zoom'
+            ? { level: 1.5 }
+            : {
+                content: 'New Text',
+                position: 'top', // Posizione di default per testi creati dalla timeline
+                fontSize: 64,
+                fontWeight: 'bold',
+                fontFamily: 'Inter',
+                color: '#ffffff'
+            }
 
         // Usa il tempo relativo alla clip attiva
         const startTime = Math.max(0, Math.min(clipTime, clipDuration - 1))
