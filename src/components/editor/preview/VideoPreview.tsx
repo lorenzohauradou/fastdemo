@@ -81,7 +81,6 @@ export function VideoPreview() {
         if (!container) return
 
         const wheelHandler = (e: WheelEvent) => {
-            // Il wheel handler sarà gestito dal ZoomController
         }
 
         container.addEventListener('wheel', wheelHandler, { passive: false })
@@ -92,7 +91,6 @@ export function VideoPreview() {
     const handleVideoLoadedMetadata = () => {
         if (currentProject) {
             // Aggiorna il progetto se necessario
-            // La logica specifica è gestita nel VideoPlayer
         }
     }
 
@@ -131,8 +129,9 @@ export function VideoPreview() {
             selectedAnimation={selectedAnimation}
             clipTime={clipTime}
             updateAnimation={updateAnimation}
+            hasBackground={hasBackground()}
         >
-            {({ interactiveZoom, zoomPosition, isDragging, onMouseDown, onMouseMove, onMouseUp, onWheel }) => (
+            {({ interactiveZoom, zoomPosition, isDragging }) => (
                 <BackgroundRenderer
                     backgroundSettings={currentProject?.backgroundSettings}
                     className="relative"
@@ -144,11 +143,6 @@ export function VideoPreview() {
                             perspective: '3000px',
                             perspectiveOrigin: '40% center'
                         }}
-                        onMouseDown={onMouseDown}
-                        onMouseMove={onMouseMove}
-                        onMouseUp={onMouseUp}
-                        onMouseLeave={onMouseUp}
-                        onWheel={onWheel}
                     >
                         {/* Contenitore del Video animato con Framer Motion */}
                         <motion.div
