@@ -1,82 +1,131 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { Play, Upload, Volume2, ArrowLeft, Plus, X } from 'lucide-react'
+import { Play, Pause, Upload, Volume2, ArrowLeft, Plus, X } from 'lucide-react'
 import { useApi } from '@/lib/api'
+import Image from 'next/image'
+
+function AnimatedWaveform({ isPlaying, trackId }: { isPlaying: boolean, trackId: string }) {
+    const [animationFrame, setAnimationFrame] = useState(0)
+
+    useEffect(() => {
+        if (!isPlaying) return
+
+        const interval = setInterval(() => {
+            setAnimationFrame(prev => prev + 1)
+        }, 100)
+
+        return () => clearInterval(interval)
+    }, [isPlaying])
+
+    return (
+        <div className="flex items-center space-x-px max-w-[120px] overflow-hidden">
+            {Array.from({ length: 40 }, (_, i) => {
+                const baseHeight = Math.sin(i * 0.2) * 6 + Math.sin(i * 0.1) * 4 + 8
+                const animatedHeight = isPlaying
+                    ? baseHeight * (0.8 + Math.sin(animationFrame * 0.3 + i * 0.5) * 0.3)
+                    : baseHeight
+                return (
+                    <div
+                        key={i}
+                        className={`w-0.5 rounded-full flex-shrink-0 transition-colors duration-200 ${isPlaying ? 'bg-green-500' : 'bg-gray-500'
+                            }`}
+                        style={{
+                            height: `${Math.max(2, animatedHeight)}px`
+                        }}
+                    />
+                )
+            })}
+        </div>
+    )
+}
 
 const musicCategories = [
     {
         id: 'cinematic',
         name: 'Cinematic',
         description: 'Dramatic emotional soundscapes',
-        color: 'from-orange-500 to-red-600'
+        color: 'from-slate-800 via-orange-900 to-slate-900',
     },
     {
         id: 'confident',
-        name: 'Confident Energy',
-        description: 'Bold motivational tracks',
-        color: 'from-red-500 to-pink-600'
+        name: 'Main Demo',
+        description: 'Main demo video tracks',
+        color: 'from-slate-800 via-red-900 to-slate-900',
     },
     {
         id: 'electronic',
         name: 'Electronic',
         description: 'Modern digital beats',
-        color: 'from-blue-500 to-purple-600'
+        color: 'from-slate-800 via-blue-900 to-slate-900',
     },
     {
-        id: 'hype',
-        name: 'Hype',
+        id: 'energy',
+        name: 'Energy',
         description: 'High-energy exciting tracks',
-        color: 'from-green-500 to-teal-600'
+        color: 'from-slate-800 via-green-900 to-slate-900',
     },
     {
         id: 'jazzy',
         name: 'Jazzy',
         description: 'Smooth sophisticated melodies',
-        color: 'from-emerald-500 to-green-600'
+        color: 'from-slate-800 via-emerald-900 to-slate-900',
     },
     {
         id: 'lofi',
         name: 'Lo-fi Chill',
         description: 'Relaxed nostalgic beats',
-        color: 'from-purple-500 to-indigo-600'
+        color: 'from-slate-800 via-purple-900 to-slate-900',
     }
 ]
 
 const categoryTracks = {
+    featured: [
+        { id: 'cinematic/cinematic.mp3', name: 'Epic Cinematic', duration: '2:15', cover: '/images/musicpanel/cinematic.png' },
+        { id: 'confident/confident.mp3', name: 'Confident Power', duration: '2:08', cover: '/images/musicpanel/confident.png' },
+        { id: 'energy/rock.mp3', name: 'Rock Energy', duration: '2:33', cover: '/images/musicpanel/energy.png' },
+        { id: 'jazzy/jazzy.mp3', name: 'Smooth Jazz', duration: '3:12', cover: '/images/musicpanel/jazzy.png' },
+        { id: 'lofi/lofi.mp3', name: 'Chill Vibes', duration: '2:45', cover: '/images/musicpanel/lofi.png' },
+        { id: 'electronic-dance/dance.mp3', name: 'Electronic Beat', duration: '2:28', cover: '/images/musicpanel/electronic.png' }
+    ],
     cinematic: [
-        { id: 'dramatic-reveal', name: 'Dramatic Reveal', duration: '1:59' },
-        { id: 'epic-journey', name: 'Epic Journey', duration: '2:05' },
-        { id: 'final-battle', name: 'Final Battle', duration: '1:59' },
-        { id: 'heroic-moment', name: 'Heroic Moment', duration: '2:02' },
-        { id: 'opening-scene', name: 'Opening Scene', duration: '2:01' }
+        { id: 'cinematic/cinematic.mp3', name: 'Epic Cinematic', duration: '2:15', cover: '/images/musicpanel/cinematic.png' },
+        { id: 'cinematic/cinematic2.mp3', name: 'Heroic Journey', duration: '1:59', cover: '/images/musicpanel/cinematic1.png' },
+        { id: 'cinematic/cinematic3.mp3', name: 'Final Battle', duration: '2:22', cover: '/images/musicpanel/cinematic2.png' }
     ],
     confident: [
-        { id: 'confident-1', name: 'Power Drive', duration: '2:15' },
-        { id: 'confident-2', name: 'Victory March', duration: '1:58' },
-        { id: 'confident-3', name: 'Rising Up', duration: '2:33' }
+        { id: 'confident/confident.mp3', name: 'Confident Power', duration: '2:08', cover: '/images/musicpanel/confident.png' },
+        { id: 'confident/confident1.mp3', name: 'Victory March', duration: '1:58', cover: '/images/musicpanel/confident1.png' },
+        { id: 'confident/confident3.mp3', name: 'Rising Up', duration: '2:33', cover: '/images/musicpanel/confident2.png' },
+        { id: 'confident/confident4.mp3', name: 'Bold Move', duration: '2:12', cover: '/images/musicpanel/confident3.png' },
+        { id: 'confident/confident5.mp3', name: 'Unstoppable', duration: '2:25', cover: '/images/musicpanel/confident4.png' }
     ],
     electronic: [
-        { id: 'electronic-1', name: 'Neon Lights', duration: '3:12' },
-        { id: 'electronic-2', name: 'Digital Pulse', duration: '2:44' },
-        { id: 'electronic-3', name: 'Cyber Dreams', duration: '3:01' }
+        { id: 'electronic-dance/dance.mp3', name: 'Electronic Beat', duration: '2:28', cover: '/images/musicpanel/electronic.png' },
+        { id: 'electronic-dance/dance1.mp3', name: 'Digital Pulse', duration: '2:44', cover: '/images/musicpanel/electronic1.png' }
     ],
-    hype: [
-        { id: 'hype-1', name: 'Energy Boost', duration: '2:28' },
-        { id: 'hype-2', name: 'Adrenaline Rush', duration: '1:55' },
-        { id: 'hype-3', name: 'Peak Performance', duration: '2:17' }
+    energy: [
+        { id: 'energy/dub-energic.mp3', name: 'Dub Energy', duration: '2:18', cover: '/images/musicpanel/energy.png' },
+        { id: 'energy/dub-energic1.mp3', name: 'Dub Power', duration: '2:35', cover: '/images/musicpanel/energy1.png' },
+        { id: 'energy/hiphop-energetic.mp3', name: 'Hip Hop Energy', duration: '2:22', cover: '/images/musicpanel/energy2.png' },
+        { id: 'energy/jazzy-energetic.mp3', name: 'Jazzy Energy', duration: '2:45', cover: '/images/musicpanel/energy3.png' },
+        { id: 'energy/rock.mp3', name: 'Rock Energy', duration: '2:33', cover: '/images/musicpanel/energy4.png' },
+        { id: 'energy/rock1.mp3', name: 'Rock Power', duration: '2:28', cover: '/images/musicpanel/energy5.png' },
+        { id: 'energy/trap-energic.mp3', name: 'Trap Energy', duration: '2:15', cover: '/images/musicpanel/energy6.png' },
+        { id: 'energy/trap-energic2.mp3', name: 'Trap Hype', duration: '2:38', cover: '/images/musicpanel/energy7.png' }
     ],
     jazzy: [
-        { id: 'jazzy-1', name: 'Smooth Operator', duration: '3:45' },
-        { id: 'jazzy-2', name: 'Late Night Vibes', duration: '4:12' },
-        { id: 'jazzy-3', name: 'City Lights', duration: '3:28' }
+        { id: 'jazzy/jazzy.mp3', name: 'Smooth Jazz', duration: '3:12', cover: '/images/musicpanel/jazzy.png' },
+        { id: 'jazzy/jazzy1.mp3', name: 'Late Night Vibes', duration: '3:28', cover: '/images/musicpanel/jazzy1.png' },
+        { id: 'jazzy/jazzy2.mp3', name: 'City Lights', duration: '3:45', cover: '/images/musicpanel/jazzy2.png' }
     ],
     lofi: [
-        { id: 'lofi-1', name: 'Study Session', duration: '3:15' },
-        { id: 'lofi-2', name: 'Rainy Day', duration: '2:48' },
-        { id: 'lofi-3', name: 'Coffee Shop', duration: '3:33' }
+        { id: 'lofi/lofi.mp3', name: 'Chill Vibes', duration: '2:45', cover: '/images/musicpanel/lofi.png' },
+        { id: 'lofi/lofi1.mp3', name: 'Study Session', duration: '3:15', cover: '/images/musicpanel/lofi1.png' },
+        { id: 'lofi/lofi2.mp3', name: 'Rainy Day', duration: '2:48', cover: '/images/musicpanel/lofi2.png' },
+        { id: 'lofi/lofi3.mp3', name: 'Coffee Shop', duration: '3:33', cover: '/images/musicpanel/lofi3.png' }
     ]
 }
 
@@ -87,6 +136,8 @@ export function MusicPanel() {
     const [importedFile, setImportedFile] = useState<File | null>(null)
     const [volume, setVolume] = useState([50])
     const [isUploading, setIsUploading] = useState(false)
+    const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null)
+    const audioRef = useRef<HTMLAudioElement | null>(null)
     const api = useApi()
 
     const handleCategorySelect = (categoryId: string) => {
@@ -94,11 +145,46 @@ export function MusicPanel() {
         setCurrentView('category')
     }
 
+    const handlePlayPause = (trackId: string) => {
+        if (currentlyPlaying === trackId) {
+            // Pause current track
+            if (audioRef.current) {
+                audioRef.current.pause()
+                setCurrentlyPlaying(null)
+            }
+        } else {
+            // Stop any current track
+            if (audioRef.current) {
+                audioRef.current.pause()
+            }
+
+            // Play new track
+            const audio = new Audio(`/api/music/${trackId}`)
+            audio.volume = 0.3
+            audioRef.current = audio
+
+            audio.play().then(() => {
+                setCurrentlyPlaying(trackId)
+            }).catch(() => {
+                setCurrentlyPlaying(null)
+            })
+
+            // Reset when track ends
+            audio.onended = () => {
+                setCurrentlyPlaying(null)
+                audioRef.current = null
+            }
+        }
+    }
+
     const handleTrackSelect = (trackId: string) => {
+        const apiPath = `/api/music/${trackId}`
+
         updateProject({
             musicSettings: {
                 type: 'preset',
-                track: trackId,
+                track: apiPath, // URL per il Player frontend
+                fileName: trackId, // Path per il backend rendering
                 volume: volume[0] / 100
             }
         })
@@ -108,16 +194,15 @@ export function MusicPanel() {
         const file = event.target.files?.[0]
         if (!file) return
 
-        // Verifica che sia un file audio
+        // Verifica
         if (!file.type.startsWith('audio/')) {
-            alert('Il file deve essere un audio')
+            alert('The file must be an audio')
             return
         }
 
         setIsUploading(true)
 
         try {
-            // Carica il file usando l'API
             const response = await api.uploadAudio(file)
 
             setImportedFile(file)
@@ -129,13 +214,13 @@ export function MusicPanel() {
                     type: 'custom',
                     track: response.audioUrl, // URL per il preview locale
                     volume: volume[0] / 100,
-                    fileName: response.filename, // Nome del file per il backend
-                    track_path: null // Sarà impostato dal backend
+                    fileName: response.filename,
+                    track_path: null //impostato nel backend
                 }
             })
         } catch (error) {
-            console.error('Errore upload audio:', error)
-            alert('Errore durante l\'upload dell\'audio')
+            console.error('Error upload audio:', error)
+            alert('Error during audio upload')
         } finally {
             setIsUploading(false)
         }
@@ -151,12 +236,6 @@ export function MusicPanel() {
                 volume: volume[0] / 100
             }
         })
-    }
-
-    const formatFileSize = (bytes: number) => {
-        if (bytes < 1024) return bytes + ' B'
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-        return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
     }
 
     const formatDuration = (file: File) => {
@@ -191,10 +270,13 @@ export function MusicPanel() {
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
 
-                    <div className="mb-4">
-                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4">
+                    <div className="mb-4 text-center">
+                        <div
+                            onClick={() => handleCategorySelect('featured')}
+                            className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity border border-slate-600/50"
+                        >
                             <h4 className="text-lg font-medium text-white">Featured</h4>
-                            <p className="text-sm text-white/80">Most popular tracks</p>
+                            <p className="text-sm text-slate-300">Most popular tracks</p>
                         </div>
                     </div>
 
@@ -203,10 +285,10 @@ export function MusicPanel() {
                             <div
                                 key={category.id}
                                 onClick={() => handleCategorySelect(category.id)}
-                                className={`bg-gradient-to-r ${category.color} rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity`}
+                                className={`bg-gradient-to-br ${category.color} rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity border border-slate-700/50`}
                             >
                                 <h4 className="text-lg font-medium text-white">{category.name}</h4>
-                                <p className="text-sm text-white/80">{category.description}</p>
+                                <p className="text-sm text-slate-300">{category.description}</p>
                             </div>
                         ))}
                     </div>
@@ -256,8 +338,12 @@ export function MusicPanel() {
                     </Button>
 
                     <div className="mb-4">
-                        <h4 className="text-lg font-medium text-white mb-2">Featured</h4>
-                        <p className="text-sm text-gray-400 mb-3">Most popular tracks</p>
+                        <h4 className="text-lg font-medium text-white mb-2">
+                            {selectedCategory === 'featured' ? 'Featured' : category?.name}
+                        </h4>
+                        <p className="text-sm text-gray-400 mb-3">
+                            {selectedCategory === 'featured' ? 'Most popular tracks' : category?.description}
+                        </p>
                     </div>
 
                     <div className="space-y-3">
@@ -267,33 +353,48 @@ export function MusicPanel() {
                                 className="bg-card rounded-lg p-4 hover:bg-gray-700 transition-colors"
                             >
                                 <div className="flex items-center justify-between min-w-0">
-                                    <div className="flex-1 min-w-0 mr-3">
-                                        <h4 className="text-lg font-medium text-white truncate">{track.name}</h4>
+                                    <div className="flex items-center flex-1 min-w-0 mr-2">
+                                        <div className="w-12 h-12 rounded-lg overflow-hidden mr-4 flex-shrink-0 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
+                                            {track.cover ? (
+                                                <Image
+                                                    src={track.cover}
+                                                    alt={track.name}
+                                                    width={48}
+                                                    height={48}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        // Fallback se l'immagine non esiste
+                                                        e.currentTarget.style.display = 'none'
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="text-slate-400 text-xs"></div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-lg font-medium text-white truncate">{track.name}</h4>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center space-x-2 flex-shrink-0">
+                                    <div className="flex items-center space-x-2 ">
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={(e) => {
                                                 e.stopPropagation()
-                                                console.log('Play preview:', track.name)
+                                                handlePlayPause(track.id)
                                             }}
                                             className="text-gray-400 hover:text-white"
                                         >
-                                            <Play className="h-5 w-5" />
+                                            {currentlyPlaying === track.id ? (
+                                                <Pause className="h-5 w-5" />
+                                            ) : (
+                                                <Play className="h-5 w-5" />
+                                            )}
                                         </Button>
-                                        {/* Waveform - contenuta senza overflow con pattern fisso */}
-                                        <div className="flex items-center space-x-px max-w-[120px] overflow-hidden">
-                                            {Array.from({ length: 40 }, (_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-0.5 bg-gray-500 rounded-full flex-shrink-0"
-                                                    style={{
-                                                        height: `${Math.sin(i * 0.2) * 6 + Math.sin(i * 0.1) * 4 + 8}px`
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
+                                        <AnimatedWaveform
+                                            isPlaying={currentlyPlaying === track.id}
+                                            trackId={track.id}
+                                        />
                                         <span className="text-sm text-gray-400 text-right w-10">{track.duration}</span>
                                         <Button
                                             variant="ghost"
@@ -384,13 +485,17 @@ export function MusicPanel() {
                         {isUploading ? 'Uploading...' : 'Import music file'}
                     </Button>
                 </label>
+
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
 
                     <div className="mb-4">
-                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4">
+                        <div
+                            onClick={() => handleCategorySelect('featured')}
+                            className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity border border-slate-600/50"
+                        >
                             <h4 className="text-lg font-medium text-white">Featured</h4>
-                            <p className="text-sm text-white/80">Most popular tracks</p>
+                            <p className="text-sm text-slate-300">Most popular tracks</p>
                         </div>
                     </div>
 
@@ -399,10 +504,10 @@ export function MusicPanel() {
                             <div
                                 key={category.id}
                                 onClick={() => handleCategorySelect(category.id)}
-                                className={`bg-gradient-to-r ${category.color} rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity`}
+                                className={`bg-gradient-to-br ${category.color} rounded-lg p-4 cursor-pointer hover:opacity-80 transition-opacity border border-slate-700/50`}
                             >
                                 <h4 className="text-lg font-medium text-white">{category.name}</h4>
-                                <p className="text-sm text-white/80">{category.description}</p>
+                                <p className="text-sm text-slate-300">{category.description}</p>
                             </div>
                         ))}
                     </div>
