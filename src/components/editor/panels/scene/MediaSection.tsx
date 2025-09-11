@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Monitor, RotateCcw, Volume2, X, Edit, Upload, Video } from 'lucide-react'
+import { Monitor, RotateCcw, X, Upload, Video } from 'lucide-react'
 import { Project, useEditorStore } from '@/lib/store'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -57,7 +57,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
         // Validazione del file
         const maxSize = 500 * 1024 * 1024 // 500MB
         if (file.size > maxSize) {
-            alert('Il file è troppo grande. Dimensione massima: 500MB')
+            alert('file is too large. Maximum size: 500MB')
             return
         }
 
@@ -66,7 +66,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
         const isAllowedType = allowedTypes.includes(file.type) || isWebM
 
         if (!isAllowedType) {
-            alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
+            alert('Unsupported format. Use MP4, MOV, AVI or WebM')
             return
         }
 
@@ -82,21 +82,14 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 body: formData
             })
 
-            if (!uploadResponse.ok) {
-                const errorData = await uploadResponse.json()
-                alert(`Errore upload: ${errorData.error}`)
-                setIsUploading(false)
-                return
-            }
 
             const uploadResult = await uploadResponse.json()
-            console.log('Upload completato:', uploadResult)
 
-            // Crea URL locale per il preview
+            // URL locale per il preview
             const videoUrl = URL.createObjectURL(file)
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
-            // Ottieni la durata del video
+            // durata del video
             const tempVideo = document.createElement('video')
             tempVideo.src = videoUrl
 
@@ -145,14 +138,10 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 setIsUploading(false)
             }
 
-            tempVideo.onerror = () => {
-                alert('Errore nel caricamento del video')
-                setIsUploading(false)
-            }
 
         } catch (error) {
-            console.error('Errore upload:', error)
-            alert('Errore durante l\'upload del video')
+            console.error('Upload error:', error)
+            alert('Error during video upload')
             setIsUploading(false)
         }
     }, [setCurrentProject])
@@ -183,7 +172,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             // Verifica che lo stream sia attivo
             const videoTrack = stream.getVideoTracks()[0]
             if (!videoTrack || videoTrack.readyState === 'ended') {
-                alert('Errore: impossibile accedere al video dello schermo')
+                alert('Error: unable to access the screen video')
                 return
             }
 
@@ -227,7 +216,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
 
             // Gestisci errori del MediaRecorder
             mediaRecorder.onerror = (event) => {
-                alert('Errore durante la registrazione')
+                alert('Error during recording')
                 setIsRecording(false)
                 stopTimer()
             }
@@ -251,7 +240,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             startTimer()
 
         } catch (error) {
-            alert('Errore nell\'avviare la registrazione. Assicurati di aver dato i permessi per condividere lo schermo.')
+            alert('Error starting recording. Ensure you have given permission to share the screen.')
         }
     }, [startTimer])
 
@@ -270,7 +259,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
 
     const handleRecordingComplete = useCallback(async () => {
         if (chunksRef.current.length === 0) {
-            alert('Nessun dato registrato')
+            alert('No data recorded')
             return
         }
 
@@ -312,12 +301,10 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
 
                 if (!uploadResponse.ok) {
                     const errorData = await uploadResponse.json()
-                    console.warn(`Errore upload: ${errorData.error}`)
+                    console.warn(`Upload error: ${errorData.error}`)
                     // Non bloccare il flusso, continua con il video locale
-                } else {
-                    const uploadResult = await uploadResponse.json()
-                    console.log('Upload screen recording completato:', uploadResult)
                 }
+
             } catch (uploadError) {
                 console.warn('Errore upload screen recording:', uploadError)
             }
@@ -367,24 +354,19 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             setIsProcessing(false)
             setIsRecording(false)
             chunksRef.current = []
-
-            // Naviga all'editor
             router.push('/editor')
 
         } catch (error) {
-            alert('Errore nel processare la registrazione')
+            alert('Error processing recording')
             setIsProcessing(false)
-            setIsRecording(false) // Reset anche lo stato di registrazione in caso di errore
+            setIsRecording(false)
             setRecordingTime(0)
             chunksRef.current = []
         }
     }, [recordingTime, setCurrentProject, router])
 
     const handleRemoveVideo = useCallback(() => {
-        // Pulisci il localStorage
         localStorage.removeItem('currentVideo')
-
-        // Reset del progetto corrente
         setCurrentProject(null)
     }, [setCurrentProject])
 
@@ -512,7 +494,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                     ) : (
                         <>
                             <Button
-                                className="w-full h-8"
+                                className="w-full h-8 hover:bg-gray-700"
                                 variant="default"
                                 size="sm"
                                 onClick={handleNewScreenRecording}

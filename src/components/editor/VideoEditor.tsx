@@ -52,7 +52,6 @@ export function VideoEditor() {
                 }
                 setCurrentProject(demoProject)
             } else {
-                // Se non c'è un progetto, torna alla home
                 router.push('/')
             }
         }

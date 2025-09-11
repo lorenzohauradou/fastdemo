@@ -215,7 +215,7 @@ export function AnimationPanel() {
 
                 {currentProject?.cameraSettings && (
                     <div className="space-y-4">
-                        {currentProject.cameraSettings.type === 'skewed_glide' && (
+                        {currentProject.cameraSettings.type === 'continuous_glide' && (
                             <>
                                 <div>
                                     <h4 className="text-sm font-medium text-white mb-3">Movement direction</h4>

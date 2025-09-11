@@ -22,6 +22,18 @@ export interface AudioUploadResponse {
     audioUrl: string
 }
 
+export interface VoiceoverRequest {
+    text: string
+    speaker_id: string
+}
+
+export interface VoiceoverResponse {
+    message: string
+    filename: string
+    audioUrl: string
+    duration?: number
+}
+
 export interface RenderRequest {
     name: string
     duration: number
@@ -215,6 +227,33 @@ class ApiClient {
         }
 
         return response.json()
+    }
+
+    /**
+     * Genera voiceover con AI
+     */
+    async generateVoiceover(voiceoverData: VoiceoverRequest): Promise<VoiceoverResponse> {
+        const response = await fetch('/api/voiceover/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(voiceoverData)
+        })
+
+        if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.error || 'Errore durante la generazione del voiceover')
+        }
+
+        const result = await response.json()
+        
+        return {
+            message: result.message,
+            filename: result.filename,
+            audioUrl: result.audioUrl,
+            duration: result.duration
+        }
     }
 }
 

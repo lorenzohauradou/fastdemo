@@ -139,6 +139,7 @@ export function Header() {
                 backgroundSettings: currentProject.backgroundSettings,
                 deviceSettings: currentProject.deviceSettings,
                 musicSettings: currentProject.musicSettings,
+                voiceoverSettings: currentProject.voiceoverSettings,
                 cameraSettings: currentProject.cameraSettings,
                 // Aggiungi dati webcam esplicitamente
                 hasWebcam: currentProject.hasWebcam || false,

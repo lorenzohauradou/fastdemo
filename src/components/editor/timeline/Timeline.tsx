@@ -28,7 +28,6 @@ function AnimationBlock({
     const blockRef = useRef<HTMLDivElement>(null)
     const startXRef = useRef(0)
 
-    // Usiamo i ref per i valori iniziali per evitare problemi con le closure di useEffect
     const initialValuesRef = useRef({ startTime: 0, endTime: 0 })
 
     const isSelected = selectedAnimation?.id === animation.id
@@ -36,6 +35,9 @@ function AnimationBlock({
 
     const handleMouseDown = (e: React.MouseEvent, mode: 'move' | 'resize-left' | 'resize-right') => {
         e.stopPropagation()
+        // Blocca resize per voiceover
+        if (animation.type === 'voiceover' && mode !== 'move') return
+
         setIsDragging(true)
         setDragMode(mode)
         setSelectedAnimation(animation)
@@ -98,23 +100,30 @@ function AnimationBlock({
             style={blockStyle}
             onMouseDown={(e) => handleMouseDown(e, 'move')}
         >
-            <div
-                className="absolute -left-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
-                onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
-            >
-                <div className={`h-3/4 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
-            </div>
+            {/* Resize handles - nascosti per voiceover */}
+            {animation.type !== 'voiceover' && (
+                <div
+                    className="absolute -left-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
+                    onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
+                >
+                    <div className={`h-3/4 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
+                </div>
+            )}
 
             <span className="text-white text-[10px] font-semibold truncate px-2 pointer-events-none">
-                {animation.type === 'zoom' ? `${Number(animation.properties.end?.level || animation.properties.level || '1').toFixed(1)}x` : animation.properties.content}
+                {animation.type === 'zoom' ? `${Number(animation.properties.end?.level || animation.properties.level || '1').toFixed(1)}x` :
+                    animation.type === 'voiceover' ? (animation.properties.text || 'Voice').substring(0, 5) :
+                        animation.properties.content}
             </span>
 
-            <div
-                className="absolute -right-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
-                onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
-            >
-                <div className={`h-3/4 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
-            </div>
+            {animation.type !== 'voiceover' && (
+                <div
+                    className="absolute -right-1 top-0 h-full w-2 cursor-ew-resize flex items-center justify-center"
+                    onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
+                >
+                    <div className={`h-3/4 w-1 rounded-full ${isSelected ? 'bg-white' : 'bg-transparent group-hover:bg-white/50'}`}></div>
+                </div>
+            )}
         </div>
     )
 }
@@ -136,9 +145,10 @@ export function Timeline() {
         getActiveClip,
         getCurrentClipTime,
         isEditingText,
+        setSelectedPanel,
     } = useEditorStore()
 
-    // Funzione helper per formattare il tempo in modo sicuro
+    // formattare il tempo
     const formatTime = (seconds: number): string => {
         try {
             const validSeconds = Math.max(0, isNaN(seconds) ? 0 : seconds)
@@ -294,12 +304,15 @@ export function Timeline() {
         window.addEventListener('mouseup', handleMouseUp, { once: true })
     }
 
-    const handleAddAnimation = (trackType: 'text' | 'zoom') => {
+    const handleAddAnimation = (trackType: 'text' | 'zoom' | 'voiceover') => {
         if (!activeClip) return
 
-        const properties = trackType === 'zoom'
-            ? { level: 1.5 }
-            : {
+        let properties: Record<string, any> = {}
+
+        if (trackType === 'zoom') {
+            properties = { level: 1.5 }
+        } else if (trackType === 'text') {
+            properties = {
                 content: 'New Text',
                 position: 'top', // Posizione di default per testi creati dalla timeline
                 fontSize: 64,
@@ -307,17 +320,54 @@ export function Timeline() {
                 fontFamily: 'Inter',
                 color: '#ffffff'
             }
+        } else if (trackType === 'voiceover') {
+            properties = {
+                text: 'Enter your script here...',
+                speaker: {
+                    id: 'adam',
+                    name: 'Adam',
+                    tags: ['deep', 'narrator', 'professional']
+                },
+                audioUrl: null,
+                isGenerating: false,
+                actualStartTime: Math.max(0, Math.min(clipTime, clipDuration - 1)),
+                isIndicatorOnly: true // Maniglia solo indicativa
+            }
+        }
 
-        // Usa il tempo relativo alla clip attiva
+        // Tempo relativo alla clip attiva
         const startTime = Math.max(0, Math.min(clipTime, clipDuration - 1))
-        const endTime = Math.min(startTime + 3, clipDuration)
+        // Per voiceover: durata fissa della maniglia (solo indicativa, non influenza l'audio reale)
+        // Per altri tipi: durata effettiva dell'animazione
+        const endTime = trackType === 'voiceover'
+            ? Math.min(startTime + 0.5, clipDuration) // Maniglia fissa
+            : Math.min(startTime + 3, clipDuration)   // Durata reale
 
-        addAnimation({
+        const newAnimation = {
             type: trackType,
             startTime,
             endTime,
             properties
-        })
+        }
+
+        addAnimation(newAnimation)
+
+        // apri il pannello voiceover e seleziona l'animazione
+        if (trackType === 'voiceover') {
+            setSelectedPanel('voiceover')
+            // Seleziona l'animazione dopo un breve delay per permettere l'aggiunta
+            setTimeout(() => {
+                const activeClip = getActiveClip()
+                if (activeClip) {
+                    const lastVoiceover = activeClip.animations
+                        .filter(a => a.type === 'voiceover')
+                        .sort((a, b) => b.startTime - a.startTime)[0]
+                    if (lastVoiceover) {
+                        setSelectedAnimation(lastVoiceover)
+                    }
+                }
+            }, 50)
+        }
     }
     const playheadStyle = {
         transform: `translateX(${80 + clipTime * pixelsPerSecond}px)`,
@@ -352,6 +402,14 @@ export function Timeline() {
                                 className="text-xs px-3 py-1.5 h-7 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
                             >
                                 + Zoom
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddAnimation('voiceover')}
+                                className="text-xs px-3 py-1.5 h-7 bg-gray-800 border-gray-600 hover:bg-gray-700 text-white"
+                            >
+                                + Voiceover AI
                             </Button>
                         </div>
                     </div>

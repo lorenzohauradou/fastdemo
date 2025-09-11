@@ -14,6 +14,8 @@ import { useCameraAnimations } from '@/hooks/useCameraAnimations'
 
 export function VideoPreview() {
     const containerRef = useRef<HTMLDivElement>(null)
+    const voiceoverAudioRef = useRef<HTMLAudioElement>(null)
+    const voiceoverStartedRef = useRef<string | null>(null)
 
     const {
         currentProject,
@@ -23,7 +25,6 @@ export function VideoPreview() {
         updateAnimation,
         getActiveClip,
         getCurrentClipTime,
-        updateProject
     } = useEditorStore()
 
     // Hook per gestire le animazioni camera
@@ -39,6 +40,13 @@ export function VideoPreview() {
         anim.type === 'text' &&
         clipTime >= anim.startTime &&
         clipTime <= anim.endTime
+    )
+
+    // Trova se c'è un'animazione voiceover attiva nella clip corrente
+    // IMPORTANTE: Non controlliamo endTime perché il voiceover deve suonare per tutta la sua durata naturale
+    const activeVoiceoverAnimation = activeClip?.animations.find(anim =>
+        anim.type === 'voiceover' &&
+        clipTime >= anim.startTime
     )
 
     // Definisci le varianti per il TESTO basate sulla posizione
@@ -93,6 +101,39 @@ export function VideoPreview() {
             // Aggiorna il progetto se necessario
         }
     }
+
+    // Audio del voiceover
+    useEffect(() => {
+        const voiceoverAudio = voiceoverAudioRef.current
+        if (!voiceoverAudio) return
+
+        if (activeVoiceoverAnimation && isPlaying) {
+            const audioUrl = activeVoiceoverAnimation.properties.audioUrl
+            if (!audioUrl) return
+
+            const voiceoverRelativeTime = clipTime - activeVoiceoverAnimation.startTime
+            const animationKey = `${activeVoiceoverAnimation.id}_${activeVoiceoverAnimation.startTime}`
+
+            // Avvia l'audio solo una volta quando entriamo nel range
+            if (voiceoverRelativeTime >= 0 && voiceoverStartedRef.current !== animationKey) {
+                voiceoverAudio.src = audioUrl
+                voiceoverAudio.currentTime = Math.max(0, voiceoverRelativeTime)
+                voiceoverAudio.play().catch(console.warn)
+                voiceoverStartedRef.current = animationKey
+
+                // Gestisci la fine naturale dell'audio
+                voiceoverAudio.onended = () => {
+                    voiceoverStartedRef.current = null
+                }
+            }
+        } else if (!isPlaying) {
+            // Pausa solo quando l'utente ferma la riproduzione
+            if (!voiceoverAudio.paused) {
+                voiceoverAudio.pause()
+            }
+            voiceoverStartedRef.current = null
+        }
+    }, [activeVoiceoverAnimation?.id, isPlaying, clipTime])
 
     // Sincronizza la webcam quando cambia lo stato di riproduzione
     useEffect(() => {
@@ -334,6 +375,13 @@ export function VideoPreview() {
 
                         <RenderProgressOverlay />
                     </div>
+
+                    {/* Audio element per il voiceover (nascosto) */}
+                    <audio
+                        ref={voiceoverAudioRef}
+                        className="hidden"
+                        preload="auto"
+                    />
                 </BackgroundRenderer>
             )}
         </ZoomController>

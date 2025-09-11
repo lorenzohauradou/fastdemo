@@ -1,6 +1,5 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import { Square } from 'lucide-react'
@@ -15,7 +14,6 @@ interface DeviceSectionProps {
 }
 
 export function DeviceSection({
-    currentProject,
     selectedDevice,
     borderRadius,
     onDeviceSelect,

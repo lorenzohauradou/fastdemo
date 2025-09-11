@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { ArrowLeft, Upload, Shuffle } from 'lucide-react'
+import { ArrowLeft, Shuffle } from 'lucide-react'
 import { BackgroundSettings, Project } from '@/lib/store'
 import { generateRandomMeshGradient } from '@/lib/meshGradientUtils'
 import { ColorPickerModal } from './ColorPickerModal'

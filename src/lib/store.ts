@@ -15,6 +15,18 @@ export interface Animation {
   }
 }
 
+export interface VoiceoverSettings {
+  text: string
+  speaker: {
+    id: string
+    name: string
+    tags: string[]
+  }
+  audioUrl?: string
+  audioFilename?: string
+  isGenerating?: boolean
+}
+
 export interface VideoClip {
   id: string
   name: string
@@ -94,6 +106,7 @@ export interface Project {
     trimEnd?: number
     duration?: number
   }
+  voiceoverSettings?: VoiceoverSettings
   videoTrimming?: {
     start: number
     end: number
@@ -120,7 +133,7 @@ interface EditorState {
   zoom: number
   
   // UI State
-  selectedPanel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background'
+  selectedPanel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background' | 'voiceover'
   selectedAnimation: Animation | null
   selectedClip: string | null
   isEditingText: boolean
@@ -134,7 +147,7 @@ interface EditorState {
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
   setZoom: (zoom: number) => void
-  setSelectedPanel: (panel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background') => void
+  setSelectedPanel: (panel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background' | 'voiceover') => void
   
   // Gestione clip
   addClip: (clip: Omit<VideoClip, 'id' | 'startTime' | 'endTime'>) => void
