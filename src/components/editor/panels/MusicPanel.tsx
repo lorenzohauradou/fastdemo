@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { Play, Pause, Upload, Volume2, ArrowLeft, Plus, X } from 'lucide-react'
+import { Play, Pause, Upload, Volume2, Plus, ArrowLeft, X } from 'lucide-react'
 import { useApi } from '@/lib/api'
 import Image from 'next/image'
 
@@ -138,6 +138,7 @@ export function MusicPanel() {
     const [isUploading, setIsUploading] = useState(false)
     const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null)
     const audioRef = useRef<HTMLAudioElement | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const api = useApi()
 
     const handleCategorySelect = (categoryId: string) => {
@@ -208,18 +209,15 @@ export function MusicPanel() {
             setImportedFile(file)
             setCurrentView('imported')
 
-            // Salva il nome del file invece dell'URL blob
             updateProject({
                 musicSettings: {
                     type: 'custom',
-                    track: response.audioUrl, // URL per il preview locale
+                    track: response.audioUrl, // URL per preview locale
                     volume: volume[0] / 100,
-                    fileName: response.filename,
-                    track_path: null //impostato nel backend
+                    fileName: response.filename // Nome file per backend
                 }
             })
         } catch (error) {
-            console.error('Error upload audio:', error)
             alert('Error during audio upload')
         } finally {
             setIsUploading(false)
@@ -245,27 +243,28 @@ export function MusicPanel() {
     if (currentView === 'main') {
         return (
             <div className="p-4 space-y-4">
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleCustomUpload}
+                    className="hidden"
+                    disabled={isUploading}
+                />
+
                 <div>
                     <h2 className="text-xl font-semibold text-white">Music</h2>
                 </div>
 
-                <label className="block w-full">
-                    <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={handleCustomUpload}
-                        className="hidden"
-                        disabled={isUploading}
-                    />
-                    <Button
-                        variant="outline"
-                        className="w-full border-gray-600 hover:bg-gray-700"
-                        disabled={isUploading}
-                    >
-                        <Upload className="mr-2 h-4 w-4" />
-                        {isUploading ? 'Uploading...' : 'Import music file'}
-                    </Button>
-                </label>
+                <Button
+                    variant="outline"
+                    className="w-full border-gray-600 hover:bg-gray-700"
+                    disabled={isUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {isUploading ? 'Uploading...' : 'Import music file'}
+                </Button>
 
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
@@ -307,23 +306,15 @@ export function MusicPanel() {
                     <h2 className="text-xl font-semibold text-white">Music</h2>
                 </div>
 
-                <label className="block w-full">
-                    <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={handleCustomUpload}
-                        className="hidden"
-                        disabled={isUploading}
-                    />
-                    <Button
-                        variant="outline"
-                        className="w-full border-gray-600 hover:bg-gray-700"
-                        disabled={isUploading}
-                    >
-                        <Upload className="mr-2 h-4 w-4" />
-                        {isUploading ? 'Uploading...' : 'Import music file'}
-                    </Button>
-                </label>
+                <Button
+                    variant="outline"
+                    className="w-full border-gray-600 hover:bg-gray-700"
+                    disabled={isUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {isUploading ? 'Uploading...' : 'Import music file'}
+                </Button>
 
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>
@@ -441,20 +432,7 @@ export function MusicPanel() {
                                 >
                                     <Volume2 className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-gray-400 hover:text-white"
-                                >
-                                    <Play className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-gray-400 hover:text-white"
-                                >
-                                    <ArrowLeft className="h-4 w-4 rotate-90" />
-                                </Button>
+
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -468,23 +446,15 @@ export function MusicPanel() {
                     </div>
                 </div>
 
-                <label className="block w-full">
-                    <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={handleCustomUpload}
-                        className="hidden"
-                        disabled={isUploading}
-                    />
-                    <Button
-                        variant="outline"
-                        className="w-full border-gray-600 hover:bg-gray-700"
-                        disabled={isUploading}
-                    >
-                        <Upload className="mr-2 h-4 w-4" />
-                        {isUploading ? 'Uploading...' : 'Import music file'}
-                    </Button>
-                </label>
+                <Button
+                    variant="outline"
+                    className="w-full border-gray-600 hover:bg-gray-700"
+                    disabled={isUploading}
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {isUploading ? 'Uploading...' : 'Import music file'}
+                </Button>
 
                 <div>
                     <h3 className="text-lg font-medium text-white mb-3">Library</h3>

@@ -9,7 +9,7 @@ export function Video() {
             <div className="w px-2 sm:px-4 lg:px-8">
                 <div className="relative max-w-6xl lg:max-w-7xl mx-auto p-2 sm:p-4 lg:p-6">
                     <div className="bg-gray-900 rounded-2xl lg:rounded-3xl relative overflow-hidden">
-                        <div className="bg-gray-800 rounded-xl lg:rounded-2xl relative aspect-[4/3] sm:aspect-video overflow-hidden">
+                        <div className="bg-gray-800 rounded-xl lg:rounded-2xl relative aspect-[16/9] sm:aspect-video overflow-hidden">
                             {isMobile ? (
                                 <video
                                     className="w-full h-full rounded-xl lg:rounded-2xl"
@@ -18,7 +18,7 @@ export function Video() {
                                     loop
                                     playsInline
                                 >
-                                    <source src="/videos/demo.webm" type="video/mp4" />
+                                    <source src="/videos/hero/showcaseready.mp4" type="video/mp4" />
                                 </video>
                             ) : (
                                 <video
@@ -28,7 +28,7 @@ export function Video() {
                                     loop
                                     playsInline
                                 >
-                                    <source src="/videos/demo.mp4" type="video/mp4" />
+                                    <source src="/videos/hero/showcaseready.mp4" type="video/mp4" />
                                 </video>
                             )}
                         </div>

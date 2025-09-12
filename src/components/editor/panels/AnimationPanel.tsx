@@ -18,14 +18,14 @@ const cameraAnimations = [
     {
         id: 'continuous-glide',
         name: 'Continuous Glide',
-        preview: '/videos/animations/continuous-glide.mp4',
+        preview: '/videos/animations/continuos_glide.mp4',
         type: 'pan' as const,
         selected: false
     },
     {
         id: 'up-down',
         name: 'Up & Down',
-        preview: '/videos/animations/up-down.mp4',
+        preview: '/videos/animations/up_down.mp4',
         type: 'pan' as const,
         selected: false
     }
@@ -80,8 +80,7 @@ export function AnimationPanel() {
             case 'up-down':
                 updateProject({
                     cameraSettings: {
-                        type: 'up_down',
-                        intensity: 1
+                        type: 'up_down'
                     }
                 })
                 break
@@ -94,36 +93,6 @@ export function AnimationPanel() {
         }
     }
 
-    // Gestori per i controlli delle animazioni
-    const handleIntensityChange = (value: number[]) => {
-        if (!currentProject?.cameraSettings) return
-        updateProject({
-            cameraSettings: {
-                ...currentProject.cameraSettings,
-                intensity: value[0]
-            }
-        })
-    }
-
-    const handleDirectionChange = (direction: 'up' | 'down' | 'left' | 'right' | 'diagonal') => {
-        if (!currentProject?.cameraSettings) return
-        updateProject({
-            cameraSettings: {
-                ...currentProject.cameraSettings,
-                direction
-            }
-        })
-    }
-
-    const handleAngleChange = (value: number[]) => {
-        if (!currentProject?.cameraSettings) return
-        updateProject({
-            cameraSettings: {
-                ...currentProject.cameraSettings,
-                angle: value[0]
-            }
-        })
-    }
 
     const AnimationPreview = ({ animationId, className }: { animationId: string, className?: string }) => {
         const animation = cameraAnimations.find(anim => anim.id === animationId)
@@ -159,6 +128,19 @@ export function AnimationPanel() {
                     loop
                     autoPlay
                     playsInline
+                    preload="auto"
+                    onLoadStart={(e) => {
+                        // inizia subito
+                        const video = e.target as HTMLVideoElement
+                        video.currentTime = 0
+                    }}
+                    onCanPlay={(e) => {
+                        // Avvia automaticamente quando è pronto
+                        const video = e.target as HTMLVideoElement
+                        video.play().catch(() => {
+                            // Ignora errori di autoplay
+                        })
+                    }}
                 />
             </div>
         )
@@ -213,62 +195,6 @@ export function AnimationPanel() {
                     </div>
                 </div>
 
-                {currentProject?.cameraSettings && (
-                    <div className="space-y-4">
-                        {currentProject.cameraSettings.type === 'continuous_glide' && (
-                            <>
-                                <div>
-                                    <h4 className="text-sm font-medium text-white mb-3">Movement direction</h4>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {(['up', 'down', 'left', 'right', 'diagonal'] as const).map((dir) => (
-                                            <Button
-                                                key={dir}
-                                                variant={currentProject.cameraSettings?.direction === dir ? "default" : "outline"}
-                                                size="sm"
-                                                onClick={() => handleDirectionChange(dir)}
-                                                className="text-xs capitalize"
-                                            >
-                                                {dir === 'diagonal' ? '↗' : dir === 'up' ? '↑' : dir === 'down' ? '↓' : dir === 'left' ? '←' : '→'}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h4 className="text-sm font-medium text-white">Skew angle</h4>
-                                        <span className="text-xs text-gray-400">{currentProject.cameraSettings.angle || 0}°</span>
-                                    </div>
-                                    <Slider
-                                        value={[currentProject.cameraSettings.angle || 0]}
-                                        onValueChange={handleAngleChange}
-                                        min={-90}
-                                        max={90}
-                                        step={1}
-                                        className="w-full"
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        {currentProject.cameraSettings.type === 'up_down' && (
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <h4 className="text-sm font-medium text-white">Intensity</h4>
-                                    <span className="text-xs text-gray-400">{((currentProject.cameraSettings.intensity || 1) * 10).toFixed(0)}</span>
-                                </div>
-                                <Slider
-                                    value={[currentProject.cameraSettings.intensity || 1]}
-                                    onValueChange={handleIntensityChange}
-                                    min={0.1}
-                                    max={2}
-                                    step={0.1}
-                                    className="w-full"
-                                />
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
         </TooltipProvider >
     )

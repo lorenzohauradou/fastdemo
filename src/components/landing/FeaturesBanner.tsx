@@ -5,8 +5,10 @@ export function FeaturesBanner() {
         "Dynamic Zoom",
         "Glide Animation",
         "Music",
+        "Webcam Recorder",
+        "Zoom Effect",
         "3D Scene",
-        "Background",
+        "Add Background",
         "Text Animations",
         "AI Voiceover",
         "Screen Recorder"
@@ -19,7 +21,7 @@ export function FeaturesBanner() {
                     Discover all the features
                 </h2>
                 <p className="text-gray-500 text-sm font-light tracking-wide">
-                    Professional video creation made simple
+                    Showcase your product with ease
                 </p>
             </div>
             <div className="relative overflow-hidden">

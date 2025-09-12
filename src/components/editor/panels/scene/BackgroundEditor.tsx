@@ -17,9 +17,11 @@ interface BackgroundEditorProps {
 export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: BackgroundEditorProps) {
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [selectedColorMode, setSelectedColorMode] = useState<string>('')
+    const [presetImages, setPresetImages] = useState<{ url: string, remotionPath: string }[]>([])
+    const [loadingImages, setLoadingImages] = useState(false)
     const COLOR_PRESETS = [
         { name: 'White', color: '#ffffff' },
-        { name: 'Light', color: '#f8fafc' },
+        { name: 'Light', color: '#E1D9D1' },
         { name: 'Primary', color: currentProject?.primaryColor || '#3B82F6' },
         { name: 'Dark', color: '#1e293b' },
         { name: 'Black', color: '#000000' },
@@ -29,7 +31,8 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
     const BACKGROUND_TYPES = [
         { id: 'solid', name: 'Solid' },
         { id: 'linear-gradient', name: 'Linear\ngradient' },
-        { id: 'mesh-gradient', name: 'Mesh\ngradient' }
+        { id: 'mesh-gradient', name: 'Mesh\ngradient' },
+        { id: 'image', name: 'Images' }
     ]
 
     const currentType = currentProject?.backgroundSettings?.type || 'solid'
@@ -56,6 +59,26 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
             setSelectedColorMode(getCurrentSelectedColor())
         }
     }, [currentProject])
+
+    // Carica le immagini preset quando il componente si monta
+    useEffect(() => {
+        const loadPresetImages = async () => {
+            setLoadingImages(true)
+            try {
+                const response = await fetch('/api/bg-images')
+                if (response.ok) {
+                    const images = await response.json()
+                    setPresetImages(images)
+                }
+            } catch (error) {
+                console.error('Error loading preset images:', error)
+            } finally {
+                setLoadingImages(false)
+            }
+        }
+
+        loadPresetImages()
+    }, [])
 
     const currentColor = selectedColorMode || getCurrentSelectedColor()
 
@@ -99,7 +122,7 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
         onUpdateProject({ backgroundSettings: settings })
     }
 
-    const handleTypeSelect = (type: 'solid' | 'linear-gradient' | 'mesh-gradient') => {
+    const handleTypeSelect = (type: 'solid' | 'linear-gradient' | 'mesh-gradient' | 'image') => {
         const selectedColor = selectedColorMode || getCurrentSelectedColor()
 
         let settings: BackgroundSettings = {
@@ -119,6 +142,10 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
                 const meshConfig = generateRandomMeshGradient(selectedColor)
                 settings.meshColors = meshConfig.colors
                 settings.meshSeed = meshConfig.seed
+                break
+            case 'image':
+                settings.imageUrl = presetImages[0]?.url || ''
+                settings.imageRemotionPath = presetImages[0]?.remotionPath || ''
                 break
         }
 
@@ -140,11 +167,12 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
     }
 
 
-    const handleImagePresetSelect = (presetUrl: string) => {
+    const handleImagePresetSelect = (imageData: { url: string, remotionPath: string }) => {
         onUpdateProject({
             backgroundSettings: {
-                type: 'solid',
-                color: presetUrl,
+                type: 'image',
+                imageUrl: imageData.url,
+                imageRemotionPath: imageData.remotionPath,
                 opacity: 1
             }
         })
@@ -207,13 +235,20 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
                         {BACKGROUND_TYPES.map((type) => (
                             <div key={type.id} className="text-center">
                                 <div
-                                    className={`w-full h-16 rounded-lg mb-2 border-2 cursor-pointer hover:scale-105 transition-transform flex items-center justify-center ${currentType === type.id
+                                    className={`w-full h-16 rounded-lg mb-2 border-2 cursor-pointer hover:scale-105 transition-transform flex items-center justify-center overflow-hidden ${currentType === type.id
                                         ? 'border-primary ring-2 ring-primary/20'
                                         : 'border-border'
                                         }`}
                                     style={{ backgroundColor: currentType === type.id ? currentColor : '#374151' }}
                                     onClick={() => handleTypeSelect(type.id as any)}
                                 >
+                                    {type.id === 'image' && presetImages.length > 0 ? (
+                                        <img
+                                            src={presetImages[7].url}
+                                            alt="Background preset"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : null}
                                 </div>
                                 <p className="text-xs font-medium text-foreground whitespace-pre-line">{type.name}</p>
                             </div>
@@ -257,6 +292,36 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
                             <Shuffle className="mr-2 h-4 w-4" />
                             Randomize mesh
                         </Button>
+                    </div>
+                )}
+
+                {currentType === 'image' && (
+                    <div>
+                        <h3 className="text-sm font-medium text-foreground mb-3">Background Images</h3>
+                        {loadingImages ? (
+                            <div className="text-center py-4">
+                                <div className="text-sm text-muted-foreground">Loading images...</div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-3 gap-2">
+                                {presetImages.map((imageData, index) => (
+                                    <div
+                                        key={index}
+                                        className={`aspect-square rounded-lg cursor-pointer border-2 transition-all hover:scale-105 overflow-hidden ${currentProject?.backgroundSettings?.imageUrl === imageData.url
+                                            ? 'border-primary ring-2 ring-primary/20'
+                                            : 'border-border'
+                                            }`}
+                                        onClick={() => handleImagePresetSelect(imageData)}
+                                    >
+                                        <img
+                                            src={imageData.url}
+                                            alt={`Background preset ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -67,6 +67,7 @@ export interface BackgroundSettings {
   meshSeed?: number
   // image
   imageUrl?: string
+  imageRemotionPath?: string
   // common
   opacity?: number
   blur?: number

@@ -181,12 +181,6 @@ export function Hero() {
             )}
             <div className="relative z-10 container mx-auto px-4 pt-36 pb-16">
                 <div className="text-center md:mb-12">
-                    <Badge
-                        variant="secondary"
-                        className="mb-4 md:mb-6 bg-zinc-800/60 text-white border-gray-700/50 backdrop-blur-sm hover:bg-zinc-700/60 transition-colors px-3 md:px-4 py-1.5 md:py-2 rounded-full"
-                    >
-                        <span className="text-xs md:text-sm">SaaS Demo Generator</span>
-                    </Badge>
 
                     <h1 className="text-3xl md:text-3xl lg:text-5xl font-bold mb-4 md:mb-6 leading-[1.05] text-white max-w-6xl mx-auto">
                         <span className="block mb-1">
@@ -207,7 +201,7 @@ export function Hero() {
                                 disabled={isProcessing}
                                 className="ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50"
                             >
-                                {isProcessing ? 'Processing...' : 'Upload'}
+                                {isProcessing ? 'Processing...' : 'Upload video'}
                             </Button>
                         </div>
 

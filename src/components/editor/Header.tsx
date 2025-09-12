@@ -41,23 +41,20 @@ export function Header() {
         }
     }
 
-    // Polling stato di rendering
+    // Polling stato di rendering con progresso fake
     const startRenderPolling = async (taskId: string, quality: string) => {
+        let fakeProgress = 5 // Inizia da 5% per sincronizzarsi con l'inizializzazione
+        let pollCount = 0
+        const maxPollsBeforeComplete = 20 // ~5 minuti con polling ogni 15 sec
+
         const pollInterval = setInterval(async () => {
             try {
                 const status = await api.getRenderStatus(taskId)
+                pollCount++
 
-                // Aggiorna il progresso se disponibile
-                if (status.progress !== undefined) {
-                    setGlobalRenderProgress(status.progress)
-                } else {
-                    // Incrementa gradualmente se il backend non fornisce progresso
-                    const currentProgress = globalRenderProgress
-                    setGlobalRenderProgress(Math.min(currentProgress + Math.random() * 5 + 2, 95))
-                }
-
-                // Controlla se il rendering è completato
+                // Sistema di progresso fake intelligente
                 if (status.status === 'completed') {
+                    // Video completato - salta immediatamente al 100%
                     clearInterval(pollInterval)
                     setGlobalRenderProgress(100)
 
@@ -67,10 +64,9 @@ export function Header() {
 
                         // Scarica automaticamente il file
                         if (status.download_url) {
-                            // Crea un link temporaneo e clicca per scaricare
                             const link = document.createElement('a')
                             link.href = status.download_url
-                            link.download = ''// file name from server
+                            link.download = ''
                             document.body.appendChild(link)
                             link.click()
                             document.body.removeChild(link)
@@ -81,13 +77,33 @@ export function Header() {
                     setRenderingState(false)
                     setGlobalRenderProgress(0)
                     alert(`Error during rendering: ${status.error || status.message}`)
+                } else {
+                    // Rendering in corso
+                    if (pollCount <= maxPollsBeforeComplete) {
+                        // Incremento progressivo che rallenta verso la fine
+                        const progressIncrement = pollCount < 10
+                            ? 3 + Math.random() * 4  // Inizio veloce: 3-7%
+                            : pollCount < 15
+                                ? 1 + Math.random() * 2  // Medio: 1-3%
+                                : 0.5 + Math.random() * 1 // Fine lenta: 0.5-1.5%
+
+                        fakeProgress = Math.min(fakeProgress + progressIncrement, 99)
+                        setGlobalRenderProgress(Math.round(fakeProgress))
+                    } else {
+                        // Se raggiungiamo il limite, fermiamo a 99% e aspettiamo
+                        setGlobalRenderProgress(99)
+                    }
                 }
 
             } catch (error) {
                 console.error('Errore nel polling:', error)
-                // Non fermare il polling per errori temporanei di rete
+                // Continua il progresso fake anche con errori di rete
+                if (fakeProgress < 99) {
+                    fakeProgress = Math.min(fakeProgress + 1, 99)
+                    setGlobalRenderProgress(Math.round(fakeProgress))
+                }
             }
-        }, 5000) // Polling ogni 5 secondi
+        }, 15000) // Polling ogni 15 secondi
     }
 
     const handleExport = async () => {
@@ -95,7 +111,7 @@ export function Header() {
 
         try {
             setRenderingState(true)
-            setGlobalRenderProgress(0)
+            setGlobalRenderProgress(5) // Inizia con 5% per dare feedback immediato
             // Prepara i dati delle clip per il multi-clip rendering
             const clipsData = currentProject.clips?.map(clip => ({
                 id: clip.id,

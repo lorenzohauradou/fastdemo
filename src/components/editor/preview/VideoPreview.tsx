@@ -28,7 +28,7 @@ export function VideoPreview() {
     } = useEditorStore()
 
     // Hook per gestire le animazioni camera
-    const { getCurrentVariant, getTransition } = useCameraAnimations(currentProject)
+    const { getCurrentVariant, getTransition } = useCameraAnimations(currentProject, isPlaying)
 
     // Ottieni la clip attiva e il suo video
     const activeClip = getActiveClip()
@@ -81,7 +81,7 @@ export function VideoPreview() {
         }
     }
 
-    const textTransition = { delay: 0.1, type: 'spring' as const, stiffness: 300, damping: 30 }
+    const textTransition = { type: 'spring' as const, stiffness: 300, damping: 30, duration: 0.67 }
 
     // Gestisce l'evento wheel con passive: false per evitare errori console
     useEffect(() => {

@@ -66,57 +66,7 @@ export function Features() {
                             <div className="absolute inset-0 bg-white/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
 
                             <div className="relative h-full backdrop-blur-xl bg-white/[0.02] border border-white/10 rounded-2xl p-8 transition-all duration-500 group-hover:bg-white/[0.04] group-hover:border-white/20">
-                                <div className="flex flex-col justify-between h-full">
-                                    <div className="text-center">
-                                        <h3 className="text-4xl font-bold text-white mb-2">Cursor</h3>
-                                        <p className="text-xl text-gray-300 mb-8">styling</p>
 
-                                        <div className="mb-8">
-                                            <div className="inline-block text-6xl">🖱️</div>
-                                        </div>
-
-                                        <div className="mb-8">
-                                            <div className="relative">
-                                                <div className="w-full h-2 bg-gray-700 rounded-full">
-                                                    <div
-                                                        className="h-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full transition-all duration-300"
-                                                        style={{ width: `${cursorPosition}%` }}
-                                                    ></div>
-                                                </div>
-                                                <div
-                                                    className="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg cursor-pointer"
-                                                    style={{ left: `calc(${cursorPosition}% - 8px)` }}
-                                                    onMouseDown={(e) => {
-                                                        const sliderElement = e.currentTarget.parentElement
-
-                                                        const handleMouseMove = (moveEvent: MouseEvent) => {
-                                                            if (sliderElement) {
-                                                                const rect = sliderElement.getBoundingClientRect()
-                                                                const x = moveEvent.clientX - rect.left
-                                                                const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100))
-                                                                setCursorPosition(percentage)
-                                                            }
-                                                        }
-
-                                                        const handleMouseUp = () => {
-                                                            document.removeEventListener('mousemove', handleMouseMove)
-                                                            document.removeEventListener('mouseup', handleMouseUp)
-                                                        }
-
-                                                        document.addEventListener('mousemove', handleMouseMove)
-                                                        document.addEventListener('mouseup', handleMouseUp)
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-gray-400 text-sm leading-relaxed">
-                                            Automatic smoothing makes your cursor moves professional and easy to follow.
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -175,50 +125,6 @@ export function Features() {
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-span-12 lg:col-span-4">
-                        <div className="relative group h-80">
-                            <div className="absolute inset-0 bg-white/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-
-                            <div className="relative h-full backdrop-blur-xl bg-white/[0.02] border border-white/10 rounded-2xl p-8 transition-all duration-500 group-hover:bg-white/[0.04] group-hover:border-white/20">
-                                <div className="flex flex-col justify-between h-full">
-                                    <div>
-                                        <div className="grid grid-cols-5 gap-2 mb-6">
-                                            {Array.from({ length: 15 }).map((_, index) => (
-                                                <div key={index} className="aspect-square bg-gray-700/50 rounded-lg hover:bg-gray-600/50 transition-colors"></div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="text-center">
-                                        <h3 className="text-3xl font-bold text-white">Templates</h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="col-span-12 lg:col-span-4 hidden">
-                        <div className="relative group h-80">
-                            <div className="absolute inset-0 bg-white/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-
-                            <div className="relative h-full backdrop-blur-xl bg-white/[0.02] border border-white/10 rounded-2xl p-8 transition-all duration-500 group-hover:bg-white/[0.04] group-hover:border-white/20 overflow-hidden">
-                                <div className="flex flex-col justify-end h-full">
-                                    <div className="text-center">
-                                        <h3 className="text-3xl font-bold text-white">Brand Kit</h3>
-                                    </div>
-                                </div>
-
-                                <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                                    <div className="transform rotate-45 text-6xl font-bold text-white space-y-4">
-                                        <div>BRAND</div>
-                                        <div>DESIGN</div>
-                                        <div>STYLE</div>
                                     </div>
                                 </div>
                             </div>

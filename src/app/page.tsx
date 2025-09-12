@@ -4,6 +4,7 @@ import { StickyCTA } from "@/components/ui/sticky-cta"
 import { Footer } from "@/components/landing/Footer"
 import { Pricing } from "@/components/landing/Pricing"
 import { Features } from "@/components/landing/Features"
+import { FeaturesSection } from "@/components/landing/FeaturesSection"
 import { FAQ } from "@/components/landing/Faq"
 import { FeaturesBanner } from "@/components/landing/FeaturesBanner"
 export default function Home() {
@@ -13,7 +14,7 @@ export default function Home() {
       <main className="overflow-x-hidden bg-black">
         <Hero />
         <FeaturesBanner />
-        <Features />
+        <FeaturesSection />
         <Pricing />
         <FAQ />
         <Footer />

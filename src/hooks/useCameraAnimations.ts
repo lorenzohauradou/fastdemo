@@ -12,7 +12,7 @@ interface CameraTransform {
     z: number
 }
 
-export function useCameraAnimations(currentProject: Project | null) {
+export function useCameraAnimations(currentProject: Project | null, isPlaying: boolean = false) {
     const [continuousGlideTransform, setContinuousGlideTransform] = useState<CameraTransform>({
         x: 0,
         y: 0,
@@ -22,11 +22,34 @@ export function useCameraAnimations(currentProject: Project | null) {
         z: 0
     })
 
-    // Hook per animazioni continue (continuous_glide)
+    const [upDownTransform, setUpDownTransform] = useState<CameraTransform>({
+        x: 0,
+        y: 0,
+        rotateY: 0,
+        rotateX: 0,
+        scale: 1,
+        z: 0
+    })
+
+    // Hook animazioni continue
     useAnimationFrame((time) => {
+        // si attivano solo se il video è in play
+        if (!isPlaying) return
+        
         if (currentProject?.cameraSettings?.type === 'continuous_glide') {
             const transform = getCameraAnimationTransform('continuous_glide', time, currentProject.cameraSettings)
             setContinuousGlideTransform(transform)
+        } else if (currentProject?.cameraSettings?.type === 'up_down') {
+            const progress = (time / 4000) % 1 // 4 secondi di ciclo
+            const translateY = Math.sin(progress * Math.PI * 2) * 10 + 10
+            setUpDownTransform({
+                x: 0,
+                y: translateY,
+                rotateY: 0,
+                rotateX: 0,
+                scale: 1,
+                z: 0
+            })
         }
     })
 
@@ -53,6 +76,11 @@ export function useCameraAnimations(currentProject: Project | null) {
             return continuousGlideTransform as any
         }
         
+        // Per up_down, usa i valori calcolati in tempo reale
+        if (animationKey === 'up_down') {
+            return upDownTransform as any
+        }
+        
         // Per altre animazioni, calcola i valori
         return getCameraAnimationTransform(animationKey || 'full', 0, currentProject?.cameraSettings) as any
     }
@@ -61,18 +89,10 @@ export function useCameraAnimations(currentProject: Project | null) {
     const getTransition = () => {
         const cameraType = currentProject?.cameraSettings?.type
         
-        if (cameraType === 'continuous_glide') {
+        if (cameraType === 'continuous_glide' || cameraType === 'up_down') {
             return {
                 type: 'tween' as const,
                 duration: 0, // Nessuna transizione, usiamo i valori diretti
-                ease: "linear" as const
-            }
-        }
-        
-        if (cameraType && cameraType !== 'none') {
-            return {
-                repeat: Infinity,
-                duration: 4,
                 ease: "linear" as const
             }
         }
