@@ -54,9 +54,25 @@ export async function POST(request: NextRequest) {
                 })
             } else {
                 console.warn('Backend upload failed, continuing with frontend-only')
+                return NextResponse.json({
+                    success: true,
+                    message: 'File caricato con successo (solo frontend)',
+                    filename: file.name,
+                    size: file.size,
+                    content_type: file.type,
+                    backend_response: null
+                })
             }
-        } catch (backendError) {
-            console.warn('Backend not available:', backendError)
+        } catch {
+            console.warn('Backend not available, continuing with frontend-only')
+            return NextResponse.json({
+                success: true,
+                message: 'File caricato con successo (solo frontend)',
+                filename: file.name,
+                size: file.size,
+                content_type: file.type,
+                backend_response: null
+            })
         }
     } catch (error) {
         console.error('Errore nell\'upload:', error)

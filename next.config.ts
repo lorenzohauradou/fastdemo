@@ -6,10 +6,6 @@ const nextConfig: NextConfig = {
     BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000',
   },
   
-  turbopack: {
-    root: '/Users/lorenzohauradou/Desktop/democraft/frontend',
-  },
-
   // Configurazione per gestire i file video - aggiornata per Next.js 15
   serverExternalPackages: [],
   

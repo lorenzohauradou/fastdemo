@@ -9,7 +9,7 @@ export interface UploadResponse {
     filename: string
     size: number
     content_type: string
-    backend_response?: any
+    backend_response?: unknown
     note?: string
 }
 
@@ -37,9 +37,9 @@ export interface VoiceoverResponse {
 export interface RenderRequest {
     name: string
     duration: number
-    animations: any[]
-    backgroundSettings?: any
-    musicSettings?: any
+    animations: unknown[]
+    backgroundSettings?: unknown
+    musicSettings?: unknown
 }
 
 export interface RenderResponse {
@@ -59,7 +59,7 @@ export interface RenderResponse {
         output_path?: string
         file_size?: number
     }
-    result?: any
+    result?: unknown
     download_url?: string
     error?: string
     note?: string
@@ -208,7 +208,7 @@ class ApiClient {
     /**
      * Crea un nuovo progetto
      */
-    async createProject(projectData: any): Promise<any> {
+    async createProject(projectData: Record<string, unknown>): Promise<unknown> {
         const response = await fetch('/api/projects', {
             method: 'POST',
             headers: {
