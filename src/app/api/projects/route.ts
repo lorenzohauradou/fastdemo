@@ -16,7 +16,7 @@ export async function GET() {
                     message: 'Failed to fetch projects',
                 })
             }
-        } catch (backendError) {
+        } catch {
             return NextResponse.json({
                 projects: [],
                 message: 'Failed to fetch projects',
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
                     { status: backendResponse.status }
                 )
             }
-        } catch (backendError) {
+        } catch {
             return NextResponse.json({
                 success: false,
                 message: 'Backend not available',

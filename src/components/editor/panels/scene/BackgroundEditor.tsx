@@ -240,7 +240,7 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
                                         : 'border-border'
                                         }`}
                                     style={{ backgroundColor: currentType === type.id ? currentColor : '#374151' }}
-                                    onClick={() => handleTypeSelect(type.id as any)}
+                                    onClick={() => handleTypeSelect(type.id as 'solid' | 'linear-gradient' | 'mesh-gradient' | 'image')}
                                 >
                                     {type.id === 'image' && presetImages.length > 0 ? (
                                         <img

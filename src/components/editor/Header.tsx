@@ -23,7 +23,7 @@ export function Header() {
         currentProject,
         currentTime,
         isRendering: globalIsRendering,
-        renderProgress: globalRenderProgress,
+        renderProgress: _globalRenderProgress,
         setRenderingState,
         setRenderProgress: setGlobalRenderProgress
     } = useEditorStore()
@@ -42,7 +42,7 @@ export function Header() {
     }
 
     // Polling stato di rendering con progresso fake
-    const startRenderPolling = async (taskId: string, quality: string) => {
+    const startRenderPolling = async (taskId: string, _quality: string) => {
         let fakeProgress = 5 // Inizia da 5% per sincronizzarsi con l'inizializzazione
         let pollCount = 0
         const maxPollsBeforeComplete = 20 // ~5 minuti con polling ogni 15 sec

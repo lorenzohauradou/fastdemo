@@ -1,6 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
+interface TextProperties {
+    content?: string
+    fontSize?: number
+    fontFamily?: string
+    fontWeight?: string
+    color?: string
+    position?: string
+}
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -97,7 +106,7 @@ export function TextPanel() {
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-white">Content</label>
                         <Input
-                            value={(selectedTextAnimation.properties as any)?.content || ''}
+                            value={(selectedTextAnimation.properties as TextProperties)?.content || ''}
                             onChange={(e) => handleTextPropertyChange('content', e.target.value)}
                             className="bg-zinc-800 border-zinc-600 text-white"
                         />
@@ -105,13 +114,13 @@ export function TextPanel() {
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-white">
-                            Font Size: {(selectedTextAnimation.properties as any)?.fontSize || 24}px
+                            Font Size: {(selectedTextAnimation.properties as TextProperties)?.fontSize || 24}px
                         </label>
                         <input
                             type="range"
                             min="12"
                             max="72"
-                            value={(selectedTextAnimation.properties as any)?.fontSize || 24}
+                            value={(selectedTextAnimation.properties as TextProperties)?.fontSize || 24}
                             onChange={(e) => handleTextPropertyChange('fontSize', parseInt(e.target.value))}
                             className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
                         />
@@ -120,7 +129,7 @@ export function TextPanel() {
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-white">Font Family</label>
                         <select
-                            value={(selectedTextAnimation.properties as any)?.fontFamily || 'Inter'}
+                            value={(selectedTextAnimation.properties as TextProperties)?.fontFamily || 'Inter'}
                             onChange={(e) => handleTextPropertyChange('fontFamily', e.target.value)}
                             className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded text-white text-sm"
                         >
@@ -151,7 +160,7 @@ export function TextPanel() {
                             {['normal', 'bold', '600'].map((weight) => (
                                 <Button
                                     key={weight}
-                                    variant={(selectedTextAnimation.properties as any)?.fontWeight === weight ? 'default' : 'outline'}
+                                    variant={(selectedTextAnimation.properties as TextProperties)?.fontWeight === weight ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => handleTextPropertyChange('fontWeight', weight)}
                                     className="text-xs"
@@ -167,7 +176,7 @@ export function TextPanel() {
                         <div className="flex items-center space-x-2">
                             <div
                                 className="w-8 h-8 rounded border-2 border-gray-600 cursor-pointer"
-                                style={{ backgroundColor: (selectedTextAnimation.properties as any)?.color || '#ffffff' }}
+                                style={{ backgroundColor: (selectedTextAnimation.properties as TextProperties)?.color || '#ffffff' }}
                                 onClick={() => setIsColorPickerOpen(true)}
                             />
                             <Button
@@ -242,19 +251,19 @@ export function TextPanel() {
                                         <div className="flex items-center justify-between">
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-white text-sm font-medium truncate">
-                                                    {(textAnim.properties as any)?.content || 'Untitled Text'}
+                                                    {(textAnim.properties as TextProperties)?.content || 'Untitled Text'}
                                                 </p>
                                                 <p className="text-gray-400 text-xs">
-                                                    {(textAnim.properties as any)?.fontFamily || 'Inter'} • {(textAnim.properties as any)?.fontSize || 24}px
+                                                    {(textAnim.properties as TextProperties)?.fontFamily || 'Inter'} • {(textAnim.properties as TextProperties)?.fontSize || 24}px
                                                 </p>
                                             </div>
                                             <div className="flex items-center space-x-2">
                                                 <div
                                                     className="w-4 h-4 rounded border border-gray-600"
-                                                    style={{ backgroundColor: (textAnim.properties as any)?.color || '#ffffff' }}
+                                                    style={{ backgroundColor: (textAnim.properties as TextProperties)?.color || '#ffffff' }}
                                                 />
                                                 <span className="text-xs text-gray-400 capitalize">
-                                                    {(textAnim.properties as any)?.position || 'right'}
+                                                    {(textAnim.properties as TextProperties)?.position || 'right'}
                                                 </span>
                                                 <button
                                                     onClick={(e) => handleDeleteText(textAnim.id, e)}

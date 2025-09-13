@@ -6,14 +6,10 @@ const nextConfig: NextConfig = {
     BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000',
   },
   
-  // Disabilita ESLint e TypeScript checking durante il build per permettere il deploy
-  eslint: {
-    ignoreDuringBuilds: true,
+  turbopack: {
+    root: '/Users/lorenzohauradou/Desktop/democraft/frontend',
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  
+
   // Configurazione per gestire i file video - aggiornata per Next.js 15
   serverExternalPackages: [],
   

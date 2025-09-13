@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useEditorStore } from '@/lib/store'
-import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
+// import { Button } from '@/components/ui/button'
+// import { Slider } from '@/components/ui/slider'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import Image from 'next/image'
 
