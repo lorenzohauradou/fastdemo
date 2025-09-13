@@ -5,7 +5,7 @@ export interface Animation {
   type: 'zoom' | 'pan' | 'text' | 'voiceover' | 'background' | 'logo' | 'video' | 'audio' | 'clip'
   startTime: number  // Tempo relativo alla clip (0 = inizio clip)
   endTime: number    // Tempo relativo alla clip
-  properties: Record<string, any>
+  properties: Record<string, unknown>
   _renderBounds?: {
     startX: number
     y: number
@@ -94,7 +94,7 @@ export interface Project {
   // animations: Animation[] // RIMOSSO - ora ogni clip ha le sue
   primaryColor?: string
   backgroundSettings?: BackgroundSettings
-  deviceSettings?: Record<string, any>
+  deviceSettings?: Record<string, unknown>
   audioTrack?: string
   templateId?: string
   musicSettings?: {
@@ -338,7 +338,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   removeClip: (clipId) => set((state) => {
     if (!state.currentProject) return state
     
-    let clips = state.currentProject.clips.filter(clip => clip.id !== clipId)
+    const clips = state.currentProject.clips.filter(clip => clip.id !== clipId)
     
     // Ricalcola le posizioni per mantenere le clip attaccate
     for (let i = 0; i < clips.length; i++) {

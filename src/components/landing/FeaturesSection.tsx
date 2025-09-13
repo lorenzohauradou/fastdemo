@@ -8,19 +8,22 @@ export function FeaturesSection() {
             id: 1,
             title: "Auto scale up/down upon element interaction",
             subtitle: "We track cursor actions and apply zoom in/out to make the video more interactive",
-            videoPlaceholder: "video-1.mp4"
+            videoSrc: "/videos/features/showcaseready-zoom-feature.mp4",
+            hasVideo: true
         },
         {
             id: 2,
             title: "Camera capture",
             subtitle: "Record your webcam alongside your screen — great for product demos and walkthroughs.",
-            videoPlaceholder: "video-2.mp4"
+            videoPlaceholder: "video-2.mp4",
+            hasVideo: false
         },
         {
             id: 3,
             title: "Convenient video editor",
             subtitle: "Manage zoom effects and many more video properties.",
-            videoPlaceholder: "video-3.mp4"
+            videoPlaceholder: "video-3.mp4",
+            hasVideo: false
         }
     ]
 
@@ -149,16 +152,27 @@ export function FeaturesSection() {
                                 <div className={`grid grid-cols-1 lg:grid-cols-5 gap-16 items-center ${index % 2 === 1 ? 'lg:grid-flow-col-dense' : ''}`}>
                                     <div className={`lg:col-span-3 ${index % 2 === 1 ? 'lg:col-start-3' : ''}`}>
                                         <div className="relative">
-                                            <div className="relative bg-transparentrounded-3xl p-4 shadow-2xl">
+                                            <div className="relative bg-transparent rounded-3xl p-4 shadow-2xl">
                                                 <div className="aspect-video bg-transparent rounded-2xl flex items-center justify-center relative overflow-hidden">
-                                                    <div className="text-center">
-                                                        <div className="w-12 h-12 mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center">
-                                                            <svg className="w-6 h-6 text-white/60" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                                                            </svg>
+                                                    {feature.hasVideo ? (
+                                                        <video
+                                                            src={feature.videoSrc}
+                                                            autoPlay
+                                                            loop
+                                                            muted
+                                                            playsInline
+                                                            className="w-full h-full object-cover rounded-2xl"
+                                                        />
+                                                    ) : (
+                                                        <div className="text-center">
+                                                            <div className="w-12 h-12 mx-auto mb-3 bg-white/10 rounded-full flex items-center justify-center">
+                                                                <svg className="w-6 h-6 text-white/60" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                                                </svg>
+                                                            </div>
+                                                            <p className="text-white/40 text-sm font-medium">{feature.videoPlaceholder}</p>
                                                         </div>
-                                                        <p className="text-white/40 text-sm font-medium">{feature.videoPlaceholder}</p>
-                                                    </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

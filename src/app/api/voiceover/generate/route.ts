@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             )
         }
-        const backendUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:8000'
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
         const response = await fetch(`${backendUrl}/api/voiceover/generate`, {
             method: 'POST',
             headers: {

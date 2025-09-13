@@ -329,7 +329,7 @@ export function LogoHeadlinePanel() {
                     <h4 className="text-sm font-medium text-white mb-2">Preview Settings</h4>
                     <div className="space-y-1 text-xs text-gray-400">
                         {logoUrl && <div>Logo: {logoFile?.name}</div>}
-                        {headlineText && <div>Headline: "{headlineText}"</div>}
+                        {headlineText && <div>Headline: &quot;{headlineText}&quot;</div>}
                         <div>Position: {position.x}%, {position.y}%</div>
                         <div>Duration: {duration[0]}s</div>
                         <div>Animation: {logoTemplates.find(t => t.id === selectedTemplate)?.name}</div>

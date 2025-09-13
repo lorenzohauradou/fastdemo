@@ -91,10 +91,7 @@ export interface ProjectsResponse {
 }
 
 class ApiClient {
-    private baseUrl: string
-
     constructor() {
-        this.baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:8000'
     }
 
     /**
@@ -124,7 +121,7 @@ class ApiClient {
         const formData = new FormData()
         formData.append('file', file)
 
-        const response = await fetch(`${this.baseUrl}/api/upload/audio`, {
+        const response = await fetch('/api/upload/audio', {
             method: 'POST',
             body: formData
         })
@@ -148,11 +145,10 @@ class ApiClient {
     }
 
     /**
-     * Avvia il rendering di un video
+     * Avvia il rendering
      */
-    async startRender(renderData: RenderRequest, useRemotion: boolean = false): Promise<RenderResponse> {
-        const endpoint = useRemotion ? '/api/render/remotion' : '/api/render'
-        const response = await fetch(endpoint, {
+    async startRender(renderData: RenderRequest): Promise<RenderResponse> {
+        const response = await fetch('/api/render/remotion', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -13,20 +13,20 @@ export function FAQ() {
 
     const faqItems: FAQItem[] = [
         {
-            question: "Does ShowcaseReady work on Windows?",
-            answer: "Yes, ShowcaseReady works perfectly on Windows, macOS, and Linux. Our web-based platform is compatible with all modern browsers, so you can create professional screen recordings from any operating system."
+            question: "How is ShowcaseReady different from Loom?",
+            answer: "Loom is a fantastic tool for quick, internal communication. ShowcaseReady is designed for a different job: creating polished, professional video assets for your marketing. While Loom gives you a raw recording, we provide the tools to transform it into a compelling product demo with custom backgrounds, device frames, animated text, background music, and natural-sounding AI voiceovers—all without needing a separate video editor."
         },
         {
-            question: "Can I bring my own videos and images?",
-            answer: "Absolutely! You can upload your own videos, images, and audio files to enhance your screen recordings. We support all major formats including MP4, MOV, PNG, JPG, and MP3. Simply drag and drop your files into the editor."
+            question: "Do I need any video editing experience?",
+            answer: "Absolutely not. ShowcaseReady is built specifically for founders, marketers, and solopreneurs, not professional video editors. Our interface is intuitive and streamlined, allowing you to add professional touches like smooth zoom animations and text overlays in just a few clicks. The goal is to get you a stunning result in minutes, not hours."
         },
         {
-            question: "Can I combine multiple recordings?",
-            answer: "Yes, you can easily combine multiple screen recordings into a single video. Our timeline editor allows you to arrange, trim, and merge different recordings seamlessly. Perfect for creating comprehensive tutorials or presentations."
+            question: "How do the AI Voiceovers work?",
+            answer: "It's simple! Just type or paste your script, choose from a library of high-quality, natural-sounding AI voices, and generate the narration for your video. It's the perfect way to get a clear, professional voiceover without the hassle of recording and editing your own voice, especially if you're not a native English speaker."
         },
         {
-            question: "Security and privacy?",
-            answer: "Your privacy and security are our top priorities. All uploads are encrypted in transit and at rest. We never store your content permanently without your permission, and you can delete your projects at any time. We're GDPR compliant and follow industry-standard security practices."
+            question: "What resolution can I export my videos in?",
+            answer: "Quality is key for a professional demo. All videos, including those made on the Free plan, can be exported in 4K, 1080p, and 720p."
         }
     ]
 

@@ -218,9 +218,11 @@ export function ResizableClip({
                 const currentTrimStart = clip.properties?.trimStart || 0
                 const originalClipDuration = clip.endTime - clip.startTime
 
-                let updates: any = {
+                const updates = {
                     startTime: visualPreview.startTime,
                     endTime: visualPreview.endTime,
+                    trimStart: clip.trimStart || 0,
+                    trimEnd: clip.trimEnd || 0,
                     properties: {
                         ...clip.properties,
                         duration: newDuration

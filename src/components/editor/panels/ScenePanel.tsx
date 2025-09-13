@@ -14,12 +14,12 @@ export function ScenePanel() {
     const [showBackgroundEdit, setShowBackgroundEdit] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [selectedDevice, setSelectedDevice] = useState<string>(
-        currentProject?.deviceSettings?.type || 'rectangle'
+        (currentProject?.deviceSettings?.type as string) || 'rectangle'
     )
     const [borderRadius, setBorderRadius] = useState([0])
 
     // Funzione per aggiornare le impostazioni del device
-    const updateDeviceSettings = (deviceSettings: Record<string, any>) => {
+    const updateDeviceSettings = (deviceSettings: Record<string, unknown>) => {
         updateProject({
             deviceSettings: {
                 ...currentProject?.deviceSettings,

@@ -7,12 +7,12 @@ export async function GET(
     try {
         const { filename } = await params
 
-        const backendUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:8000'
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
         const response = await fetch(`${backendUrl}/api/download/audio/${filename}`)
 
         if (!response.ok) {
             return NextResponse.json(
-                { error: 'File audio non trovato' },
+                { error: 'Audio file not found' },
                 { status: 404 }
             )
         }
@@ -29,9 +29,9 @@ export async function GET(
         })
 
     } catch (error) {
-        console.error('Errore download audio:', error)
+        console.error('Error downloading audio:', error)
         return NextResponse.json(
-            { error: 'Errore interno del server' },
+            { error: 'Internal server error' },
             { status: 500 }
         )
     }

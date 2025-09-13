@@ -204,7 +204,6 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             streamRef.current = stream
             chunksRef.current = []
 
-            let mediaRecorder: MediaRecorder
             const supportedMimeTypes = [
                 'video/webm;codecs=vp9,opus',
                 'video/webm;codecs=vp8,opus',
@@ -220,7 +219,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 }
             }
 
-            mediaRecorder = new MediaRecorder(stream, {
+            const mediaRecorder = new MediaRecorder(stream, {
                 mimeType: selectedMimeType
             })
 

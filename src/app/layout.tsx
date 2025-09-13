@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DemoCraft - Video Editor",
-  description: "Professional video editing with zoom and pan animations",
+  title: "ShowcaseReady - screen recording editor",
+  description: "Professional video editing with zoom and pan animations for your SaaS",
 };
 
 export default function RootLayout({

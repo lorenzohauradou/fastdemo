@@ -1,19 +1,4 @@
-export interface VideoClip {
-    id: string
-    startTime: number
-    endTime: number
-    properties: {
-        name?: string
-        url?: string
-        originalDuration?: number
-        duration?: number
-        trimStart?: number
-        trimEnd?: number
-        index?: number
-        file?: File
-    }
-    thumbnail?: string
-}
+import { VideoClip } from '@/lib/store'
 
 export interface AudioClip {
     id: string
@@ -73,7 +58,14 @@ export const generateVideoThumbnail = async (
  * Crea le clip video dal progetto (supporta multi-clip)
  */
 export const createVideoClips = (
-    currentProject: any,
+    currentProject: { 
+        clips?: VideoClip[]; 
+        duration?: number; 
+        videoFile?: File | string; 
+        name?: string;
+        originalDuration?: number;
+        videoTrimming?: { start?: number; end?: number };
+    } | null,
     hasMainVideo: boolean,
     videoSrc: string,
     videoThumbnails: { [key: string]: string }
@@ -82,19 +74,8 @@ export const createVideoClips = (
 
     // Se il progetto ha clips definite, usale
     if (currentProject.clips && currentProject.clips.length > 0) {
-        return currentProject.clips.map((clip: any) => ({
-            id: clip.id,
-            startTime: clip.startTime,
-            endTime: clip.endTime,
-            properties: {
-                name: clip.name,
-                url: clip.videoUrl || videoSrc,
-                originalDuration: clip.originalDuration || clip.duration,
-                duration: clip.duration,
-                trimStart: clip.trimStart || 0,
-                trimEnd: clip.trimEnd || 0,
-                file: clip.videoFile
-            },
+        return currentProject.clips.map((clip: VideoClip) => ({
+            ...clip,
             thumbnail: videoThumbnails[clip.id] || clip.thumbnail
         }))
     }
@@ -104,16 +85,15 @@ export const createVideoClips = (
 
     return [{
         id: 'main-video',
+        name: 'Main Video',
         startTime: 0,
         endTime: currentProject?.duration || 10,
-        properties: {
-            name: 'Main Video',
-            url: videoSrc,
-            originalDuration: currentProject?.originalDuration || currentProject?.duration || 10,
-            duration: currentProject?.duration || 10,
-            trimStart: currentProject?.videoTrimming?.start || 0,
-            trimEnd: currentProject?.videoTrimming?.end || 0
-        },
+        duration: currentProject?.duration || 10,
+        videoUrl: videoSrc,
+        originalDuration: currentProject?.originalDuration || currentProject?.duration || 10,
+        animations: [],
+        trimStart: currentProject?.videoTrimming?.start || 0,
+        trimEnd: currentProject?.videoTrimming?.end || 0,
         thumbnail: videoThumbnails['main-video']
     }]
 }
@@ -122,7 +102,7 @@ export const createVideoClips = (
  * Crea le clip audio dal progetto corrente
  */
 export const createAudioClips = (
-    currentProject: any,
+    currentProject: { musicSettings?: { track?: string; fileName?: string } } | null,
     audioSrc: string,
     totalVideoDuration: number
 ): AudioClip[] => {

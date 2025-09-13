@@ -99,7 +99,7 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
 
         const currentType = currentProject?.backgroundSettings?.type || 'solid'
 
-        let settings: BackgroundSettings = {
+        const settings: BackgroundSettings = {
             type: currentType,
             opacity: 1
         }
@@ -125,7 +125,7 @@ export function BackgroundEditor({ currentProject, onBack, onUpdateProject }: Ba
     const handleTypeSelect = (type: 'solid' | 'linear-gradient' | 'mesh-gradient' | 'image') => {
         const selectedColor = selectedColorMode || getCurrentSelectedColor()
 
-        let settings: BackgroundSettings = {
+        const settings: BackgroundSettings = {
             type: type,
             opacity: 1
         }

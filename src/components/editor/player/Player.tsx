@@ -8,9 +8,9 @@ import {
     generateVideoThumbnail,
     createVideoClips,
     createAudioClips,
-    type VideoClip,
     type AudioClip
 } from './playerUtils'
+import type { VideoClip } from '@/lib/store'
 import { useApi } from '@/lib/api'
 
 export function Player() {
@@ -74,7 +74,7 @@ export function Player() {
         if (!videoRef.current || !activeVideoClip) return
 
         const clipRelativeTime = currentTime - activeVideoClip.startTime
-        const trimStart = activeVideoClip.properties.trimStart || 0
+        const trimStart = activeVideoClip.trimStart || 0
         const actualVideoTime = trimStart + clipRelativeTime
 
         // Solo se non stiamo riproducendo, aggiorna il tempo
@@ -138,7 +138,7 @@ export function Player() {
     const handleTimeUpdate = () => {
         if (videoRef.current && isPlaying && activeVideoClip && !isChangingClip) {
             const videoTime = videoRef.current.currentTime
-            const trimStart = activeVideoClip.properties.trimStart || 0
+            const trimStart = activeVideoClip.trimStart || 0
             const clipRelativeTime = videoTime - trimStart
             const globalTime = activeVideoClip.startTime + clipRelativeTime
 
@@ -283,7 +283,7 @@ export function Player() {
     // Genera thumbnails per tutte le clip
     useEffect(() => {
         videoClips.forEach(clip => {
-            const videoUrl = clip.properties.url
+            const videoUrl = clip.videoUrl
             if (videoUrl && !videoThumbnails[clip.id]) {
                 generateVideoThumbnail(videoUrl, clip.id, handleThumbnailGenerated)
             }
@@ -393,10 +393,10 @@ export function Player() {
 
     return (
         <div className="bg-background h-40 flex ">
-            {activeVideoClip && (
+            {activeVideoClip && activeVideoClip.videoUrl && (
                 <video
                     ref={videoRef}
-                    src={activeVideoClip.properties.url}
+                    src={activeVideoClip.videoUrl}
                     className="hidden"
                     onTimeUpdate={handleTimeUpdate}
                     muted={true}

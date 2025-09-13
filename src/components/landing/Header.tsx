@@ -102,7 +102,7 @@ export function Header() {
                                 Sign in
                             </Link>
                             <Link href="/login" className="block text-white bg-gray-800 hover:bg-gray-700 transition-colors text-sm py-2 px-4 rounded">
-                                Sign up - <span className="hidden md:block">It's</span> FREE
+                                Sign up - <span className="hidden md:block">It&apos;s</span> FREE
                             </Link>
                         </>
                         {/* )} */}

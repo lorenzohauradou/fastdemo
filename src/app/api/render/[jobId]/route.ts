@@ -7,13 +7,12 @@ export async function GET(
     try {
         const { jobId } = await params
         const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
-        
-        // Proxy diretto verso il backend
+
         const backendResponse = await fetch(`${backendUrl}/api/render/status/${jobId}`)
         
         if (!backendResponse.ok) {
             return NextResponse.json(
-                { error: 'Task non trovato o errore backend' },
+                { error: 'Task not found or backend error' },
                 { status: backendResponse.status }
             )
         }
@@ -22,9 +21,9 @@ export async function GET(
         return NextResponse.json(result)
 
     } catch (error) {
-        console.error('Errore nel controllo stato:', error)
+        console.error('Error checking status:', error)
         return NextResponse.json(
-            { error: 'Errore di connessione al backend' },
+            { error: 'Connection error to backend' },
             { status: 500 }
         )
     }
