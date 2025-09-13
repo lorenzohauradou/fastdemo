@@ -19,7 +19,7 @@ export async function GET(
 
         const audioBuffer = await response.arrayBuffer()
 
-        return new NextResponse(audioBuffer, {
+        return new NextResponse(new Uint8Array(audioBuffer), {
             status: 200,
             headers: {
                 'Content-Type': 'audio/mpeg',

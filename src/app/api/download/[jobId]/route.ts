@@ -19,7 +19,7 @@ export async function GET(
                     // È un file video - proxy il download
                     const videoBuffer = await backendResponse.arrayBuffer()
                     
-                    return new NextResponse(videoBuffer, {
+                    return new NextResponse(new Uint8Array(videoBuffer), {
                         headers: {
                             'Content-Type': 'video/mp4',
                             'Content-Disposition': `attachment; filename="showcaseready-output.mp4"`,
