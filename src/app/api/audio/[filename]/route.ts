@@ -42,8 +42,7 @@ export async function GET(
 
     const contentType = getContentType(filename)
 
-    // Ritorna il file audio
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       headers: {
         'Content-Type': contentType,
         'Content-Length': fileBuffer.length.toString(),
