@@ -3,6 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Animation } from '@/lib/store'
 
+interface ZoomProperties {
+    level?: number
+    x?: number
+    y?: number
+    end?: {
+        level?: number
+        x?: number
+        y?: number
+    }
+}
+
 interface ZoomControllerProps {
     selectedAnimation: Animation | null
     clipTime: number
@@ -127,10 +138,10 @@ export function ZoomController({
 
     useEffect(() => {
         if (selectedAnimation?.type === 'zoom') {
-            const endProps = selectedAnimation.properties.end
-            const level = endProps?.level || selectedAnimation.properties.level || 1
-            const x = endProps?.x || selectedAnimation.properties.x || 0
-            const y = endProps?.y || selectedAnimation.properties.y || 0
+            const endProps = (selectedAnimation.properties as ZoomProperties).end
+            const level = endProps?.level || (selectedAnimation.properties as ZoomProperties).level || 1
+            const x = endProps?.x || (selectedAnimation.properties as ZoomProperties).x || 0
+            const y = endProps?.y || (selectedAnimation.properties as ZoomProperties).y || 0
 
             setInteractiveZoom(level)
             setZoomPosition({ x, y })

@@ -3,6 +3,22 @@
 import { Search } from 'lucide-react'
 import { VideoClip, Animation } from '@/lib/store'
 
+interface ZoomProperties {
+    level?: number
+    x?: number
+    y?: number
+    start?: {
+        level?: number
+        x?: number
+        y?: number
+    }
+    end?: {
+        level?: number
+        x?: number
+        y?: number
+    }
+}
+
 interface ZoomIndicatorProps {
     activeClip: VideoClip | null
     clipTime: number
@@ -37,7 +53,7 @@ export function ZoomIndicator({
         displayX = zoomPosition.x
         displayY = zoomPosition.y
     } else {
-        const props = activeZoomAtCurrentTime.properties
+        const props = activeZoomAtCurrentTime.properties as ZoomProperties
         const startProps = props.start || {}
         const endProps = props.end || {}
         const progress = (clipTime - activeZoomAtCurrentTime.startTime) /

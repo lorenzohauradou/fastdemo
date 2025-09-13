@@ -3,6 +3,12 @@
 import { useEffect, useRef } from 'react'
 import { VideoClip, Project } from '@/lib/store'
 
+interface ZoomProperties {
+    level?: number
+    x?: number
+    y?: number
+}
+
 interface VideoPlayerProps {
     activeClip: VideoClip | null
     clipTime: number
@@ -139,9 +145,9 @@ export function VideoPlayer({
                 const endProps = props.end || props // Se non c'è 'end', usa le proprietà principali
 
                 // Usa direttamente i valori finali per uno zoom immediato
-                const finalZoom = endProps.level || props.level || 1
-                const finalX = (endProps.x || props.x || 0) / finalZoom
-                const finalY = (endProps.y || props.y || 0) / finalZoom
+                const finalZoom = (endProps as ZoomProperties).level || (props as ZoomProperties).level || 1
+                const finalX = ((endProps as ZoomProperties).x || (props as ZoomProperties).x || 0) / finalZoom
+                const finalY = ((endProps as ZoomProperties).y || (props as ZoomProperties).y || 0) / finalZoom
 
                 zoomTransform = `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`
             }

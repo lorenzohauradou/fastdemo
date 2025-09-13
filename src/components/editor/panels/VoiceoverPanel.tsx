@@ -1,6 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+
+interface VoiceoverProperties {
+    text?: string
+    speaker?: { id?: string; name?: string }
+    trim?: number
+    length?: number
+    audioUrl?: string
+}
 import Image from 'next/image'
 import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -87,12 +95,12 @@ export function VoiceoverPanel() {
     const selectedVoiceoverAnimation = selectedAnimation?.type === 'voiceover' ? selectedAnimation : null
 
     const [text, setText] = useState(
-        selectedVoiceoverAnimation?.properties.text ||
+        (selectedVoiceoverAnimation?.properties as VoiceoverProperties)?.text ||
         currentProject?.voiceoverSettings?.text ||
         ''
     )
     const [selectedSpeaker, setSelectedSpeaker] = useState(
-        selectedVoiceoverAnimation?.properties.speaker?.id ||
+        (selectedVoiceoverAnimation?.properties as VoiceoverProperties)?.speaker?.id ||
         currentProject?.voiceoverSettings?.speaker?.id ||
         speakers[0].id
     )
@@ -114,8 +122,8 @@ export function VoiceoverPanel() {
     // Aggiorna il testo quando cambia la selezione del voiceover
     useEffect(() => {
         if (selectedVoiceoverAnimation) {
-            setText(selectedVoiceoverAnimation.properties.text || '')
-            setSelectedSpeaker(selectedVoiceoverAnimation.properties.speaker?.id || speakers[0].id)
+            setText((selectedVoiceoverAnimation.properties as VoiceoverProperties).text || '')
+            setSelectedSpeaker((selectedVoiceoverAnimation.properties as VoiceoverProperties).speaker?.id || speakers[0].id)
         } else {
             setText(currentProject?.voiceoverSettings?.text || '')
             setSelectedSpeaker(currentProject?.voiceoverSettings?.speaker?.id || speakers[0].id)
@@ -460,10 +468,10 @@ export function VoiceoverPanel() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                                         <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-zinc-700">
-                                            {voiceoverAnim.properties.speaker?.id && (
+                                            {(voiceoverAnim.properties as VoiceoverProperties).speaker?.id && (
                                                 <Image
-                                                    src={speakers.find(s => s.id === voiceoverAnim.properties.speaker.id)?.image || '/images/speakers/adam.png'}
-                                                    alt={voiceoverAnim.properties.speaker.name || 'Speaker'}
+                                                    src={speakers.find(s => s.id === (voiceoverAnim.properties as VoiceoverProperties).speaker?.id)?.image || '/images/speakers/adam.png'}
+                                                    alt={(voiceoverAnim.properties as VoiceoverProperties).speaker?.name || 'Speaker'}
                                                     width={32}
                                                     height={32}
                                                     className="w-full h-full object-cover"
@@ -472,19 +480,19 @@ export function VoiceoverPanel() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-white text-sm font-medium truncate">
-                                                {voiceoverAnim.properties.text || 'Untitled Voiceover'}
+                                                {(voiceoverAnim.properties as VoiceoverProperties).text || 'Untitled Voiceover'}
                                             </p>
                                             <p className="text-gray-400 text-xs">
-                                                {voiceoverAnim.properties.speaker?.name || 'Unknown'} • {voiceoverAnim.properties.text?.length || 0} chars
+                                                {(voiceoverAnim.properties as VoiceoverProperties).speaker?.name || 'Unknown'} • {(voiceoverAnim.properties as VoiceoverProperties).text?.length || 0} chars
                                             </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        {voiceoverAnim.properties.audioUrl && (
+                                        {(voiceoverAnim.properties as VoiceoverProperties).audioUrl && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    const audio = new Audio(voiceoverAnim.properties.audioUrl)
+                                                    const audio = new Audio((voiceoverAnim.properties as VoiceoverProperties).audioUrl!)
                                                     audio.play().catch(console.warn)
                                                 }}
                                                 className="p-1 hover:bg-purple-600/20 rounded transition-all"

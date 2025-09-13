@@ -35,10 +35,6 @@ export function Sidebar() {
                 return <TextPanel />
             case 'voiceover':
                 return <VoiceoverPanel />
-            case 'logos':
-                return <LogosPanel />
-            case 'logoheadline':
-                return <LogoHeadlinePanel />
             default:
                 return <ScenePanel />
         }

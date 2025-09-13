@@ -8,9 +8,22 @@ import { BackgroundRenderer } from './BackgroundRenderer'
 import { VideoPlayer } from './VideoPlayer'
 import { ZoomController } from './ZoomController'
 import { ZoomIndicator } from './ZoomIndicator'
-import { LogoOverlay } from './LogoOverlay'
 import { RenderProgressOverlay } from './RenderProgressOverlay'
 import { useCameraAnimations } from '@/hooks/useCameraAnimations'
+
+interface TextProperties {
+    content?: string
+    subtitle?: string
+    position?: string
+    fontSize?: number
+    fontWeight?: string
+    fontFamily?: string
+    color?: string
+}
+
+interface VoiceoverProperties {
+    audioUrl?: string
+}
 
 export function VideoPreview() {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -108,7 +121,7 @@ export function VideoPreview() {
         if (!voiceoverAudio) return
 
         if (activeVoiceoverAnimation && isPlaying) {
-            const audioUrl = activeVoiceoverAnimation.properties.audioUrl
+            const audioUrl = (activeVoiceoverAnimation.properties as VoiceoverProperties).audioUrl
             if (!audioUrl) return
 
             const voiceoverRelativeTime = clipTime - activeVoiceoverAnimation.startTime
@@ -267,13 +280,13 @@ export function VideoPreview() {
                                 <motion.div
                                     className={`absolute flex items-center justify-center pointer-events-none ${
                                         // Posizionamento basato sulla proprietà position - usa 'top' come default
-                                        activeTextAnimation.properties.position === 'top' ? 'top-8 left-0 right-0 h-auto' :
-                                            activeTextAnimation.properties.position === 'bottom' ? 'bottom-18 left-0 right-0 h-auto' :
-                                                activeTextAnimation.properties.position === 'left' ? 'left-8 top-0 bottom-0 w-auto flex-col' :
-                                                    activeTextAnimation.properties.position === 'right' ? 'right-8 top-0 bottom-0 w-auto flex-col' :
+                                        (activeTextAnimation.properties as TextProperties).position === 'top' ? 'top-8 left-0 right-0 h-auto' :
+                                            (activeTextAnimation.properties as TextProperties).position === 'bottom' ? 'bottom-18 left-0 right-0 h-auto' :
+                                                (activeTextAnimation.properties as TextProperties).position === 'left' ? 'left-8 top-0 bottom-0 w-auto flex-col' :
+                                                    (activeTextAnimation.properties as TextProperties).position === 'right' ? 'right-8 top-0 bottom-0 w-auto flex-col' :
                                                         'top-8 left-0 right-0 h-auto' // Default: top center come fallback
                                         }`}
-                                    variants={getTextVariants(activeTextAnimation.properties.position || 'top')}
+                                    variants={getTextVariants((activeTextAnimation.properties as TextProperties).position || 'top')}
                                     initial="hidden"
                                     animate="visible"
                                     exit="hidden"
@@ -283,23 +296,23 @@ export function VideoPreview() {
                                         <h1
                                             className="text-white font-bold leading-tight"
                                             style={{
-                                                fontSize: `${activeTextAnimation.properties.fontSize || 48}px`,
-                                                fontWeight: activeTextAnimation.properties.fontWeight || 'bold',
-                                                fontFamily: activeTextAnimation.properties.fontFamily || 'Inter',
-                                                color: activeTextAnimation.properties.color || '#ffffff',
+                                                fontSize: `${(activeTextAnimation.properties as TextProperties).fontSize || 48}px`,
+                                                fontWeight: (activeTextAnimation.properties as TextProperties).fontWeight || 'bold',
+                                                fontFamily: (activeTextAnimation.properties as TextProperties).fontFamily || 'Inter',
+                                                color: (activeTextAnimation.properties as TextProperties).color || '#ffffff',
                                                 textShadow: '0 4px 20px rgba(0,0,0,0.5)',
                                             }}
                                         >
-                                            {activeTextAnimation.properties.content}
+                                            {(activeTextAnimation.properties as TextProperties).content}
                                         </h1>
-                                        {activeTextAnimation.properties.subtitle && (
+                                        {(activeTextAnimation.properties as TextProperties).subtitle && (
                                             <p
                                                 className="text-white/80 mt-2"
                                                 style={{
-                                                    fontSize: `${(activeTextAnimation.properties.fontSize || 48) * 0.6}px`,
+                                                    fontSize: `${((activeTextAnimation.properties as TextProperties).fontSize || 48) * 0.6}px`,
                                                 }}
                                             >
-                                                {activeTextAnimation.properties.subtitle}
+                                                {(activeTextAnimation.properties as TextProperties).subtitle}
                                             </p>
                                         )}
                                     </div>
@@ -367,11 +380,6 @@ export function VideoPreview() {
                                 </button>
                             </div>
                         )}
-
-                        <LogoOverlay
-                            activeClip={activeClip}
-                            clipTime={clipTime}
-                        />
 
                         <RenderProgressOverlay />
                     </div>
