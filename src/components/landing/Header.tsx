@@ -23,8 +23,8 @@ export function Header() {
                             className="object-contain w-full h-full"
                         />
                     </div>
-                    <span className="text-xl font-bold text-white">
-                        ShowcaseReady
+                    <span className="text-xl font-bold text-white min-w-[130px]">
+                        Screen Show
                     </span>
                 </Link>
                 <nav className="hidden lg:flex space-x-8 justify-start items-left w-full ml-16">

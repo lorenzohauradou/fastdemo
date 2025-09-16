@@ -1,6 +1,7 @@
 "use client"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+
 export function Video() {
     const isMobile = useIsMobile()
 
@@ -34,13 +35,13 @@ export function Video() {
                         </div>
                     </div>
 
-                    {/* <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
-                        <Link href="/login">
-                            <div className="bg-gray-900/80 text-white px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-xs lg:text-sm flex items-center gap-2">
-                                <span>Start Vibe Scaling Now</span>
-                                <span>↓</span>
-                            </div>
-                        </Link>
+                    {/* <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+
+                        <div className="bg-zinc-900/80 text-white px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-xs lg:text-xl flex items-center gap-2 opacity-80">
+                            <span>This video was entirely created using ShowcaseReady</span>
+                            <span>↓</span>
+                        </div>
+
                     </div> */}
                 </div>
             </div>
