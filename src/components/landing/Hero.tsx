@@ -46,7 +46,8 @@ export function Hero() {
             const formData = new FormData()
             formData.append('file', file)
 
-            const uploadResponse = await fetch('/api/upload', {
+            // Chiamata diretta al backend per bypassare il limite di Vercel (4.5MB)
+            const uploadResponse = await fetch('https://control-incoming-premium-narrow.trycloudflare.com/api/upload', {
                 method: 'POST',
                 body: formData
             })
