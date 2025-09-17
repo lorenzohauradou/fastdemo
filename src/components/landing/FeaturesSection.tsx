@@ -6,22 +6,22 @@ export function FeaturesSection() {
     const mainFeatures = [
         {
             id: 1,
-            title: "Auto scale up/down upon element interaction",
-            subtitle: "We track cursor actions and apply zoom in/out to make the video more interactive",
+            title: "Zoom in/out upon element interaction",
+            subtitle: "We apply zoom in/out to make the video more interactive",
             videoSrc: "/videos/features/showcaseready-zoom-feature.mp4",
             hasVideo: true
         },
         {
             id: 2,
             title: "Camera capture",
-            subtitle: "Record your webcam alongside your screen — great for product demos and walkthroughs.",
+            subtitle: "Record your webcam alongside your screen",
             videoPlaceholder: "video-2.mp4",
             hasVideo: false
         },
         {
             id: 3,
-            title: "Convenient video editor",
-            subtitle: "Manage zoom effects and many more video properties.",
+            title: "Add background & Animations",
+            subtitle: "Make your landing page a favour, create engaging content",
             videoPlaceholder: "video-3.mp4",
             hasVideo: false
         }
