@@ -17,7 +17,7 @@ export function Footer() {
                         <div className="flex items-center gap-3">
                             <Image src="/favicon.ico" alt="ShowcaseReady" width={32} height={32} />
                             <span className="text-2xl font-bold text-white">
-                                ShowcaseReady
+                                SnapScreen
                             </span>
                         </div>
                         <p className="text-gray-400 text-lg">
@@ -51,7 +51,7 @@ export function Footer() {
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-6">
                         <p className="text-gray-400 text-sm">
-                            © 2025 ShowcaseReady, Inc. All rights reserved.
+                            © 2025 SnapScreen, Inc. All rights reserved.
                         </p>
                         <div className="flex items-center gap-4">
                             <Link

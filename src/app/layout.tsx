@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ShowcaseReady - screen recording editor",
+  title: "SnapScreen - screen recording editor",
   description: "Professional video editing with zoom and pan animations for your SaaS",
 };
 

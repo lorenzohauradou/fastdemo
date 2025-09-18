@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             )
         }
-        const backendUrl = process.env.BACKEND_URL || 'https://control-incoming-premium-narrow.trycloudflare.com'
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000'
         console.log('🔍 BACKEND_URL:', backendUrl)
         try {
             const backendFormData = new FormData()

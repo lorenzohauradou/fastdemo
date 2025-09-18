@@ -140,13 +140,18 @@
   }
   
   /* Nasconde le scrollbar ma mantiene la funzionalità scroll */
-  * {
+  .hide-scrollbar {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
   }
   
-  *::-webkit-scrollbar {
+  .hide-scrollbar::-webkit-scrollbar {
     display: none; /* WebKit */
+  }
+  
+  html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 

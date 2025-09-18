@@ -17,14 +17,14 @@ export function Header() {
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
                         <Image
                             src="/favicon.ico"
-                            alt="ShowcaseReady Logo"
+                            alt="SnapScreen Logo"
                             width={32}
                             height={32}
                             className="object-contain w-full h-full"
                         />
                     </div>
-                    <span className="text-xl font-bold text-white min-w-[130px]">
-                        Screen Show
+                    <span className="text-xl font-bold text-white min-w-[200px]">
+                        SnapScreen
                     </span>
                 </Link>
                 <nav className="hidden lg:flex space-x-8 justify-start items-left w-full ml-16">

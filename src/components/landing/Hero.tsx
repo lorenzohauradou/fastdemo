@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Link2, Brain } from "lucide-react"
 // import { useSession } from "next-auth/react"
 import Link from "next/link"
@@ -45,10 +44,7 @@ export function Hero() {
             // Upload prima di creare il progetto
             const formData = new FormData()
             formData.append('file', file)
-
-            // Chiamata diretta al backend per bypassare il limite di Vercel (4.5MB)
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://control-incoming-premium-narrow.trycloudflare.com'
-            const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
+            const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData
             })
@@ -181,29 +177,29 @@ export function Hero() {
                     </div>
                 </div>
             )}
-            <div className="relative z-10 container mx-auto px-4 pt-36 pb-16">
-                <div className="text-center md:mb-12">
+            <div className="relative z-10 container mx-auto px-4 pt-36 sm:pt-28 md:pt-36 pb-8 sm:pb-12 md:pb-16">
+                <div className="text-center mb-8 md:mb-12">
 
-                    <h1 className="text-3xl md:text-3xl lg:text-5xl font-bold mb-4 md:mb-6 leading-[1.05] text-white max-w-6xl mx-auto">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-[1.05] text-white max-w-6xl mx-auto px-2">
                         <span className="block mb-1">
                             Turn Screen Recordings into Stunning Demos
 
                         </span>
                     </h1>
-                    <p className="text-sm md:text-lg text-[#d1d5db] mb-6 md:mb-8 max-w-4xl mx-auto leading-relaxed px-4">
+                    <p className="text-sm sm:text-base md:text-lg text-[#d1d5db] mb-6 md:mb-8 max-w-4xl mx-auto leading-relaxed px-4">
                         Add fluid 3D animations, smooth zooms, and dynamic backgrounds to your SaaS showcase in minutes
                     </p>
 
-                    <div className="flex flex-col md:flex-row justify-center items-center gap-3 mb-8 md:mb-12 px-4">
-                        <div className="w-full md:w-[400px] flex items-center bg-zinc-800/60 backdrop-blur-sm border border-gray-700 rounded-full px-4 py-2.5 md:px-4 md:py-2.5">
+                    <div className="flex flex-col md:flex-row justify-center items-center gap-3 mb-8 md:mb-12 px-4 max-w-5xl mx-auto">
+                        <div className="w-full md:w-[400px] flex items-center bg-zinc-800/60 backdrop-blur-sm border border-gray-700 rounded-full px-3 sm:px-4 py-2.5">
                             <Link2 className="w-4 h-4 text-[#9ca3af] mr-2 flex-shrink-0" />
-                            <span className="text-[#bbbcbe] text-sm flex-1">{isMobile ? "Add your screen recording" : "Add your screen recording"}</span>
+                            <span className="text-[#bbbcbe] text-xs sm:text-sm flex-1 truncate">Add your screen recording</span>
                             <Button
                                 onClick={handleUploadClick}
                                 disabled={isProcessing}
-                                className="ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50"
+                                className="ml-2 bg-white text-black hover:bg-gray-100 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all disabled:opacity-50 whitespace-nowrap"
                             >
-                                {isProcessing ? 'Processing...' : 'Upload video'}
+                                {isProcessing ? 'Processing...' : isMobile ? 'Upload' : 'Upload video'}
                             </Button>
                         </div>
 
