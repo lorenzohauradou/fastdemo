@@ -10,6 +10,7 @@ import { ScreenRecorder } from "./ScreenRecorder"
 import { useRouter } from "next/navigation"
 import { useRef, useState, useCallback } from "react"
 import { useEditorStore } from "@/lib/store"
+import { upload } from '@vercel/blob/client'
 
 export function Hero() {
     // const { data: session } = useSession()
@@ -41,31 +42,19 @@ export function Hero() {
         setIsProcessing(true)
 
         try {
-            // Upload prima di creare il progetto
-            const formData = new FormData()
-            formData.append('file', file)
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
+            // Upload diretto a Vercel Blob
+            const blob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/video/upload',
             })
 
-            if (!uploadResponse.ok) {
-                const errorData = await uploadResponse.json()
-                alert(`Upload error: ${errorData.error}`)
-                setIsProcessing(false)
-                return
-            }
+            console.log('Upload completato:', blob)
 
-            const uploadResult = await uploadResponse.json()
-            console.log('Upload completed:', uploadResult)
-
-            // Crea URL locale per il preview
-            const videoUrl = URL.createObjectURL(file)
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
             // Ottieni la durata del video
             const tempVideo = document.createElement('video')
-            tempVideo.src = videoUrl
+            tempVideo.src = blob.url
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
@@ -73,7 +62,8 @@ export function Hero() {
                 // Crea il progetto con struttura multi-clip
                 const newProject = {
                     name: videoName,
-                    videoFilename: file.name, // Salva il filename originale per il backend
+                    videoFilename: file.name,
+                    blobUrl: blob.url,
                     clips: [{
                         id: 'main-video',
                         name: videoName,
@@ -81,8 +71,9 @@ export function Hero() {
                         endTime: videoDuration,
                         duration: videoDuration,
                         videoFile: file,
-                        videoUrl: videoUrl,
-                        videoFilename: file.name, // Salva anche nella clip
+                        videoUrl: blob.url,
+                        videoFilename: file.name,
+                        blobUrl: blob.url,
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
@@ -101,13 +92,15 @@ export function Hero() {
 
                 // Naviga all'editor
                 router.push('/editor')
+                setIsProcessing(false)
             }
 
             tempVideo.onerror = () => {
-                alert('Error uploading video')
+                alert('Error processing video')
                 setIsProcessing(false)
             }
         } catch (error) {
+            console.error('Errore upload:', error)
             alert('Error uploading video')
             setIsProcessing(false)
         }
