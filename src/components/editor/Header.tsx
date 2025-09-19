@@ -150,6 +150,7 @@ export function Header() {
                 name: currentProject.name,
                 duration: currentProject.duration,
                 videoFilename: currentProject.videoFilename, // Filename del video caricato
+                blobUrl: currentProject.blobUrl, // URL di Vercel Blob
                 animations: allAnimations, // Per compatibilità legacy
                 clips: clipsData, // Nuovi dati strutturati per multi-clip
                 backgroundSettings: currentProject.backgroundSettings,
@@ -160,6 +161,7 @@ export function Header() {
                 // Aggiungi dati webcam esplicitamente
                 hasWebcam: currentProject.hasWebcam || false,
                 webcamFilename: currentProject.webcamFilename,
+                webcamBlobUrl: currentProject.webcamBlobUrl, // URL webcam Vercel Blob
                 // videoTrimming rimosso - ora ogni clip ha il suo trimming
                 isMultiClip: clipsData.length > 1, // Flag per indicare se è multi-clip
                 // Aggiungi impostazioni di qualità

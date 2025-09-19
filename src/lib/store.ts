@@ -81,11 +81,13 @@ export interface Project {
   videoFile?: File
   videoUrl?: string
   videoFilename?: string  // Nome del file video per il backend
+  blobUrl?: string        // URL di Vercel Blob per il video principale
   // Webcam properties (legacy single clip) 
   hasWebcam?: boolean
   webcamFile?: File
   webcamUrl?: string
   webcamFilename?: string
+  webcamBlobUrl?: string  // URL di Vercel Blob per la webcam
   // Nuova struttura multi-clip
   clips: VideoClip[]     // Array di clip video
   activeClipId: string | null  // Clip attualmente attiva per editing
