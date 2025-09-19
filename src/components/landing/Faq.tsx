@@ -13,12 +13,12 @@ export function FAQ() {
 
     const faqItems: FAQItem[] = [
         {
-            question: "How is ShowcaseReady different from Loom?",
-            answer: "Loom is a fantastic tool for quick, internal communication. ShowcaseReady is designed for a different job: creating polished, professional video assets for your marketing. While Loom gives you a raw recording, we provide the tools to transform it into a compelling product demo with custom backgrounds, device frames, animated text, background music, and natural-sounding AI voiceovers—all without needing a separate video editor."
+            question: "How is Snap Screen different from Loom?",
+            answer: "Loom is a fantastic tool for quick, internal communication. Snap Screen is designed for a different job: creating polished, professional video assets for your marketing. While Loom gives you a raw recording, we provide the tools to transform it into a compelling product demo with custom backgrounds, device frames, animated text, background music, and natural-sounding AI voiceovers—all without needing a separate video editor."
         },
         {
             question: "Do I need any video editing experience?",
-            answer: "Absolutely not. ShowcaseReady is built specifically for founders, marketers, and solopreneurs, not professional video editors. Our interface is intuitive and streamlined, allowing you to add professional touches like smooth zoom animations and text overlays in just a few clicks. The goal is to get you a stunning result in minutes, not hours."
+            answer: "Absolutely not. Snap Screen is built specifically for founders, marketers, and solopreneurs, not professional video editors. Our interface is intuitive and streamlined, allowing you to add professional touches like smooth zoom animations and text overlays in just a few clicks. The goal is to get you a stunning result in minutes, not hours."
         },
         {
             question: "How do the AI Voiceovers work?",
