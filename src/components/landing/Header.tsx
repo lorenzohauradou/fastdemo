@@ -19,15 +19,19 @@ export function Header() {
         >
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center">
-
-                    <Image
-                        src="/favicon.ico"
-                        alt="SnapScreen Logo"
-                        width={40}
-                        height={40}
-                        className="object-contain w-full h-full"
-                    />
-
+                    <motion.div
+                        className="w-16 h-16 flex items-center justify-center overflow-hidden"
+                        whileHover={{ scale: 1.05, rotate: 2 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                    >
+                        <Image
+                            src="/favicon.ico"
+                            alt="SnapScreen Logo"
+                            width={40}
+                            height={40}
+                            className="object-contain w-full h-full"
+                        />
+                    </motion.div>
                     <motion.span
                         className="ml-4 text-2xl font-bold text-white min-w-[200px]"
                         initial={{ opacity: 0, x: -20 }}

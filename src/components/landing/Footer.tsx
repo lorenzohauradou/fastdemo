@@ -9,7 +9,7 @@ export function Footer() {
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-8">
                     <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden"> <Image src="/favicon.ico" alt="SnapScreen" width={64} height={64} /></div>
+                        <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden"> <Image src="/favicon.ico" alt="SnapScreen" width={64} height={64} /></div>
                         <span className="text-2xl font-bold text-white">
                             Snap Screen
                         </span>
