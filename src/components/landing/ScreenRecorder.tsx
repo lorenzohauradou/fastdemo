@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Video, Camera } from 'lucide-react'
 import fixWebmDuration from 'fix-webm-duration'
+import { upload } from '@vercel/blob/client'
 
 interface ScreenRecorderProps {
     onRecordingComplete?: (videoData: any) => void
@@ -68,7 +69,6 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                     })
                     webcamStreamRef.current = webcamStream
                     webcamChunksRef.current = []
-                    console.log('✅ Webcam permission granted')
                 } catch (webcamError) {
                     console.warn('Webcam not available:', webcamError)
                     alert('Webcam not available. Recording screen only.')
@@ -268,32 +268,23 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                 const videoDuration = duration
                 const videoName = `Screen Recording ${new Date().toLocaleString()}`
 
-                // Upload del file al backend prima di creare il progetto
+                // Upload del video principale a Vercel Blob
+                let videoBlobUrl = videoUrl
                 try {
-                    const formData = new FormData()
-                    formData.append('file', videoFile)
-
-                    const uploadResponse = await fetch('/api/upload', {
-                        method: 'POST',
-                        body: formData
+                    const videoBlob = await upload(videoFile.name, videoFile, {
+                        access: 'public',
+                        handleUploadUrl: '/api/video/upload',
                     })
-
-                    if (!uploadResponse.ok) {
-                        const errorData = await uploadResponse.json()
-                        alert(`Errore upload: ${errorData.error}`)
-                        setIsProcessing(false)
-                        return
-                    }
-
-                    const uploadResult = await uploadResponse.json()
+                    videoBlobUrl = videoBlob.url
+                    console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
                 } catch (uploadError) {
-                    console.warn('Error upload screen recording:', uploadError)
-                    // Continua comunque per permettere il preview locale
+                    console.warn('Errore upload screen recording su Vercel Blob:', uploadError)
+                    // Usa l'URL locale come fallback
                 }
 
                 // Upload webcam se disponibile
                 let webcamFile = null
-                // Se ci sono chunks webcam, significa che l'utente ha scelto di includerla
+                let webcamBlobUrl = undefined
                 const hasWebcamData = webcamChunksRef.current.length > 0
 
                 if (hasWebcamData) {
@@ -304,40 +295,39 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                             type: mimeType
                         })
 
-
-                        const webcamFormData = new FormData()
-                        webcamFormData.append('file', webcamFile)
-
-                        const webcamUploadResponse = await fetch('/api/upload', {
-                            method: 'POST',
-                            body: webcamFormData
-                        })
-
-                        if (webcamUploadResponse.ok) {
-                            const webcamUploadResult = await webcamUploadResponse.json()
+                        // Upload webcam a Vercel Blob
+                        try {
+                            const webcamBlobResult = await upload(webcamFile.name, webcamFile, {
+                                access: 'public',
+                                handleUploadUrl: '/api/video/upload',
+                            })
+                            webcamBlobUrl = webcamBlobResult.url
+                            console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
+                        } catch (webcamUploadError) {
+                            console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
+                            // Usa l'URL locale come fallback
+                            webcamBlobUrl = URL.createObjectURL(webcamFile)
                         }
-                    } catch (webcamUploadError) {
-                        console.warn('Error upload webcam:', webcamUploadError)
+                    } catch (webcamProcessError) {
+                        console.warn('Errore processing webcam:', webcamProcessError)
                     }
-                } else if (includeWebcam) {
-                    console.warn('Error')
                 }
 
                 // crea un nuovo progetto con il sistema multi-clip (stesso formato di VideoUpload)
-                const webcamUrl = webcamFile ? URL.createObjectURL(webcamFile) : undefined
                 const hasWebcam = hasWebcamData && webcamFile !== null
-
 
                 const newProject = {
                     name: videoName,
-                    videoFilename: videoFile.name, // Salva il filename originale per il backend
-                    videoUrl: videoUrl,
+                    videoFilename: videoFile.name,
+                    blobUrl: videoBlobUrl,
+                    videoUrl: videoBlobUrl,
                     videoFile: videoFile,
                     duration: videoDuration,
                     originalDuration: videoDuration,
                     // Aggiungi dati webcam se disponibili
                     webcamFilename: webcamFile?.name,
-                    webcamUrl: webcamUrl,
+                    webcamBlobUrl: webcamBlobUrl,
+                    webcamUrl: webcamBlobUrl,
                     webcamFile: webcamFile || undefined,
                     hasWebcam: hasWebcam,
                     clips: [{
@@ -347,15 +337,17 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                         endTime: videoDuration,
                         duration: videoDuration,
                         videoFile: videoFile,
-                        videoUrl: videoUrl,
-                        videoFilename: videoFile.name, // Salva anche nella clip
+                        videoUrl: videoBlobUrl,
+                        videoFilename: videoFile.name,
+                        blobUrl: videoBlobUrl,
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
                         trimEnd: 0,
                         // Aggiungi dati webcam anche nella clip
                         webcamFilename: webcamFile?.name,
-                        webcamUrl: webcamUrl,
+                        webcamBlobUrl: webcamBlobUrl,
+                        webcamUrl: webcamBlobUrl,
                         webcamFile: webcamFile || undefined,
                         hasWebcam: hasWebcam
                     }],
@@ -369,7 +361,7 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                 // Salva nel localStorage (stesso formato di VideoUpload)
                 localStorage.setItem('currentVideo', JSON.stringify({
                     name: videoName,
-                    url: videoUrl,
+                    url: videoBlobUrl,
                     file: videoFile.name,
                     size: videoFile.size,
                     type: videoFile.type
@@ -415,7 +407,7 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                 webcamRecorderRef.current.stop()
             }
         }
-    }, []) // Array vuoto - esegue solo al mount/unmount
+    }, [])
 
     if (isProcessing) {
         return (

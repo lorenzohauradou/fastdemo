@@ -3,10 +3,10 @@
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useEditorStore } from '@/lib/store'
-import { useApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Upload } from 'lucide-react'
+import { upload } from '@vercel/blob/client'
 
 interface VideoUploadProps {
     onVideoUploaded?: (videoData: any) => void
@@ -15,7 +15,6 @@ interface VideoUploadProps {
 
 export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProps) {
     const router = useRouter()
-    const api = useApi()
     const { setCurrentProject } = useEditorStore()
     const [isDragging, setIsDragging] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
@@ -78,11 +77,14 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         setUploadProgress(0)
 
         try {
-            // Upload del file 
-            await api.uploadVideo(file)
+            // upload Vercel Blob
+            const blob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/video/upload',
+            })
 
-            // Crea URL locale per il preview
-            const videoUrl = URL.createObjectURL(file)
+            console.log('Upload completato:', blob)
+
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
             // Simula progress upload veloce
@@ -100,7 +102,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
 
             // Crea un video temporaneo per ottenere la durata
             const tempVideo = document.createElement('video')
-            tempVideo.src = videoUrl
+            tempVideo.src = blob.url
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
@@ -109,7 +111,8 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 const newProject = {
                     name: videoName,
                     videoFilename: file.name,
-                    videoUrl: videoUrl,
+                    blobUrl: blob.url,
+                    videoUrl: blob.url,
                     videoFile: file,
                     duration: videoDuration,
                     originalDuration: videoDuration,
@@ -120,8 +123,9 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                         endTime: videoDuration,
                         duration: videoDuration,
                         videoFile: file,
-                        videoUrl: videoUrl,
-                        videoFilename: file.name, // Salva anche nella clip
+                        videoUrl: blob.url,
+                        videoFilename: file.name,
+                        blobUrl: blob.url,
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
@@ -137,7 +141,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 // Salva nel localStorage
                 localStorage.setItem('currentVideo', JSON.stringify({
                     name: videoName,
-                    url: videoUrl,
+                    url: blob.url,
                     file: file.name,
                     size: file.size,
                     type: file.type
@@ -145,14 +149,16 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
 
                 setCurrentProject(newProject)
                 router.push('/editor')
+                setIsUploading(false)
             }
 
             // Fallback se non riusciamo a ottenere la durata
             tempVideo.onerror = () => {
                 const newProject = {
                     name: videoName,
-                    videoFilename: file.name, // Salva il filename originale per il backend
-                    videoUrl: videoUrl,
+                    videoFilename: file.name,
+                    blobUrl: blob.url,
+                    videoUrl: blob.url,
                     videoFile: file,
                     duration: 30, // Durata di default
                     originalDuration: 30,
@@ -163,8 +169,9 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                         endTime: 30,
                         duration: 30,
                         videoFile: file,
-                        videoUrl: videoUrl,
-                        videoFilename: file.name, // Salva anche nella clip
+                        videoUrl: blob.url,
+                        videoFilename: file.name,
+                        blobUrl: blob.url,
                         originalDuration: 30,
                         animations: [],
                         trimStart: 0,
@@ -180,7 +187,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 // Salva nel localStorage
                 localStorage.setItem('currentVideo', JSON.stringify({
                     name: videoName,
-                    url: videoUrl,
+                    url: blob.url,
                     file: file.name,
                     size: file.size,
                     type: file.type
@@ -188,6 +195,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
 
                 setCurrentProject(newProject)
                 router.push('/editor')
+                setIsUploading(false)
             }
 
         } catch (error) {

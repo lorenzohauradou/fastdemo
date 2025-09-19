@@ -7,6 +7,7 @@ import { Project, useEditorStore } from '@/lib/store'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import fixWebmDuration from 'fix-webm-duration'
+import { upload } from '@vercel/blob/client'
 
 interface MediaSectionProps {
     currentProject: Project | null
@@ -78,25 +79,19 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
         setIsUploading(true)
 
         try {
-            // Upload del file al backend
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
+            // Upload a Vercel Blob
+            const blob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/video/upload',
             })
 
+            console.log('Upload completato:', blob)
 
-            const uploadResult = await uploadResponse.json()
-
-            // URL locale per il preview
-            const videoUrl = URL.createObjectURL(file)
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
             // durata del video
             const tempVideo = document.createElement('video')
-            tempVideo.src = videoUrl
+            tempVideo.src = blob.url
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
@@ -105,7 +100,8 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 const newProject = {
                     name: videoName,
                     videoFilename: file.name,
-                    videoUrl: videoUrl,
+                    blobUrl: blob.url,
+                    videoUrl: blob.url,
                     videoFile: file,
                     duration: videoDuration,
                     originalDuration: videoDuration,
@@ -116,8 +112,9 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                         endTime: videoDuration,
                         duration: videoDuration,
                         videoFile: file,
-                        videoUrl: videoUrl,
+                        videoUrl: blob.url,
                         videoFilename: file.name,
+                        blobUrl: blob.url,
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
@@ -133,7 +130,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 // Salva nel localStorage
                 localStorage.setItem('currentVideo', JSON.stringify({
                     name: videoName,
-                    url: videoUrl,
+                    url: blob.url,
                     file: file.name,
                     size: file.size,
                     type: file.type
@@ -142,7 +139,6 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 setCurrentProject(newProject)
                 setIsUploading(false)
             }
-
 
         } catch (error) {
             console.error('Upload error:', error)
@@ -336,27 +332,24 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             const videoDuration = actualDuration
             const videoName = `Screen Recording ${new Date().toLocaleString()}`
 
+            // Upload del video principale a Vercel Blob
+            let videoBlobUrl = videoUrl
             try {
-                const formData = new FormData()
-                formData.append('file', videoFile)
-
-                const uploadResponse = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
+                const videoBlob = await upload(videoFile.name, videoFile, {
+                    access: 'public',
+                    handleUploadUrl: '/api/video/upload',
                 })
-
-                if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json()
-                    console.warn(`Upload error: ${errorData.error}`)
-                }
-
+                videoBlobUrl = videoBlob.url
+                console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
             } catch (uploadError) {
-                console.warn('Errore upload screen recording:', uploadError)
+                console.warn('Errore upload screen recording su Vercel Blob:', uploadError)
+                // Usa l'URL locale come fallback
             }
 
             let webcamFile = null
             const hasWebcamData = webcamChunksRef.current.length > 0
 
+            let webcamBlobUrl = undefined
             if (hasWebcamData) {
                 try {
                     const webcamBlob = new Blob(webcamChunksRef.current, { type: mimeType })
@@ -365,34 +358,37 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                         type: mimeType
                     })
 
-                    const webcamFormData = new FormData()
-                    webcamFormData.append('file', webcamFile)
-
-                    const webcamUploadResponse = await fetch('/api/upload', {
-                        method: 'POST',
-                        body: webcamFormData
-                    })
-
-                    if (webcamUploadResponse.ok) {
-                        const webcamUploadResult = await webcamUploadResponse.json()
+                    // Upload webcam a Vercel Blob
+                    try {
+                        const webcamBlobResult = await upload(webcamFile.name, webcamFile, {
+                            access: 'public',
+                            handleUploadUrl: '/api/video/upload',
+                        })
+                        webcamBlobUrl = webcamBlobResult.url
+                        console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
+                    } catch (webcamUploadError) {
+                        console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
+                        // Usa l'URL locale come fallback
+                        webcamBlobUrl = URL.createObjectURL(webcamFile)
                     }
-                } catch (webcamUploadError) {
-                    console.warn('Error upload webcam:', webcamUploadError)
+                } catch (webcamProcessError) {
+                    console.warn('Errore processing webcam:', webcamProcessError)
                 }
             }
 
-            const webcamUrl = webcamFile ? URL.createObjectURL(webcamFile) : undefined
             const hasWebcam = hasWebcamData && webcamFile !== null
 
             const newProject = {
                 name: videoName,
                 videoFilename: videoFile.name,
-                videoUrl: videoUrl,
+                blobUrl: videoBlobUrl,
+                videoUrl: videoBlobUrl,
                 videoFile: videoFile,
                 duration: videoDuration,
                 originalDuration: videoDuration,
                 webcamFilename: webcamFile?.name,
-                webcamUrl: webcamUrl,
+                webcamBlobUrl: webcamBlobUrl,
+                webcamUrl: webcamBlobUrl,
                 webcamFile: webcamFile || undefined,
                 hasWebcam: hasWebcam,
                 clips: [{
@@ -402,14 +398,16 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                     endTime: videoDuration,
                     duration: videoDuration,
                     videoFile: videoFile,
-                    videoUrl: videoUrl,
+                    videoUrl: videoBlobUrl,
                     videoFilename: videoFile.name,
+                    blobUrl: videoBlobUrl,
                     originalDuration: videoDuration,
                     animations: [],
                     trimStart: 0,
                     trimEnd: 0,
                     webcamFilename: webcamFile?.name,
-                    webcamUrl: webcamUrl,
+                    webcamBlobUrl: webcamBlobUrl,
+                    webcamUrl: webcamBlobUrl,
                     webcamFile: webcamFile || undefined,
                     hasWebcam: hasWebcam
                 }],
@@ -423,7 +421,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             // Salva nel localStorage
             localStorage.setItem('currentVideo', JSON.stringify({
                 name: videoName,
-                url: videoUrl,
+                url: videoBlobUrl,
                 file: videoFile.name,
                 size: videoFile.size,
                 type: videoFile.type

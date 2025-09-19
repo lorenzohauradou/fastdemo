@@ -138,21 +138,13 @@
   body {
     @apply bg-background text-foreground;
   }
-  
-  /* Nasconde le scrollbar ma mantiene la funzionalità scroll */
-  .hide-scrollbar {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* Internet Explorer 10+ */
-  }
+ 
   
   .hide-scrollbar::-webkit-scrollbar {
     display: none; /* WebKit */
   }
   
-  html, body {
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
+
 }
 
 @keyframes scroll-left {
