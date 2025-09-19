@@ -8,9 +8,9 @@ import { FAQ } from "@/components/landing/Faq"
 import { FeaturesBanner } from "@/components/landing/FeaturesBanner"
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <Header />
-      <main className="overflow-x-hidden bg-black">
+      <main className="bg-black">
         <Hero />
         <FeaturesBanner />
         <FeaturesSection />

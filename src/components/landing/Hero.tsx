@@ -152,7 +152,7 @@ export function Hero() {
 
     return (
         <section
-            className={`relative min-h-screen bg-black overflow-hidden transition-all duration-300 ${isDragging ? 'bg-zinc-900/50' : ''
+            className={`relative min-h-screen bg-black transition-all duration-300 ${isDragging ? 'bg-zinc-900/50' : ''
                 }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

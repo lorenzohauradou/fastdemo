@@ -137,6 +137,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden; /* Previene scroll orizzontale globale */
+    overflow-y: auto; /* Permette scroll verticale */
+  }
+  
+  html {
+    overflow-x: hidden; /* Previene scroll orizzontale anche su html */
   }
  
   

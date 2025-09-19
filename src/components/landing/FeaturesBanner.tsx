@@ -15,7 +15,7 @@ export function FeaturesBanner() {
     ]
 
     return (
-        <section className="py-16 bg-black text-white overflow-hidden">
+        <section className="py-16 bg-black text-white">
             <div className="text-center mb-12">
                 <h2 className="text-4xl text-white mb-2">
                     Discover all the features
@@ -24,7 +24,7 @@ export function FeaturesBanner() {
                     Showcase your product with ease
                 </p>
             </div>
-            <div className="relative overflow-hidden">
+            <div className="relative">
                 <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black to-transparent z-10"></div>
                 <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black to-transparent z-10"></div>
 
