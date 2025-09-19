@@ -24,7 +24,7 @@ export function FeaturesBanner() {
                     Showcase your product with ease
                 </p>
             </div>
-            <div className="relative">
+            <div className="relative overflow-x-hidden">
                 <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black to-transparent z-10"></div>
                 <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black to-transparent z-10"></div>
 
