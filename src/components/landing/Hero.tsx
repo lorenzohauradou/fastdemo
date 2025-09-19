@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { Link2, Brain } from "lucide-react"
 // import { useSession } from "next-auth/react"
-import Link from "next/link"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Video } from "./Video"
 import { ScreenRecorder } from "./ScreenRecorder"
@@ -11,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { useRef, useState, useCallback } from "react"
 import { useEditorStore } from "@/lib/store"
 import { upload } from '@vercel/blob/client'
+import { motion } from "framer-motion"
 
 export function Hero() {
     // const { data: session } = useSession()
@@ -173,35 +173,79 @@ export function Hero() {
             <div className="relative z-10 container mx-auto px-4 pt-36 sm:pt-28 md:pt-36 pb-8 sm:pb-12 md:pb-16">
                 <div className="text-center mb-8 md:mb-12">
 
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-[1.05] text-white max-w-6xl mx-auto px-2">
+                    <motion.h1
+                        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-[1.05] text-white max-w-6xl mx-auto px-2"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                    >
                         <span className="block mb-1">
                             Turn Screen Recordings into Stunning Demos
 
                         </span>
-                    </h1>
-                    <p className="text-sm sm:text-base md:text-lg text-[#d1d5db] mb-6 md:mb-8 max-w-4xl mx-auto leading-relaxed px-4">
+                    </motion.h1>
+                    <motion.p
+                        className="text-sm sm:text-base md:text-lg text-[#d1d5db] mb-6 md:mb-8 max-w-4xl mx-auto leading-relaxed px-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+                    >
                         Add fluid 3D animations, smooth zooms, and dynamic backgrounds to your SaaS showcase in minutes
-                    </p>
+                    </motion.p>
 
-                    <div className="flex flex-col md:flex-row justify-center items-center gap-3 mb-8 md:mb-12 px-4 max-w-5xl mx-auto">
-                        <div className="w-full md:w-[400px] flex items-center bg-zinc-800/60 backdrop-blur-sm border border-gray-700 rounded-full px-3 sm:px-4 py-2.5">
+                    <motion.div
+                        className="flex flex-col md:flex-row justify-center items-center gap-3 mb-8 md:mb-12 px-4 max-w-5xl mx-auto"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
+                    >
+                        <motion.div
+                            className="w-full md:w-[400px] flex items-center bg-zinc-800/60 backdrop-blur-sm border border-gray-700 rounded-full px-3 sm:px-4 py-2.5"
+                            whileHover={{ scale: 1.02, borderColor: "rgba(156, 163, 175, 0.5)" }}
+                            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        >
                             <Link2 className="w-4 h-4 text-[#9ca3af] mr-2 flex-shrink-0" />
                             <span className="text-[#bbbcbe] text-xs sm:text-sm flex-1 truncate">Add your screen recording</span>
-                            <Button
-                                onClick={handleUploadClick}
-                                disabled={isProcessing}
-                                className="ml-2 bg-white text-black hover:bg-gray-100 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all disabled:opacity-50 whitespace-nowrap"
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
                             >
-                                {isProcessing ? 'Processing...' : isMobile ? 'Upload' : 'Upload video'}
-                            </Button>
-                        </div>
+                                <Button
+                                    onClick={handleUploadClick}
+                                    disabled={isProcessing}
+                                    className="ml-2 bg-white text-black hover:bg-gray-100 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all disabled:opacity-50 whitespace-nowrap"
+                                >
+                                    {isProcessing ? 'Processing...' : isMobile ? 'Upload' : 'Upload video'}
+                                </Button>
+                            </motion.div>
+                        </motion.div>
 
-                        <span className="text-[#9ca3af] font-medium text-sm hidden md:block">or</span>
+                        <motion.span
+                            className="text-[#9ca3af] font-medium text-sm hidden md:block"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.6, duration: 0.4 }}
+                        >
+                            or
+                        </motion.span>
 
-                        <ScreenRecorder />
-                    </div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
+                        >
+                            <ScreenRecorder />
+                        </motion.div>
+                    </motion.div>
                 </div>
-                <Video />
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }}
+                >
+                    <Video />
+                </motion.div>
             </div>
 
             <input

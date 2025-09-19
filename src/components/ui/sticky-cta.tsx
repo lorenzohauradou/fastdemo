@@ -6,6 +6,7 @@ import { Link2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEditorStore } from "@/lib/store"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { motion, AnimatePresence } from "framer-motion"
 
 export function StickyCTA() {
     const [isVisible, setIsVisible] = useState(false)
@@ -123,32 +124,70 @@ export function StickyCTA() {
     if (isDismissed) return null
 
     return (
-        <div className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-            }`}>
-            <div className="px-4 py-6 pb-6">
-                <div className="container mx-auto max-w-xl">
-                    <div className="flex items-center justify-center gap-4">
-                        <div className="flex w-full items-center bg-transparent backdrop-blur-sm border border-purple-300/50 rounded-full px-4 py-2.5">
-                            <Link2 className="w-4 h-4 text-[#9ca3af] mr-2 flex-shrink-0" />
-                            <span className="text-[#d1d5db] text-sm flex-1 whitespace-nowrap">Add your screen recording and ...</span>
-                            <Button
-                                onClick={handleUploadClick}
-                                disabled={isProcessing}
-                                className={`ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50 `}
-                            >
-                                {isProcessing ? 'Processing...' : isMobile ? 'Get Demo' : 'Upload Video'}
-                            </Button>
+        <AnimatePresence>
+            {isVisible && (
+                <motion.div
+                    className="fixed bottom-0 left-0 right-0 z-50"
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 100, opacity: 0 }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 30,
+                        opacity: { duration: 0.2 }
+                    }}
+                >
+                    <div className="px-4 py-6 pb-6">
+                        <div className="container mx-auto max-w-xl">
+                            <div className="flex items-center justify-center gap-4">
+                                <motion.div
+                                    className="flex w-full items-center bg-transparent backdrop-blur-sm border border-purple-300/50 rounded-full px-4 py-2.5"
+                                    whileHover={{
+                                        scale: 1.02,
+                                        borderColor: "rgba(168, 85, 247, 0.8)",
+                                        boxShadow: "0 0 20px rgba(168, 85, 247, 0.3)"
+                                    }}
+                                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                >
+                                    <motion.div
+                                        animate={{ rotate: [0, 5, -5, 0] }}
+                                        transition={{
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            repeatDelay: 3,
+                                            ease: "easeInOut"
+                                        }}
+                                    >
+                                        <Link2 className="w-4 h-4 text-[#9ca3af] mr-2 flex-shrink-0" />
+                                    </motion.div>
+                                    <span className="text-[#d1d5db] text-sm flex-1 whitespace-nowrap">Add your screen recording and ...</span>
+                                    <motion.div
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                    >
+                                        <Button
+                                            onClick={handleUploadClick}
+                                            disabled={isProcessing}
+                                            className={`ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50 `}
+                                        >
+                                            {isProcessing ? 'Processing...' : isMobile ? 'Get Demo' : 'Upload Video'}
+                                        </Button>
+                                    </motion.div>
+                                </motion.div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="video/*"
-                onChange={handleFileSelect}
-                className="hidden"
-            />
-        </div>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="video/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                    />
+                </motion.div>
+            )}
+        </AnimatePresence>
     )
 } 
