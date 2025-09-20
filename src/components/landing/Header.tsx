@@ -1,14 +1,12 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 
 export function Header() {
-    const [isMenuOpen, setIsMenuOpen] = useState(false)
     const isMobile = useIsMobile()
     return (
         <motion.header
@@ -20,15 +18,15 @@ export function Header() {
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center">
                     <motion.div
-                        className="w-16 h-16 flex items-center justify-center overflow-hidden"
+                        className="w-12 h-12 md:w-15 md:h-15 flex items-center justify-center overflow-hidden"
                         whileHover={{ scale: 1.05, rotate: 2 }}
                         transition={{ type: "spring", stiffness: 400, damping: 10 }}
                     >
                         <Image
                             src="/favicon.ico"
                             alt="SnapScreen Logo"
-                            width={40}
-                            height={40}
+                            width={64}
+                            height={64}
                             className="object-contain w-full h-full"
                         />
                     </motion.div>
@@ -91,7 +89,7 @@ export function Header() {
                             transition={{ type: "spring", stiffness: 400, damping: 10 }}
                         >
                             <Button
-                                className={`bg-white text-black hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full transition-all ${isMobile ? 'w-full' : ''}`}
+                                className={`bg-white pr-6 md:mr-0 text-black hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full transition-all ${isMobile ? 'w-full' : ''}`}
                                 asChild
                             >
                                 <Link href="/login">

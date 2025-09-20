@@ -161,7 +161,7 @@ export function StickyCTA() {
                                     >
                                         <Link2 className="w-4 h-4 text-[#9ca3af] mr-2 flex-shrink-0" />
                                     </motion.div>
-                                    <span className="text-[#d1d5db] text-sm flex-1 whitespace-nowrap">Add your screen recording and ...</span>
+                                    <span className="text-[#d1d5db] text-sm flex-1 whitespace-nowrap">{isMobile ? 'Add your screen recording ...' : 'Add your screen recording and ...'}</span>
                                     <motion.div
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.95 }}
@@ -172,7 +172,7 @@ export function StickyCTA() {
                                             disabled={isProcessing}
                                             className={`ml-2 bg-white text-black hover:bg-gray-100 px-4 py-1.5 rounded-full text-sm font-medium transition-all disabled:opacity-50 `}
                                         >
-                                            {isProcessing ? 'Processing...' : isMobile ? 'Get Demo' : 'Upload Video'}
+                                            Get Demo
                                         </Button>
                                     </motion.div>
                                 </motion.div>
