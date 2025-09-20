@@ -14,15 +14,15 @@ export function FAQ() {
     const faqItems: FAQItem[] = [
         {
             question: "How is Snap Screen different from Loom?",
-            answer: "Loom is a fantastic tool for quick, internal communication. Snap Screen is designed for a different job: creating polished, professional video assets for your marketing. While Loom gives you a raw recording, we provide the tools to transform it into a compelling product demo with custom backgrounds, device frames, animated text, background music, and natural-sounding AI voiceovers—all without needing a separate video editor."
+            answer: "Loom is a fantastic tool for quick, internal communication. Snap Screen is designed for a different job: creating professional video assets specialized for your landing page or social media. You can record your screen, add animations, text, background music, and natural-sounding AI voiceovers—all without needing a separate video editor."
         },
         {
             question: "Do I need any video editing experience?",
-            answer: "Absolutely not. Snap Screen is built specifically for founders, marketers, and solopreneurs, not professional video editors. Our interface is intuitive and streamlined, allowing you to add professional touches like smooth zoom animations and text overlays in just a few clicks. The goal is to get you a stunning result in minutes, not hours."
+            answer: "Absolutely not. Snap Screen is built specifically for founders, marketers, and solopreneurs, not professional video editors. The goal is to get you high quality results in minutes, not hours."
         },
         {
             question: "How do the AI Voiceovers work?",
-            answer: "It's simple! Just type or paste your script, choose from a library of high-quality, natural-sounding AI voices, and generate the narration for your video. It's the perfect way to get a clear, professional voiceover without the hassle of recording and editing your own voice, especially if you're not a native English speaker."
+            answer: "It's simple! Just type or paste your script, choose from a library of natural-sounding AI voices, and generate the narration for your video. It's the perfect way to get a clear, professional voiceover without the hassle of recording and editing your own voice, especially if you're not a native English speaker."
         },
         {
             question: "What resolution can I export my videos in?",
