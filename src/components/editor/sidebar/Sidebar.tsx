@@ -4,20 +4,17 @@ import { useEditorStore } from '@/lib/store'
 import { MusicPanel } from '@/components/editor/panels/MusicPanel'
 import { AnimationPanel } from '@/components/editor/panels/AnimationPanel'
 import { TextPanel } from '@/components/editor/panels/TextPanel'
-import { LogosPanel } from '@/components/editor/panels/LogosPanel'
-import { LogoHeadlinePanel } from '@/components/editor/panels/LogoHeadlinePanel'
 import { ScenePanel } from '@/components/editor/panels/ScenePanel'
 import { VoiceoverPanel } from '@/components/editor/panels/VoiceoverPanel'
 import { Button } from '@/components/ui/button'
-import { Music, Zap, Type, Image, Clapperboard, Mic } from 'lucide-react'
+import { Music, Zap, Type, Clapperboard, Mic } from 'lucide-react'
 
 const panels = [
     { id: 'scene' as const, label: 'Scene', icon: Clapperboard },
     { id: 'text' as const, label: 'Text', icon: Type },
     { id: 'animation' as const, label: 'Animation', icon: Zap },
-    { id: 'music' as const, label: 'Music', icon: Music },
     { id: 'voiceover' as const, label: 'Voiceover', icon: Mic },
-    { id: 'logos' as const, label: 'Logos', icon: Image },
+    { id: 'music' as const, label: 'Music', icon: Music },
 ]
 
 export function Sidebar() {
