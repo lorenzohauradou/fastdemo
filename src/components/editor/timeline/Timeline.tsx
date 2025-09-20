@@ -154,15 +154,15 @@ export function Timeline() {
             const validSeconds = Math.max(0, isNaN(seconds) ? 0 : seconds)
             return new Date(validSeconds * 1000).toISOString().substr(14, 5)
         } catch (error) {
-            console.warn('Errore nel formattare il tempo:', seconds, error)
+            console.warn('Error in formatting time:', seconds, error)
             return '00:00'
         }
     }
 
     const tracks = [
-        { id: 'text', label: 'TEXT', type: 'text' as const, color: '#22c55e' }, // Verde
-        { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f97316' }, // Arancione
-        { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#a855f7' }, // Viola
+        { id: 'text', label: 'TEXT', type: 'text' as const, color: '#22c55e' },
+        { id: 'zoom', label: 'ZOOM', type: 'zoom' as const, color: '#f97316' },
+        { id: 'voiceover', label: 'VOICEOVER', type: 'voiceover' as const, color: '#a855f7' },
     ]
 
     // Funzione per generare thumbnails dal video
@@ -178,9 +178,9 @@ export function Timeline() {
 
             // Timeout di sicurezza
             const timeoutId = setTimeout(() => {
-                console.warn('Timeout nella generazione thumbnails')
+                console.warn('Timeout in generating thumbnails')
                 resolve([]) // Risolvi con array vuoto invece di rigettare
-            }, 10000) // 10 secondi timeout
+            }, 30000) // 30 secondi timeout
 
             video.addEventListener('loadedmetadata', () => {
                 canvas.width = 32
@@ -228,7 +228,7 @@ export function Timeline() {
             generateVideoThumbnails(currentProject.videoUrl, 20)
                 .then(setVideoThumbnails)
                 .catch(error => {
-                    console.warn('Errore nella generazione thumbnails:', error)
+                    console.warn('Error in generating thumbnails:', error)
                     setVideoThumbnails([]) // Fallback a array vuoto
                 })
         }

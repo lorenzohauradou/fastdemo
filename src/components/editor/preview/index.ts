@@ -1,4 +1,3 @@
-// Esportazioni dei componenti del preview
 export { VideoPreview } from './VideoPreview'
 export { BackgroundRenderer } from './BackgroundRenderer'
 export { VideoPlayer } from './VideoPlayer'

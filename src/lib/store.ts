@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 export interface Animation {
   id: string
-  type: 'zoom' | 'pan' | 'text' | 'voiceover' | 'background' | 'logo' | 'video' | 'audio' | 'clip'
+  type: 'zoom' | 'pan' | 'text' | 'voiceover' | 'background' | 'video' | 'audio' | 'clip'
   startTime: number  // Tempo relativo alla clip (0 = inizio clip)
   endTime: number    // Tempo relativo alla clip
   properties: Record<string, unknown>
@@ -136,7 +136,7 @@ interface EditorState {
   zoom: number
   
   // UI State
-  selectedPanel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background' | 'voiceover'
+  selectedPanel: 'scene' | 'music' | 'animation' | 'text' | 'templates' | 'logoheadline' | 'background' | 'voiceover'
   selectedAnimation: Animation | null
   selectedClip: string | null
   isEditingText: boolean
@@ -150,7 +150,7 @@ interface EditorState {
   setCurrentTime: (time: number) => void
   setIsPlaying: (playing: boolean) => void
   setZoom: (zoom: number) => void
-  setSelectedPanel: (panel: 'scene' | 'music' | 'animation' | 'text' | 'logos' | 'templates' | 'logoheadline' | 'background' | 'voiceover') => void
+  setSelectedPanel: (panel: 'scene' | 'music' | 'animation' | 'text' | 'templates' | 'logoheadline' | 'background' | 'voiceover') => void
   
   // Gestione clip
   addClip: (clip: Omit<VideoClip, 'id' | 'startTime' | 'endTime'>) => void
@@ -171,7 +171,6 @@ interface EditorState {
   setRenderingState: (isRendering: boolean) => void
   setRenderProgress: (progress: number) => void
   
-  // Utilità
   getCurrentClipTime: () => number  // Tempo relativo alla clip attiva
   getClipAtTime: (globalTime: number) => VideoClip | null
 }

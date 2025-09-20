@@ -14,7 +14,7 @@ export function VideoEditor() {
     const { currentProject, setCurrentProject } = useEditorStore()
 
     useEffect(() => {
-        // Carica il video dal localStorage se presente
+        // Carica il video dal localStorage
         const savedVideo = localStorage.getItem('currentVideo')
         if (savedVideo && !currentProject) {
             try {
@@ -37,12 +37,12 @@ export function VideoEditor() {
                 router.push('/')
             }
         } else if (!currentProject) {
-            // In modalità sviluppo, crea un progetto demo
+            // modalità sviluppo, crea un progetto demo
             if (process.env.NODE_ENV === 'development') {
                 const demoProject = {
                     name: 'Demo Project',
-                    videoUrl: '', // Vuoto per ora
-                    duration: 30, // 30 secondi di demo
+                    videoUrl: '',
+                    duration: 30,
                     clips: [],
                     activeClipId: null,
                     musicSettings: {

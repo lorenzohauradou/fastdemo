@@ -76,13 +76,13 @@ export function VideoPlayer({
                     onLoadedMetadata?.()
                 }
 
-                // Carica il video completamente per evitare lag
+                // load video
                 videoRef.current.load()
             }
         }
     }, [activeClip?.id, clipTime, onLoadedMetadata])
 
-    // Gestisce play/pause - SOLO VIDEO, l'audio è gestito dal Player
+    // Gestisce play/pause - solo video, l'audio è gestito dal Player
     useEffect(() => {
         if (!videoRef.current) return
 
@@ -101,7 +101,7 @@ export function VideoPlayer({
 
         const zoomAnimations = activeClip.animations.filter(anim => anim.type === 'zoom')
 
-        // Trova SOLO l'animazione zoom selezionata se è attiva al tempo corrente
+        // Trova solo l'animazione zoom selezionata se è attiva al tempo corrente
         return selectedAnimation?.type === 'zoom' &&
             clipTime >= selectedAnimation.startTime &&
             clipTime <= selectedAnimation.endTime
@@ -152,7 +152,7 @@ export function VideoPlayer({
                 zoomTransform = `scale(${finalZoom}) translate(${finalX}px, ${finalY}px)`
             }
         } else {
-            // Nessuna animazione zoom attiva, usa il zoom base della timeline
+            // Nessuna animazione zoom attiva
             zoomTransform = `scale(${zoom})`
         }
 
@@ -181,7 +181,7 @@ export function VideoPlayer({
             }
 
             if (Object.keys(updates).length > 0) {
-                // Qui dovremmo usare updateProject dal store, ma per ora lo gestiamo nel componente padre
+                // Qui dovrei usare updateProject dal store, ma per ora lo gestiamo nel componente padre
                 onLoadedMetadata?.()
             }
         }
@@ -198,11 +198,11 @@ export function VideoPlayer({
             className="object-contain transition-transform duration-100 ease-out select-none"
             style={{
                 ...getVideoTransform(),
-                width: '100%',    // Lascia margini per mostrare il background
-                height: '100%',   // Lascia margini per mostrare il background
+                width: '100%',
+                height: '100%',
                 borderRadius: currentProject?.deviceSettings?.borderRadius ? `${currentProject.deviceSettings.borderRadius}px` : '0px',
                 boxShadow: hasBackground ? '0 20px 40px rgba(0,0,0,0.3)' : 'none',
-                // Aggiungi il riflesso solo se c'è un background e NON c'è zoom attivo
+                // Aggiungi il riflesso solo se c'è un background e non c'è zoom attivo
                 ...(hasBackground && {
                     transform: `${getVideoTransform().transform || ''} scale(0.8)`,
                 }),

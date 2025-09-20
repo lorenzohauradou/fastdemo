@@ -198,8 +198,8 @@ export function VideoPreview() {
                             perspectiveOrigin: '40% center'
                         }}
                     >
-                        {/* Contenitore del Video animato con Framer Motion */}
                         <motion.div
+                            // Contenitore del Video animato
                             className="w-full h-full flex items-center justify-center"
                             animate={getCurrentVariant(activeTextAnimation)}
                             transition={getTransition()}
@@ -222,8 +222,8 @@ export function VideoPreview() {
                                 onLoadedMetadata={handleVideoLoadedMetadata}
                             />
 
-                            {/* Webcam overlay */}
                             {activeClip?.hasWebcam && activeClip?.webcamUrl && (
+                                // Webcam overlay
                                 <div className="absolute bottom-8 right-8 w-32 h-32 rounded-full overflow-hidden shadow-lg">
                                     <video
                                         ref={(video) => {
@@ -274,11 +274,11 @@ export function VideoPreview() {
                             />
                         </motion.div>
 
-                        {/* Contenitore del Testo animato con Framer Motion */}
                         <AnimatePresence>
                             {activeTextAnimation && (
                                 <motion.div
                                     className={`absolute flex items-center justify-center pointer-events-none ${
+                                        // Animazione Testo
                                         // Posizionamento basato sulla proprietà position - usa 'top' come default
                                         (activeTextAnimation.properties as TextProperties).position === 'top' ? 'top-8 left-0 right-0 h-auto' :
                                             (activeTextAnimation.properties as TextProperties).position === 'bottom' ? 'bottom-18 left-0 right-0 h-auto' :
