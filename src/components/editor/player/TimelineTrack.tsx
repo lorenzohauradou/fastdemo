@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import { ResizableClip } from './ResizableClip'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Upload, Music } from 'lucide-react'
 import { AudioWaveform } from './AudioWaveform'
 
@@ -21,6 +22,7 @@ interface TimelineTrackProps {
     showWaveform?: boolean
     audioSrc?: string
     timelineWidth?: number
+    isAddingClip?: boolean
 }
 
 export function TimelineTrack({
@@ -38,7 +40,8 @@ export function TimelineTrack({
     onOpenLibrary,
     showWaveform = false,
     audioSrc,
-    timelineWidth = 800
+    timelineWidth = 800,
+    isAddingClip = false
 }: TimelineTrackProps) {
     const timelineRef = useRef<HTMLDivElement>(null)
 
@@ -115,20 +118,17 @@ export function TimelineTrack({
                         type={type}
                         allClips={clips}
                         onMoveAdjacentClip={(clipId, newStartTime, newEndTime) => {
-                            // Trova la clip corrente per confrontare i valori
                             const currentClip = clips.find(c => c.id === clipId)
                             if (currentClip) {
                                 const updates: any = {}
 
-                                // Aggiorna solo se i valori sono effettivamente cambiati
+                                // Aggiorna
                                 if (Math.abs(currentClip.startTime - newStartTime) > 0.01) {
                                     updates.startTime = newStartTime
                                 }
                                 if (Math.abs(currentClip.endTime - newEndTime) > 0.01) {
                                     updates.endTime = newEndTime
                                 }
-
-                                // Aggiorna solo se ci sono cambiamenti significativi
                                 if (Object.keys(updates).length > 0) {
                                     onClipUpdate(clipId, updates)
                                 }
@@ -169,10 +169,20 @@ export function TimelineTrack({
                         ) : (
                             <button
                                 onClick={onAddClip}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-transparent hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white"
+                                disabled={isAddingClip}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-transparent hover:bg-zinc-600 border border-zinc-600 hover:border-zinc-500 rounded-md transition-all duration-200 text-xs text-zinc-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Upload className="h-3 w-3" />
-                                Add Video Clip
+                                {isAddingClip ? (
+                                    <>
+                                        <LoadingSpinner size="sm" className="text-zinc-300" />
+                                        Adding...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="h-3 w-3" />
+                                        Add Video Clip
+                                    </>
+                                )}
                             </button>
                         )}
                     </div>

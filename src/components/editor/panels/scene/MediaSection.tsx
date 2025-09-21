@@ -2,12 +2,12 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Monitor, RotateCcw, X, Upload, Video, Camera } from 'lucide-react'
 import { Project, useEditorStore } from '@/lib/store'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import fixWebmDuration from 'fix-webm-duration'
-import { upload } from '@vercel/blob/client'
 
 interface MediaSectionProps {
     currentProject: Project | null
@@ -79,19 +79,26 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
         setIsUploading(true)
 
         try {
-            // Upload a Vercel Blob
-            const blob = await upload(file.name, file, {
-                access: 'public',
-                handleUploadUrl: '/api/video/upload',
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const response = await fetch('/api/video/upload', {
+                method: 'POST',
+                body: formData,
             })
 
-            console.log('Upload completato:', blob)
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Errore durante l\'upload')
+            }
 
+            const uploadResult = await response.json()
+            const videoUrl = uploadResult.url
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
             // durata del video
             const tempVideo = document.createElement('video')
-            tempVideo.src = blob.url
+            tempVideo.src = videoUrl
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
@@ -100,8 +107,8 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 const newProject = {
                     name: videoName,
                     videoFilename: file.name,
-                    blobUrl: blob.url,
-                    videoUrl: blob.url,
+                    blobUrl: videoUrl,
+                    videoUrl: videoUrl,
                     videoFile: file,
                     duration: videoDuration,
                     originalDuration: videoDuration,
@@ -112,9 +119,9 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                         endTime: videoDuration,
                         duration: videoDuration,
                         videoFile: file,
-                        videoUrl: blob.url,
+                        videoUrl: videoUrl,
                         videoFilename: file.name,
-                        blobUrl: blob.url,
+                        blobUrl: videoUrl,
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
@@ -130,7 +137,7 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 // Salva nel localStorage
                 localStorage.setItem('currentVideo', JSON.stringify({
                     name: videoName,
-                    url: blob.url,
+                    url: videoUrl,
                     file: file.name,
                     size: file.size,
                     type: file.type
@@ -320,8 +327,6 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
 
             // Blob video iniziale
             const videoBlob = new Blob(chunksRef.current, { type: mimeType })
-
-            // Fix-webm-duration per correggere i metadati
             const fixedBlob = await fixWebmDuration(videoBlob, actualDuration * 1000)
 
             const videoUrl = URL.createObjectURL(fixedBlob)
@@ -335,14 +340,21 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             // Upload del video principale a Vercel Blob
             let videoBlobUrl = videoUrl
             try {
-                const videoBlob = await upload(videoFile.name, videoFile, {
-                    access: 'public',
-                    handleUploadUrl: '/api/video/upload',
+                const formData = new FormData()
+                formData.append('file', videoFile)
+
+                const response = await fetch('/api/video/upload', {
+                    method: 'POST',
+                    body: formData,
                 })
-                videoBlobUrl = videoBlob.url
-                console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
+
+                if (response.ok) {
+                    const uploadResult = await response.json()
+                    videoBlobUrl = uploadResult.url
+                } else {
+                    throw new Error('Upload failed')
+                }
             } catch (uploadError) {
-                console.warn('Errore upload screen recording su Vercel Blob:', uploadError)
                 // Usa l'URL locale come fallback
             }
 
@@ -360,12 +372,21 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
 
                     // Upload webcam a Vercel Blob
                     try {
-                        const webcamBlobResult = await upload(webcamFile.name, webcamFile, {
-                            access: 'public',
-                            handleUploadUrl: '/api/video/upload',
+                        const formData = new FormData()
+                        formData.append('file', webcamFile)
+
+                        const response = await fetch('/api/video/upload', {
+                            method: 'POST',
+                            body: formData,
                         })
-                        webcamBlobUrl = webcamBlobResult.url
-                        console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
+
+                        if (response.ok) {
+                            const uploadResult = await response.json()
+                            webcamBlobUrl = uploadResult.url
+                            console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
+                        } else {
+                            throw new Error('Upload failed')
+                        }
                     } catch (webcamUploadError) {
                         console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
                         // Usa l'URL locale come fallback
@@ -470,8 +491,6 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             }
         }
     }, [])
-
-    // Se stiamo processando la registrazione
     if (isProcessing) {
         return (
             <div>
@@ -490,8 +509,6 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             </div>
         )
     }
-
-    // Se stiamo registrando
     if (isRecording) {
         return (
             <div>
@@ -562,8 +579,17 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                                 onClick={handleImportVideo}
                                 disabled={isUploading}
                             >
-                                <RotateCcw className="h-3 w-3 mr-1" />
-                                Replace
+                                {isUploading ? (
+                                    <>
+                                        <LoadingSpinner size="sm" className="mr-1" />
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RotateCcw className="h-3 w-3 mr-1" />
+                                        Replace
+                                    </>
+                                )}
                             </Button>
 
                         </div>
@@ -572,7 +598,10 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             ) : (
                 <div className="border-2 border-dashed border-border rounded-lg p-4 text-center space-y-3">
                     {isUploading ? (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-center">
+                                <LoadingSpinner size="md" className="text-primary" />
+                            </div>
                             <div className="text-sm text-muted-foreground">
                                 Uploading video...
                             </div>

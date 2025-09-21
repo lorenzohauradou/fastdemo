@@ -33,6 +33,7 @@ export function Player() {
     const timelineRef = useRef<HTMLDivElement>(null)
     const [videoThumbnails, setVideoThumbnails] = useState<{ [key: string]: string }>({})
     const [isChangingClip, setIsChangingClip] = useState(false)
+    const [isAddingVideoClip, setIsAddingVideoClip] = useState(false)
 
     const audioSrc = currentProject?.musicSettings?.track || ''
 
@@ -226,47 +227,74 @@ export function Player() {
         input.onchange = async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0]
             if (file) {
-                // Validazione del file
-                const maxSize = 500 * 1024 * 1024 // 500MB
+                setIsAddingVideoClip(true)
+                const maxSize = 500 * 1024 * 1024
                 if (file.size > maxSize) {
-                    alert('Il file è troppo grande. Dimensione massima: 500MB')
+                    alert('The file is too large. Maximum size: 500MB')
+                    setIsAddingVideoClip(false)
                     return
                 }
 
                 const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
                 if (!allowedTypes.includes(file.type)) {
-                    alert('Formato non supportato. Usa MP4, MOV, AVI o WebM')
+                    alert('Format not supported. Use MP4, MOV, AVI or WebM')
+                    setIsAddingVideoClip(false)
                     return
                 }
 
-                // Crea URL locale per il preview
-                const videoUrl = URL.createObjectURL(file)
+                try {
+                    const formData = new FormData()
+                    formData.append('file', file)
 
-                // Ottieni la durata del video
-                const tempVideo = document.createElement('video')
-                tempVideo.src = videoUrl
+                    const response = await fetch('/api/video/upload', {
+                        method: 'POST',
+                        body: formData,
+                    })
 
-                tempVideo.onloadedmetadata = () => {
-                    const videoDuration = tempVideo.duration
-
-                    // La nuova clip sarà automaticamente posizionata alla fine grazie alla logica nello store
-                    const newClip = {
-                        name: file.name.replace(/\.[^/.]+$/, ''),
-                        duration: videoDuration,
-                        videoFile: file,
-                        videoUrl: videoUrl,
-                        originalDuration: videoDuration,
-                        animations: [],
-                        trimStart: 0,
-                        trimEnd: 0
+                    if (!response.ok) {
+                        const errorData = await response.json()
+                        throw new Error(errorData.error || 'Errore durante l\'upload')
                     }
 
-                    addClip(newClip)
-                }
+                    const uploadResult = await response.json()
+                    const videoUrl = uploadResult.url
 
-                tempVideo.onerror = () => {
-                    alert('Errore nel caricamento del video')
-                    URL.revokeObjectURL(videoUrl)
+                    // Ottieni la durata del video usando URL locale temporaneo
+                    const tempVideoUrl = URL.createObjectURL(file)
+                    const tempVideo = document.createElement('video')
+                    tempVideo.src = tempVideoUrl
+
+                    tempVideo.onloadedmetadata = () => {
+                        const videoDuration = tempVideo.duration
+
+                        // Pulisci l'URL temporaneo
+                        URL.revokeObjectURL(tempVideoUrl)
+
+                        // nuova clip automaticamente posizionata alla fine grazie alla logica nello store
+                        const newClip = {
+                            name: file.name.replace(/\.[^/.]+$/, ''),
+                            duration: videoDuration,
+                            videoFile: file,
+                            videoUrl: videoUrl, // URL del blob Vercel
+                            originalDuration: videoDuration,
+                            animations: [],
+                            trimStart: 0,
+                            trimEnd: 0
+                        }
+
+                        addClip(newClip)
+                        setIsAddingVideoClip(false)
+                    }
+
+                    tempVideo.onerror = () => {
+                        alert('Errore nel caricamento del video')
+                        URL.revokeObjectURL(tempVideoUrl)
+                        setIsAddingVideoClip(false)
+                    }
+                } catch (error) {
+                    console.error('Errore durante l\'upload:', error)
+                    alert('Errore durante il caricamento del video')
+                    setIsAddingVideoClip(false)
                 }
             }
         }
@@ -426,6 +454,7 @@ export function Player() {
                         onTimelineClick={handleTimelineClick}
                         onAddClip={handleAddVideoClip}
                         timelineWidth={Math.max(timelineWidth, duration * pixelsPerSecond + 200)}
+                        isAddingClip={isAddingVideoClip}
                     />
                 </div>
 

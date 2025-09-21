@@ -6,7 +6,6 @@ import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Upload } from 'lucide-react'
-import { upload } from '@vercel/blob/client'
 
 interface VideoUploadProps {
     onVideoUploaded?: (videoData: any) => void
@@ -57,8 +56,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
     }
 
     const handleVideoFile = async (file: File) => {
-        // Validazione del file
-        const maxSize = 500 * 1024 * 1024 // 500MB
+        const maxSize = 500 * 1024 * 1024
         if (file.size > maxSize) {
             alert('The file is too large. Maximum size: 500MB')
             return
@@ -77,14 +75,22 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         setUploadProgress(0)
 
         try {
-            // upload Vercel Blob
-            const blob = await upload(file.name, file, {
-                access: 'public',
-                handleUploadUrl: '/api/video/upload',
+            // Upload a Vercel Blob tramite API route
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const response = await fetch('/api/video/upload', {
+                method: 'POST',
+                body: formData,
             })
 
-            console.log('Upload completato:', blob)
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Error during upload')
+            }
 
+            const uploadResult = await response.json()
+            const videoUrl = uploadResult.url
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
             // Simula progress upload veloce
@@ -100,9 +106,8 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
 
             setUploadProgress(100)
 
-            // Crea un video temporaneo per ottenere la durata
             const tempVideo = document.createElement('video')
-            tempVideo.src = blob.url
+            tempVideo.src = videoUrl
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
@@ -111,8 +116,8 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 const newProject = {
                     name: videoName,
                     videoFilename: file.name,
-                    blobUrl: blob.url,
-                    videoUrl: blob.url,
+                    blobUrl: videoUrl,
+                    videoUrl: videoUrl,
                     videoFile: file,
                     duration: videoDuration,
                     originalDuration: videoDuration,
@@ -123,9 +128,9 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                         endTime: videoDuration,
                         duration: videoDuration,
                         videoFile: file,
-                        videoUrl: blob.url,
+                        videoUrl: videoUrl,
                         videoFilename: file.name,
-                        blobUrl: blob.url,
+                        blobUrl: videoUrl,
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
@@ -141,7 +146,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 // Salva nel localStorage
                 localStorage.setItem('currentVideo', JSON.stringify({
                     name: videoName,
-                    url: blob.url,
+                    url: videoUrl,
                     file: file.name,
                     size: file.size,
                     type: file.type
@@ -157,10 +162,10 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 const newProject = {
                     name: videoName,
                     videoFilename: file.name,
-                    blobUrl: blob.url,
-                    videoUrl: blob.url,
+                    blobUrl: videoUrl,
+                    videoUrl: videoUrl,
                     videoFile: file,
-                    duration: 30, // Durata di default
+                    duration: 30,
                     originalDuration: 30,
                     clips: [{
                         id: 'main-video',
@@ -169,9 +174,9 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                         endTime: 30,
                         duration: 30,
                         videoFile: file,
-                        videoUrl: blob.url,
+                        videoUrl: videoUrl,
                         videoFilename: file.name,
-                        blobUrl: blob.url,
+                        blobUrl: videoUrl,
                         originalDuration: 30,
                         animations: [],
                         trimStart: 0,
@@ -187,7 +192,7 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 // Salva nel localStorage
                 localStorage.setItem('currentVideo', JSON.stringify({
                     name: videoName,
-                    url: blob.url,
+                    url: videoUrl,
                     file: file.name,
                     size: file.size,
                     type: file.type

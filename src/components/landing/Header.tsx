@@ -1,13 +1,122 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import Image from "next/image"
 import Link from "next/link"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
+import { useRef, useState, useCallback } from "react"
+import { useEditorStore } from "@/lib/store"
 
 export function Header() {
     const isMobile = useIsMobile()
+    const router = useRouter()
+    const { setCurrentProject } = useEditorStore()
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isProcessing, setIsProcessing] = useState(false)
+
+    const processVideoAndNavigate = useCallback(async (file: File) => {
+        const maxSize = 500 * 1024 * 1024
+        if (file.size > maxSize) {
+            alert('file is too large. Maximum size: 500MB')
+            return
+        }
+
+        const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
+        const isWebM = file.type.startsWith('video/webm')
+        const isAllowedType = allowedTypes.includes(file.type) || isWebM
+
+        if (!isAllowedType) {
+            alert('Unsupported format. Use MP4, MOV, AVI or WebM')
+            return
+        }
+
+        setIsProcessing(true)
+
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const response = await fetch('/api/video/upload', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Errore durante l\'upload')
+            }
+
+            const uploadResult = await response.json()
+            const videoUrl = uploadResult.url
+            const videoName = file.name.replace(/\.[^/.]+$/, '')
+
+            //  durata del video
+            const tempVideo = document.createElement('video')
+            tempVideo.src = videoUrl
+
+            tempVideo.onloadedmetadata = () => {
+                const videoDuration = tempVideo.duration
+
+                // Crea il progetto con struttura multi-clip
+                const newProject = {
+                    name: videoName,
+                    videoFilename: file.name,
+                    blobUrl: videoUrl,
+                    clips: [{
+                        id: 'main-video',
+                        name: videoName,
+                        startTime: 0,
+                        endTime: videoDuration,
+                        duration: videoDuration,
+                        videoFile: file,
+                        videoUrl: videoUrl,
+                        videoFilename: file.name,
+                        blobUrl: videoUrl,
+                        originalDuration: videoDuration,
+                        animations: [],
+                        trimStart: 0,
+                        trimEnd: 0
+                    }],
+                    activeClipId: 'main-video',
+                    duration: videoDuration,
+                    musicSettings: {
+                        type: 'preset' as const,
+                        volume: 0.5
+                    }
+                }
+
+                // Imposta il progetto nello store
+                setCurrentProject(newProject)
+
+                router.push('/editor')
+                setIsProcessing(false)
+            }
+
+            tempVideo.onerror = () => {
+                alert('Error processing video')
+                setIsProcessing(false)
+            }
+        } catch (error) {
+            console.error('Errore upload:', error)
+            alert('Error uploading video')
+            setIsProcessing(false)
+        }
+    }, [router, setCurrentProject])
+
+    const handleDemoClick = useCallback(() => {
+        fileInputRef.current?.click()
+    }, [])
+
+    const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (file) {
+            processVideoAndNavigate(file)
+        }
+    }, [processVideoAndNavigate])
+
     return (
         <motion.header
             className="fixed bg-transparent backdrop-blur-sm top-0 w-full z-50"
@@ -89,17 +198,31 @@ export function Header() {
                             transition={{ type: "spring", stiffness: 400, damping: 10 }}
                         >
                             <Button
-                                className={`bg-white pr-6 md:mr-0 text-black hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full transition-all ${isMobile ? 'w-full' : ''}`}
-                                asChild
+                                onClick={handleDemoClick}
+                                disabled={isProcessing}
+                                className={`bg-white pr-6 md:mr-0 text-black hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full transition-all disabled:opacity-50 ${isMobile ? 'w-full' : ''}`}
                             >
-                                <Link href="/login">
-                                    {isMobile ? 'Free Demo' : 'Get Free Demo'}
-                                </Link>
+                                {isProcessing ? (
+                                    <div className="flex items-center gap-2">
+                                        <LoadingSpinner size="sm" className="text-black" />
+                                        Processing...
+                                    </div>
+                                ) : (
+                                    isMobile ? 'Free Demo' : 'Get Free Demo'
+                                )}
                             </Button>
                         </motion.div>
                     </>
                 </motion.div>
             </div>
+
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleFileSelect}
+                className="hidden"
+            />
         </motion.header>
     )
 }

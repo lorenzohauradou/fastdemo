@@ -1,19 +1,17 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Link2, Brain } from "lucide-react"
-// import { useSession } from "next-auth/react"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { Link2 } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Video } from "./Video"
 import { ScreenRecorder } from "./ScreenRecorder"
 import { useRouter } from "next/navigation"
 import { useRef, useState, useCallback } from "react"
 import { useEditorStore } from "@/lib/store"
-import { upload } from '@vercel/blob/client'
 import { motion } from "framer-motion"
 
 export function Hero() {
-    // const { data: session } = useSession()
     const isMobile = useIsMobile()
     const router = useRouter()
     const { setCurrentProject } = useEditorStore()
@@ -21,10 +19,8 @@ export function Hero() {
     const [isDragging, setIsDragging] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
 
-    // Funzione per processare il video e navigare all'editor
     const processVideoAndNavigate = useCallback(async (file: File) => {
-        // Validazione del file
-        const maxSize = 500 * 1024 * 1024 // 500MB
+        const maxSize = 500 * 1024 * 1024
         if (file.size > maxSize) {
             alert('file is too large. Maximum size: 500MB')
             return
@@ -42,19 +38,26 @@ export function Hero() {
         setIsProcessing(true)
 
         try {
-            // Upload diretto a Vercel Blob
-            const blob = await upload(file.name, file, {
-                access: 'public',
-                handleUploadUrl: '/api/video/upload',
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const response = await fetch('/api/video/upload', {
+                method: 'POST',
+                body: formData,
             })
 
-            console.log('Upload completato:', blob)
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Errore durante l\'upload')
+            }
 
+            const uploadResult = await response.json()
+            const videoUrl = uploadResult.url
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
             // Ottieni la durata del video
             const tempVideo = document.createElement('video')
-            tempVideo.src = blob.url
+            tempVideo.src = videoUrl
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
@@ -63,7 +66,7 @@ export function Hero() {
                 const newProject = {
                     name: videoName,
                     videoFilename: file.name,
-                    blobUrl: blob.url,
+                    blobUrl: videoUrl,
                     clips: [{
                         id: 'main-video',
                         name: videoName,
@@ -71,9 +74,9 @@ export function Hero() {
                         endTime: videoDuration,
                         duration: videoDuration,
                         videoFile: file,
-                        videoUrl: blob.url,
+                        videoUrl: videoUrl,
                         videoFilename: file.name,
-                        blobUrl: blob.url,
+                        blobUrl: videoUrl,
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
@@ -216,7 +219,14 @@ export function Hero() {
                                     disabled={isProcessing}
                                     className="ml-2 bg-white text-black hover:bg-gray-100 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all disabled:opacity-50 whitespace-nowrap"
                                 >
-                                    {isProcessing ? 'Processing...' : isMobile ? 'Upload' : 'Upload video'}
+                                    {isProcessing ? (
+                                        <div className="flex items-center gap-2">
+                                            <LoadingSpinner size="sm" className="text-black" />
+                                            Processing...
+                                        </div>
+                                    ) : (
+                                        isMobile ? 'Upload' : 'Upload video'
+                                    )}
                                 </Button>
                             </motion.div>
                         </motion.div>

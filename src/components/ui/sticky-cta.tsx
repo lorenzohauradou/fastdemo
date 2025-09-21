@@ -16,7 +16,6 @@ export function StickyCTA() {
     const { setCurrentProject } = useEditorStore()
     const fileInputRef = useRef<HTMLInputElement>(null)
     const isMobile = useIsMobile()
-    // Funzione per processare il video e navigare all'editor
     const processVideoAndNavigate = useCallback(async (file: File) => {
         // Validazione del file
         const maxSize = 500 * 1024 * 1024 // 500MB
@@ -34,16 +33,34 @@ export function StickyCTA() {
         setIsProcessing(true)
 
         try {
-            // Crea URL locale per il preview
-            const videoUrl = URL.createObjectURL(file)
+            // Upload del video su Vercel Blob
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const response = await fetch('/api/video/upload', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Errore durante l\'upload')
+            }
+
+            const uploadResult = await response.json()
+            const videoUrl = uploadResult.url
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
-            // Ottieni la durata del video
+            // Crea URL locale temporaneo per ottenere la durata
+            const tempVideoUrl = URL.createObjectURL(file)
             const tempVideo = document.createElement('video')
-            tempVideo.src = videoUrl
+            tempVideo.src = tempVideoUrl
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
+
+                // Pulisci l'URL temporaneo
+                URL.revokeObjectURL(tempVideoUrl)
 
                 // Crea il progetto con la nuova struttura multi-clip
                 const newProject = {
@@ -54,8 +71,8 @@ export function StickyCTA() {
                         startTime: 0,
                         endTime: videoDuration,
                         duration: videoDuration,
-                        videoFile: file,
-                        videoUrl: videoUrl,
+                        videoFile: file, // Mantieni il file per compatibilità
+                        videoUrl: videoUrl, // URL del blob Vercel
                         originalDuration: videoDuration,
                         animations: [],
                         trimStart: 0,
@@ -74,6 +91,7 @@ export function StickyCTA() {
 
                 // Naviga all'editor
                 router.push('/editor')
+                setIsProcessing(false)
             }
 
             tempVideo.onerror = () => {
@@ -81,7 +99,7 @@ export function StickyCTA() {
                 setIsProcessing(false)
             }
         } catch (error) {
-            console.error('Errore durante il processamento del video:', error)
+            console.error('Errore durante l\'upload:', error)
             alert('Errore durante il caricamento del video')
             setIsProcessing(false)
         }
