@@ -37,7 +37,7 @@ export const authOptions: NextAuthOptions = {
               </div>
             `,
           })
-        } catch (error) {
+        } catch {
           throw new Error("Could not send verification email.")
         }
       },
@@ -48,10 +48,10 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   callbacks: {
-    async session({ session, token }) {
+    async session({ session }) {
       return session
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token }) {
       return token
     },
   },

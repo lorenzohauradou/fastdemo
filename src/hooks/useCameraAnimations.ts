@@ -54,7 +54,7 @@ export function useCameraAnimations(currentProject: Project | null, isPlaying: b
     })
 
     // Determina quale animazione applicare
-    const getCameraAnimationKey = (activeTextAnimation?: any) => {
+    const getCameraAnimationKey = (activeTextAnimation?: { properties?: { position?: 'top' | 'bottom' | 'left' | 'right' } }) => {
         const cameraSettings = currentProject?.cameraSettings
         if (!cameraSettings || cameraSettings.type === 'none') {
             if (activeTextAnimation) {
@@ -68,21 +68,21 @@ export function useCameraAnimations(currentProject: Project | null, isPlaying: b
     }
 
     // Ottieni le varianti per l'animazione corrente
-    const getCurrentVariant = (activeTextAnimation?: any) => {
+    const getCurrentVariant = (activeTextAnimation?: { properties?: { position?: 'top' | 'bottom' | 'left' | 'right' } }) => {
         const animationKey = getCameraAnimationKey(activeTextAnimation)
         
         // Per continuous_glide, usa i valori calcolati in tempo reale
         if (animationKey === 'continuous_glide') {
-            return continuousGlideTransform as any
+            return continuousGlideTransform
         }
         
         // Per up_down, usa i valori calcolati in tempo reale
         if (animationKey === 'up_down') {
-            return upDownTransform as any
+            return upDownTransform
         }
         
         // Per altre animazioni, calcola i valori
-        return getCameraAnimationTransform(animationKey || 'full', 0, currentProject?.cameraSettings) as any
+        return getCameraAnimationTransform(animationKey || 'full', 0, currentProject?.cameraSettings)
     }
 
     // Determina il tipo di transizione

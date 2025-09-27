@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion"
 
 export function StickyCTA() {
     const [isVisible, setIsVisible] = useState(false)
-    const [isDismissed, setIsDismissed] = useState(false)
+    const [isDismissed] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const router = useRouter()
     const { setCurrentProject } = useEditorStore()
