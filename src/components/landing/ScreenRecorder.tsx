@@ -254,8 +254,11 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
             const fixedBlob = await fixWebmDuration(videoBlob, actualDuration * 1000) // fix-webm-duration vuole millisecondi
 
             const videoUrl = URL.createObjectURL(fixedBlob)
+
+            // Assicurati che il MIME type sia valido per l'API
+            const validMimeType = mimeType.startsWith('video/') ? mimeType : 'video/webm'
             const videoFile = new File([fixedBlob], `screen-recording-${Date.now()}.${extension}`, {
-                type: mimeType
+                type: validMimeType
             })
 
             setProcessingProgress(100)
@@ -269,6 +272,12 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
 
                 let videoBlobUrl = videoUrl
                 try {
+                    console.log('Uploading video file:', {
+                        name: videoFile.name,
+                        type: videoFile.type,
+                        size: videoFile.size
+                    })
+
                     const formData = new FormData()
                     formData.append('file', videoFile)
 
@@ -298,8 +307,10 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                     try {
                         const webcamBlob = new Blob(webcamChunksRef.current, { type: mimeType })
                         const fixedWebcamBlob = await fixWebmDuration(webcamBlob, actualDuration * 1000)
+
+                        const validWebcamMimeType = mimeType.startsWith('video/') ? mimeType : 'video/webm'
                         webcamFile = new File([fixedWebcamBlob], `webcam-recording-${Date.now()}.${extension}`, {
-                            type: mimeType
+                            type: validWebcamMimeType
                         })
 
                         try {
