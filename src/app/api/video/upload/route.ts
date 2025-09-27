@@ -22,7 +22,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
-    if (!allowedTypes.includes(file.type)) {
+    const isValidType = allowedTypes.some(type => file.type.startsWith(type))
+    
+    if (!isValidType) {
       return NextResponse.json(
         { error: 'Unsupported format. Use MP4, MOV, AVI or WebM' },
         { status: 400 }

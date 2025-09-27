@@ -272,12 +272,6 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
 
                 let videoBlobUrl = videoUrl
                 try {
-                    console.log('Uploading video file:', {
-                        name: videoFile.name,
-                        type: videoFile.type,
-                        size: videoFile.size
-                    })
-
                     const formData = new FormData()
                     formData.append('file', videoFile)
 
