@@ -277,13 +277,14 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                         body: formData,
                     })
 
-                    if (response.ok) {
-                        const uploadResult = await response.json()
-                        videoBlobUrl = uploadResult.url
-                        console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
-                    } else {
-                        throw new Error('Upload failed')
+                    if (!response.ok) {
+                        const errorData = await response.json()
+                        throw new Error(errorData.error || 'Errore durante l\'upload del video')
                     }
+
+                    const uploadResult = await response.json()
+                    videoBlobUrl = uploadResult.url
+                    console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
                 } catch (uploadError) {
                     console.warn('Errore upload screen recording su Vercel Blob:', uploadError)
                 }
@@ -310,13 +311,14 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                                 body: formData,
                             })
 
-                            if (response.ok) {
-                                const uploadResult = await response.json()
-                                webcamBlobUrl = uploadResult.url
-                                console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
-                            } else {
-                                throw new Error('Upload failed')
+                            if (!response.ok) {
+                                const errorData = await response.json()
+                                throw new Error(errorData.error || 'Errore durante l\'upload della webcam')
                             }
+
+                            const uploadResult = await response.json()
+                            webcamBlobUrl = uploadResult.url
+                            console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
                         } catch (webcamUploadError) {
                             console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
                             webcamBlobUrl = URL.createObjectURL(webcamFile)
