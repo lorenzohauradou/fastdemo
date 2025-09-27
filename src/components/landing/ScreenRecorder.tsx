@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Video, Camera } from 'lucide-react'
 import fixWebmDuration from 'fix-webm-duration'
+import { upload } from '@vercel/blob/client'
 
 interface ScreenRecorderProps {
     onRecordingComplete?: (videoData: any) => void
@@ -272,24 +273,14 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
 
                 let videoBlobUrl = videoUrl
                 try {
-                    const formData = new FormData()
-                    formData.append('file', videoFile)
-
-                    const response = await fetch('/api/video/upload', {
-                        method: 'POST',
-                        body: formData,
+                    // Upload diretto a Vercel Blob (bypassa il limite di 4.5MB)
+                    const blob = await upload(videoFile.name, videoFile, {
+                        access: 'public',
+                        handleUploadUrl: '/api/video/upload',
                     })
 
-                    if (!response.ok) {
-                        const errorData = await response.json()
-                        throw new Error(errorData.error || 'Errore durante l\'upload del video')
-                    }
-
-                    const uploadResult = await response.json()
-                    videoBlobUrl = uploadResult.url
-                    console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
+                    videoBlobUrl = blob.url
                 } catch (uploadError) {
-                    console.warn('Errore upload screen recording su Vercel Blob:', uploadError)
                 }
 
                 // Upload webcam se disponibile
@@ -308,24 +299,17 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                         })
 
                         try {
-                            const formData = new FormData()
-                            formData.append('file', webcamFile)
-
-                            const response = await fetch('/api/video/upload', {
-                                method: 'POST',
-                                body: formData,
+                            // Upload diretto a Vercel Blob (bypassa il limite di 4.5MB)
+                            const blob = await upload(webcamFile.name, webcamFile, {
+                                access: 'public',
+                                handleUploadUrl: '/api/video/upload',
                             })
 
-                            if (!response.ok) {
-                                const errorData = await response.json()
-                                throw new Error(errorData.error || 'Errore durante l\'upload della webcam')
-                            }
-
-                            const uploadResult = await response.json()
-                            webcamBlobUrl = uploadResult.url
+                            webcamBlobUrl = blob.url
                             console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
                         } catch (webcamUploadError) {
                             console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
+                            // Usa l'URL locale come fallback
                             webcamBlobUrl = URL.createObjectURL(webcamFile)
                         }
                     } catch (webcamProcessError) {

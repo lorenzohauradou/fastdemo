@@ -9,6 +9,7 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useRef, useState, useCallback } from "react"
 import { useEditorStore } from "@/lib/store"
+import { upload } from '@vercel/blob/client'
 
 export function Header() {
     const isMobile = useIsMobile()
@@ -35,29 +36,25 @@ export function Header() {
         setIsProcessing(true)
 
         try {
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/video/upload', {
-                method: 'POST',
-                body: formData,
+            // Upload diretto a Vercel Blob (bypassa il limite di 4.5MB)
+            const blob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/video/upload',
             })
 
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Errore durante l\'upload')
-            }
-
-            const uploadResult = await response.json()
-            const videoUrl = uploadResult.url
+            const videoUrl = blob.url
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
-            //  durata del video
+            // Crea URL locale temporaneo per ottenere la durata
+            const tempVideoUrl = URL.createObjectURL(file)
             const tempVideo = document.createElement('video')
-            tempVideo.src = videoUrl
+            tempVideo.src = tempVideoUrl
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
+
+                // Pulisci l'URL temporaneo
+                URL.revokeObjectURL(tempVideoUrl)
 
                 // Crea il progetto con struttura multi-clip
                 const newProject = {
@@ -100,7 +97,7 @@ export function Header() {
             }
         } catch (error) {
             console.error('Errore upload:', error)
-            alert('Error uploading video')
+            alert(`Error uploading video: ${error instanceof Error ? error.message : 'Unknown error'}`)
             setIsProcessing(false)
         }
     }, [router, setCurrentProject])

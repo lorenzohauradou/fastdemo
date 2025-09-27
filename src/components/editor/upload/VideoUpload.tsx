@@ -6,6 +6,7 @@ import { useEditorStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Upload } from 'lucide-react'
+import { upload } from '@vercel/blob/client'
 
 interface VideoUploadProps {
     onVideoUploaded?: (videoData: any) => void
@@ -74,24 +75,6 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
         setUploadProgress(0)
 
         try {
-            // Upload a Vercel Blob tramite API route
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/video/upload', {
-                method: 'POST',
-                body: formData,
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Error during upload')
-            }
-
-            const uploadResult = await response.json()
-            const videoUrl = uploadResult.url
-            const videoName = file.name.replace(/\.[^/.]+$/, '')
-
             // Simula progress upload veloce
             const progressInterval = setInterval(() => {
                 setUploadProgress(prev => {
@@ -103,13 +86,27 @@ export function VideoUpload({ onVideoUploaded, className = '' }: VideoUploadProp
                 })
             }, 50)
 
+            // Upload diretto a Vercel Blob (bypassa il limite di 4.5MB)
+            const blob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/video/upload',
+            })
+
+            const videoUrl = blob.url
+            const videoName = file.name.replace(/\.[^/.]+$/, '')
+
             setUploadProgress(100)
 
+            // Crea URL locale temporaneo per ottenere la durata
+            const tempVideoUrl = URL.createObjectURL(file)
             const tempVideo = document.createElement('video')
-            tempVideo.src = videoUrl
+            tempVideo.src = tempVideoUrl
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
+
+                // Pulisci l'URL temporaneo
+                URL.revokeObjectURL(tempVideoUrl)
 
                 // Crea un nuovo progetto con il sistema multi-clip
                 const newProject = {

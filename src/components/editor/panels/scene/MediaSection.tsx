@@ -8,6 +8,7 @@ import { Project, useEditorStore } from '@/lib/store'
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import fixWebmDuration from 'fix-webm-duration'
+import { upload } from '@vercel/blob/client'
 
 interface MediaSectionProps {
     currentProject: Project | null
@@ -78,29 +79,24 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
         setIsUploading(true)
 
         try {
-            const formData = new FormData()
-            formData.append('file', file)
-
-            const response = await fetch('/api/video/upload', {
-                method: 'POST',
-                body: formData,
+            // Upload diretto a Vercel Blob (bypassa il limite di 4.5MB)
+            const blob = await upload(file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/video/upload',
             })
 
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Errore durante l\'upload')
-            }
-
-            const uploadResult = await response.json()
-            const videoUrl = uploadResult.url
+            const videoUrl = blob.url
             const videoName = file.name.replace(/\.[^/.]+$/, '')
 
-            // durata del video
+            // Crea URL locale temporaneo per ottenere la durata
+            const tempVideoUrl = URL.createObjectURL(file)
             const tempVideo = document.createElement('video')
-            tempVideo.src = videoUrl
+            tempVideo.src = tempVideoUrl
 
             tempVideo.onloadedmetadata = () => {
                 const videoDuration = tempVideo.duration
+
+                URL.revokeObjectURL(tempVideoUrl)
 
                 // Crea un nuovo progetto con il sistema multi-clip
                 const newProject = {
@@ -342,21 +338,13 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             // Upload del video principale a Vercel Blob
             let videoBlobUrl = videoUrl
             try {
-                const formData = new FormData()
-                formData.append('file', videoFile)
-
-                const response = await fetch('/api/video/upload', {
-                    method: 'POST',
-                    body: formData,
+                // Upload diretto a Vercel Blob (bypassa il limite di 4.5MB)
+                const blob = await upload(videoFile.name, videoFile, {
+                    access: 'public',
+                    handleUploadUrl: '/api/video/upload',
                 })
 
-                if (!response.ok) {
-                    const errorData = await response.json()
-                    throw new Error(errorData.error || 'Errore durante l\'upload del video')
-                }
-
-                const uploadResult = await response.json()
-                videoBlobUrl = uploadResult.url
+                videoBlobUrl = blob.url
             } catch (uploadError) {
                 // Usa l'URL locale come fallback
             }
@@ -378,22 +366,13 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
 
                     // Upload webcam a Vercel Blob
                     try {
-                        const formData = new FormData()
-                        formData.append('file', webcamFile)
-
-                        const response = await fetch('/api/video/upload', {
-                            method: 'POST',
-                            body: formData,
+                        // Upload diretto a Vercel Blob (bypassa il limite di 4.5MB)
+                        const blob = await upload(webcamFile.name, webcamFile, {
+                            access: 'public',
+                            handleUploadUrl: '/api/video/upload',
                         })
 
-                        if (!response.ok) {
-                            const errorData = await response.json()
-                            throw new Error(errorData.error || 'Errore durante l\'upload della webcam')
-                        }
-
-                        const uploadResult = await response.json()
-                        webcamBlobUrl = uploadResult.url
-                        console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
+                        webcamBlobUrl = blob.url
                     } catch (webcamUploadError) {
                         console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
                         // Usa l'URL locale come fallback
