@@ -6,10 +6,10 @@ interface CameraSettings {
 }
 
 interface CameraTransform {
-    x: number | string | number[]
-    y: number | string | number[]
-    rotateY: number | number[]
-    rotateX: number | number[]
+    x: number
+    y: number
+    rotateY: number
+    rotateX: number
     scale: number
     z: number
 }
@@ -26,8 +26,8 @@ export const baseCameraVariants = {
     },
     withText: {
         scale: 0.8,
-        x: '-10%',
-        y: '5%',
+        x: -50,
+        y: 25,
         rotateY: 15,
         rotateX: -3,
         z: 50
@@ -36,7 +36,7 @@ export const baseCameraVariants = {
     withTextTop: {
         scale: 0.8,
         x: 0,
-        y: '25%',
+        y: 100,
         rotateY: 0,
         rotateX: -5,
         z: 20
@@ -44,14 +44,14 @@ export const baseCameraVariants = {
     withTextBottom: {
         scale: 0.8,
         x: 0,
-        y: '-25%',
+        y: -100,
         rotateY: 0,
         rotateX: 5,
         z: 20
     },
     withTextLeft: {
         scale: 0.8,
-        x: '25%',
+        x: 100,
         y: 0,
         rotateY: -8,
         rotateX: 0,
@@ -59,7 +59,7 @@ export const baseCameraVariants = {
     },
     withTextRight: {
         scale: 0.8,
-        x: '-25%',
+        x: -100,
         y: 0,
         rotateY: 8,
         rotateX: 0,

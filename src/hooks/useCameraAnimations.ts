@@ -4,10 +4,10 @@ import { Project } from '@/lib/store'
 import { getCameraAnimationTransform, getCameraVariantForTextPosition } from '../lib/cameraAnimationUtils'
 
 interface CameraTransform {
-    x: number | string | number[]
-    y: number | string | number[]
-    rotateY: number | number[]
-    rotateX: number | number[]
+    x: number
+    y: number
+    rotateY: number
+    rotateX: number
     scale: number
     z: number
 }
