@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAnimationFrame } from 'framer-motion'
+import { useAnimationFrame, TargetAndTransition } from 'framer-motion'
 import { Project } from '@/lib/store'
 import { getCameraAnimationTransform, getCameraVariantForTextPosition } from '../lib/cameraAnimationUtils'
 
@@ -68,21 +68,21 @@ export function useCameraAnimations(currentProject: Project | null, isPlaying: b
     }
 
     // Ottieni le varianti per l'animazione corrente
-    const getCurrentVariant = (activeTextAnimation?: { properties?: { position?: 'top' | 'bottom' | 'left' | 'right' } }) => {
+    const getCurrentVariant = (activeTextAnimation?: { properties?: { position?: 'top' | 'bottom' | 'left' | 'right' } }): TargetAndTransition => {
         const animationKey = getCameraAnimationKey(activeTextAnimation)
         
         // Per continuous_glide, usa i valori calcolati in tempo reale
         if (animationKey === 'continuous_glide') {
-            return continuousGlideTransform
+            return continuousGlideTransform as TargetAndTransition
         }
         
         // Per up_down, usa i valori calcolati in tempo reale
         if (animationKey === 'up_down') {
-            return upDownTransform
+            return upDownTransform as TargetAndTransition
         }
         
         // Per altre animazioni, calcola i valori
-        return getCameraAnimationTransform(animationKey || 'full', 0, currentProject?.cameraSettings)
+        return getCameraAnimationTransform(animationKey || 'full', 0, currentProject?.cameraSettings) as TargetAndTransition
     }
 
     // Determina il tipo di transizione
