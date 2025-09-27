@@ -46,8 +46,15 @@ export function Hero() {
             })
 
             if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Errore durante l\'upload')
+                let errorMessage = 'Errore durante l\'upload'
+                try {
+                    const errorData = await response.json()
+                    errorMessage = errorData.error || errorMessage
+                } catch {
+                    // Se non è JSON, usa il status text
+                    errorMessage = `Server error: ${response.status} ${response.statusText}`
+                }
+                throw new Error(errorMessage)
             }
 
             const uploadResult = await response.json()
