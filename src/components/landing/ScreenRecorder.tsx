@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Video, Camera } from 'lucide-react'
 import fixWebmDuration from 'fix-webm-duration'
-import { upload } from '@vercel/blob/client'
 
 interface ScreenRecorderProps {
     onRecordingComplete?: (videoData: any) => void
@@ -268,18 +267,25 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                 const videoDuration = duration
                 const videoName = `Screen Recording ${new Date().toLocaleString()}`
 
-                // Upload del video principale a Vercel Blob
                 let videoBlobUrl = videoUrl
                 try {
-                    const videoBlob = await upload(videoFile.name, videoFile, {
-                        access: 'public',
-                        handleUploadUrl: '/api/video/upload',
+                    const formData = new FormData()
+                    formData.append('file', videoFile)
+
+                    const response = await fetch('/api/video/upload', {
+                        method: 'POST',
+                        body: formData,
                     })
-                    videoBlobUrl = videoBlob.url
-                    console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
+
+                    if (response.ok) {
+                        const uploadResult = await response.json()
+                        videoBlobUrl = uploadResult.url
+                        console.log('Screen recording caricato su Vercel Blob:', videoBlobUrl)
+                    } else {
+                        throw new Error('Upload failed')
+                    }
                 } catch (uploadError) {
                     console.warn('Errore upload screen recording su Vercel Blob:', uploadError)
-                    // Usa l'URL locale come fallback
                 }
 
                 // Upload webcam se disponibile
@@ -295,17 +301,24 @@ export function ScreenRecorder({ onRecordingComplete, className = '' }: ScreenRe
                             type: mimeType
                         })
 
-                        // Upload webcam a Vercel Blob
                         try {
-                            const webcamBlobResult = await upload(webcamFile.name, webcamFile, {
-                                access: 'public',
-                                handleUploadUrl: '/api/video/upload',
+                            const formData = new FormData()
+                            formData.append('file', webcamFile)
+
+                            const response = await fetch('/api/video/upload', {
+                                method: 'POST',
+                                body: formData,
                             })
-                            webcamBlobUrl = webcamBlobResult.url
-                            console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
+
+                            if (response.ok) {
+                                const uploadResult = await response.json()
+                                webcamBlobUrl = uploadResult.url
+                                console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
+                            } else {
+                                throw new Error('Upload failed')
+                            }
                         } catch (webcamUploadError) {
                             console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
-                            // Usa l'URL locale come fallback
                             webcamBlobUrl = URL.createObjectURL(webcamFile)
                         }
                     } catch (webcamProcessError) {

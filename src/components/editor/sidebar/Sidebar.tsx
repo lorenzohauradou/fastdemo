@@ -38,7 +38,7 @@ export function Sidebar() {
     }
 
     return (
-        <div className="flex h-full">
+        <div className="flex h-full ">
             <div className="w-16 bg-background border-r border-border flex flex-col">
                 {panels.map((panel) => {
                     const Icon = panel.icon

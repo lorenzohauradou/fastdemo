@@ -43,3 +43,5 @@ next-env.d.ts
 
 uploads/audio/
 .env*.local
+
+/src/generated/prisma

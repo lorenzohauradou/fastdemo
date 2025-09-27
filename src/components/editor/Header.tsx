@@ -4,21 +4,25 @@ import { useRouter } from 'next/navigation'
 import { useEditorStore } from '@/lib/store'
 import { useApi } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Download, ArrowLeft, Loader2, ChevronDown } from 'lucide-react'
+import { Download, ArrowLeft, Loader2, ChevronDown, LogOut } from 'lucide-react'
 import { useState } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { LoginDialog } from '@/components/auth/LoginDialog'
 
 type VideoQuality = '720p' | '1080p' | '4K'
 
 export function Header() {
     const router = useRouter()
     const api = useApi()
+    const { data: session, status } = useSession()
     const [selectedQuality, setSelectedQuality] = useState<VideoQuality>('1080p')
+    const [showLoginDialog, setShowLoginDialog] = useState(false)
     const {
         currentProject,
         currentTime,
@@ -96,8 +100,7 @@ export function Header() {
                 }
 
             } catch (error) {
-                console.error('Errore nel polling:', error)
-                // Continua il progresso fake anche con errori di rete
+
                 if (fakeProgress < 99) {
                     fakeProgress = Math.min(fakeProgress + 1, 99)
                     setGlobalRenderProgress(Math.round(fakeProgress))
@@ -108,6 +111,12 @@ export function Header() {
 
     const handleExport = async () => {
         if (!currentProject || globalIsRendering) return
+
+        // Controlla se l'utente è autenticato
+        if (!session) {
+            setShowLoginDialog(true)
+            return
+        }
 
         try {
             setRenderingState(true)
@@ -194,6 +203,10 @@ export function Header() {
         router.push('/')
     }
 
+    const handleSignOut = async () => {
+        await signOut({ callbackUrl: '/' })
+    }
+
     return (
         <div className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
             <div className="flex items-center space-x-4">
@@ -218,6 +231,50 @@ export function Header() {
             </div>
 
             <div className="flex items-center space-x-3">
+
+
+                {status === 'loading' ? (
+                    <Button
+                        disabled
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground"
+                    >
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    </Button>
+                ) : session ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700"
+                            >
+                                {session.user?.email?.split('@')[0] || 'User'}
+                                <ChevronDown className="ml-1 h-3 w-3" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-zinc-800 border-zinc-600">
+                            <DropdownMenuItem
+                                onClick={handleSignOut}
+                                className="text-zinc-300 hover:bg-zinc-700 focus:bg-zinc-700"
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Sign out
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    <Button
+                        onClick={() => setShowLoginDialog(true)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700"
+                    >
+                        Sign in
+                    </Button>
+                )}
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
@@ -271,6 +328,12 @@ export function Header() {
                     )}
                 </Button>
             </div>
+
+            {/* Login Dialog */}
+            <LoginDialog
+                open={showLoginDialog}
+                onOpenChange={setShowLoginDialog}
+            />
         </div>
     )
 }

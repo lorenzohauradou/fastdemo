@@ -69,7 +69,7 @@ export function VideoEditor() {
     }
 
     return (
-        <div className="flex h-full bg-background text-foreground">
+        <div className="flex h-[120vh] bg-background text-foreground">
             <div className="w-96 min-w-80 max-w-96 flex-shrink bg-card border-r border-border overflow-hidden">
                 <Sidebar />
             </div>
@@ -77,7 +77,7 @@ export function VideoEditor() {
             <div className="flex-1 flex flex-col min-w-0">
                 <Header />
 
-                <div className="flex-1 flex flex-col bg-background min-h-0">
+                <div className="flex-1 flex flex-col bg-background min-h-0 max-h-screen">
                     <div className="flex-1 flex justify-center items-center mb-4 min-h-0">
                         <div
                             className="rounded-lg overflow-hidden border border-border shadow-lg"

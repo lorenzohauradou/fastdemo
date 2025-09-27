@@ -8,15 +8,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     
     if (!file) {
       return NextResponse.json(
-        { error: 'Nessun file fornito' },
+        { error: 'No file provided' },
         { status: 400 }
       )
     }
 
-    const maxSize = 500 * 1024 * 1024 // 500MB
+    const maxSize = 500 * 1024 * 1024
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'File troppo grande. Dimensione massima: 500MB' },
+        { error: 'File too large. Maximum size: 500MB' },
         { status: 400 }
       )
     }
@@ -24,10 +24,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Formato non supportato. Usa MP4, MOV, AVI o WebM' },
+        { error: 'Unsupported format. Use MP4, MOV, AVI or WebM' },
         { status: 400 }
       )
     }
+
     const blob = await put(file.name, file, {
       access: 'public',
       addRandomSuffix: true,
@@ -40,9 +41,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       type: file.type
     })
   } catch (error) {
-    console.error('Errore upload video:', error)
+    console.error('Error during video upload:', error)
     return NextResponse.json(
-      { error: 'Errore durante l\'upload del video' },
+      { error: error instanceof Error ? error.message : 'Error during video upload' },
       { status: 500 }
     )
   }
