@@ -27,10 +27,9 @@ export function Hero() {
         }
 
         const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
-        const isWebM = file.type.startsWith('video/webm')
-        const isAllowedType = allowedTypes.includes(file.type) || isWebM
+        const isValidType = allowedTypes.some(type => file.type.startsWith(type))
 
-        if (!isAllowedType) {
+        if (!isValidType) {
             alert('Unsupported format. Use MP4, MOV, AVI or WebM')
             return
         }

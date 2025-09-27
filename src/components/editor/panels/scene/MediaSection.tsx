@@ -68,10 +68,9 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
         }
 
         const allowedTypes = ['video/mp4', 'video/mov', 'video/quicktime', 'video/avi', 'video/webm']
-        const isWebM = file.type.startsWith('video/webm')
-        const isAllowedType = allowedTypes.includes(file.type) || isWebM
+        const isValidType = allowedTypes.some(type => file.type.startsWith(type))
 
-        if (!isAllowedType) {
+        if (!isValidType) {
             alert('Unsupported format. Use MP4, MOV, AVI or WebM')
             return
         }
@@ -330,8 +329,11 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
             const fixedBlob = await fixWebmDuration(videoBlob, actualDuration * 1000)
 
             const videoUrl = URL.createObjectURL(fixedBlob)
+
+            // Assicurati che il MIME type sia valido per l'API
+            const validMimeType = mimeType.startsWith('video/') ? mimeType : 'video/webm'
             const videoFile = new File([fixedBlob], `screen-recording-${Date.now()}.${extension}`, {
-                type: mimeType
+                type: validMimeType
             })
 
             const videoDuration = actualDuration
@@ -348,12 +350,13 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                     body: formData,
                 })
 
-                if (response.ok) {
-                    const uploadResult = await response.json()
-                    videoBlobUrl = uploadResult.url
-                } else {
-                    throw new Error('Upload failed')
+                if (!response.ok) {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'Errore durante l\'upload del video')
                 }
+
+                const uploadResult = await response.json()
+                videoBlobUrl = uploadResult.url
             } catch (uploadError) {
                 // Usa l'URL locale come fallback
             }
@@ -366,8 +369,11 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                 try {
                     const webcamBlob = new Blob(webcamChunksRef.current, { type: mimeType })
                     const fixedWebcamBlob = await fixWebmDuration(webcamBlob, actualDuration * 1000)
+
+                    // Assicurati che il MIME type sia valido per l'API
+                    const validWebcamMimeType = mimeType.startsWith('video/') ? mimeType : 'video/webm'
                     webcamFile = new File([fixedWebcamBlob], `webcam-recording-${Date.now()}.${extension}`, {
-                        type: mimeType
+                        type: validWebcamMimeType
                     })
 
                     // Upload webcam a Vercel Blob
@@ -380,13 +386,14 @@ export function MediaSection({ currentProject }: MediaSectionProps) {
                             body: formData,
                         })
 
-                        if (response.ok) {
-                            const uploadResult = await response.json()
-                            webcamBlobUrl = uploadResult.url
-                            console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
-                        } else {
-                            throw new Error('Upload failed')
+                        if (!response.ok) {
+                            const errorData = await response.json()
+                            throw new Error(errorData.error || 'Errore durante l\'upload della webcam')
                         }
+
+                        const uploadResult = await response.json()
+                        webcamBlobUrl = uploadResult.url
+                        console.log('Webcam recording caricato su Vercel Blob:', webcamBlobUrl)
                     } catch (webcamUploadError) {
                         console.warn('Errore upload webcam su Vercel Blob:', webcamUploadError)
                         // Usa l'URL locale come fallback
